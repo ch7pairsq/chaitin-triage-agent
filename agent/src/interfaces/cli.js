@@ -22,10 +22,34 @@ if (requestedWorkflow && !['security', 'malware'].includes(requestedWorkflow)) {
 }
 
 if (securityRequested) {
-  aliasEnvironment('SECURITY_TRIAGE_', ['OCTOBUS_BASE_URL', 'OCTOBUS_CAPSET_ID', 'OCTOBUS_INSTANCE_ID', 'OCTOBUS_FULL_SERVICE', 'OCTOBUS_TOKEN', 'TRIAGE_STATE_DB_PATH', 'LLM_API_BASE', 'LLM_API_KEY', 'LLM_MODEL', 'LLM_TIMEOUT_MS']);
+  // 配对映射：域前缀变量 → 无前缀运行时变量。状态库源名是
+  // SECURITY_TRIAGE_STATE_DB_PATH（无双重 TRIAGE），目标名是 TRIAGE_STATE_DB_PATH，
+  // 两者无法用统一前缀拼接表达，因此使用显式 [源名, 目标名] 配对。
+  aliasEnvironment('SECURITY_TRIAGE_', [
+    ['OCTOBUS_BASE_URL', 'OCTOBUS_BASE_URL'],
+    ['OCTOBUS_CAPSET_ID', 'OCTOBUS_CAPSET_ID'],
+    ['OCTOBUS_INSTANCE_ID', 'OCTOBUS_INSTANCE_ID'],
+    ['OCTOBUS_FULL_SERVICE', 'OCTOBUS_FULL_SERVICE'],
+    ['OCTOBUS_TOKEN', 'OCTOBUS_TOKEN'],
+    ['STATE_DB_PATH', 'TRIAGE_STATE_DB_PATH'],
+    ['LLM_API_BASE', 'LLM_API_BASE'],
+    ['LLM_API_KEY', 'LLM_API_KEY'],
+    ['LLM_MODEL', 'LLM_MODEL'],
+    ['LLM_TIMEOUT_MS', 'LLM_TIMEOUT_MS']
+  ]);
   await import('./security-cli.js');
 } else {
-  aliasEnvironment('MALWARE_TRIAGE_', ['OCTOBUS_BASE_URL', 'OCTOBUS_CAPSET_ID', 'OCTOBUS_INSTANCE_ID', 'OCTOBUS_AUTH_TOKEN', 'TRIAGE_STATE_DB_PATH', 'LLM_BASE_URL', 'LLM_MODEL', 'LLM_TIMEOUT_MS']);
+  // 同上：MALWARE_TRIAGE_STATE_DB_PATH → TRIAGE_STATE_DB_PATH。
+  aliasEnvironment('MALWARE_TRIAGE_', [
+    ['OCTOBUS_BASE_URL', 'OCTOBUS_BASE_URL'],
+    ['OCTOBUS_CAPSET_ID', 'OCTOBUS_CAPSET_ID'],
+    ['OCTOBUS_INSTANCE_ID', 'OCTOBUS_INSTANCE_ID'],
+    ['OCTOBUS_AUTH_TOKEN', 'OCTOBUS_AUTH_TOKEN'],
+    ['STATE_DB_PATH', 'TRIAGE_STATE_DB_PATH'],
+    ['LLM_BASE_URL', 'LLM_BASE_URL'],
+    ['LLM_MODEL', 'LLM_MODEL'],
+    ['LLM_TIMEOUT_MS', 'LLM_TIMEOUT_MS']
+  ]);
   await import('./malware-cli.js');
 }
 
@@ -34,9 +58,9 @@ function option(name) {
   return index >= 0 ? args[index + 1] : undefined;
 }
 
-function aliasEnvironment(prefix, names) {
-  for (const name of names) {
-    const scoped = `${prefix}${name}`;
-    if (!process.env[name] && process.env[scoped]) process.env[name] = process.env[scoped];
+function aliasEnvironment(prefix, pairs) {
+  for (const [suffix, plainName] of pairs) {
+    const scoped = `${prefix}${suffix}`;
+    if (!process.env[plainName] && process.env[scoped]) process.env[plainName] = process.env[scoped];
   }
 }
