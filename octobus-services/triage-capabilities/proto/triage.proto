@@ -1,0 +1,26 @@
+// 研判确定性能力契约（规范 §7.1 / §7.4）。
+// 能力以 gRPC method 形式定义，经 capset 选择暴露；请求 / 响应统一使用
+// google.protobuf.Struct 承载 JSON（与 Connect RPC 的 JSON 映射一致）。
+// 约束：本服务只做确定性计算，绝不调用模型；模型只能经编排层解释结果。
+syntax = "proto3";
+
+package triage.capabilities.v1;
+
+import "google/protobuf/struct.proto";
+
+// 能力注册表入口：与 agent/src/capabilities/index.js 中的注册项一一对应。
+// capability_id 命名遵循 {domain}.{operation}（规范 §7.4）。
+service CapabilityService {
+  // security.rules.evaluate_false_positive
+  rpc EvaluateFalsePositiveRules(google.protobuf.Struct) returns (google.protobuf.Struct);
+  // security.threat.match_indicators
+  rpc MatchThreatIndicators(google.protobuf.Struct) returns (google.protobuf.Struct);
+  // security.threat.decision_from_correlation
+  rpc DecisionFromThreatCorrelation(google.protobuf.Struct) returns (google.protobuf.Struct);
+  // malware.report.validate_sanitized
+  rpc ValidateSanitizedReport(google.protobuf.Struct) returns (google.protobuf.Struct);
+  // malware.risk.assess
+  rpc AssessRisk(google.protobuf.Struct) returns (google.protobuf.Struct);
+  // malware.yara.draft_candidate
+  rpc DraftYaraCandidate(google.protobuf.Struct) returns (google.protobuf.Struct);
+}

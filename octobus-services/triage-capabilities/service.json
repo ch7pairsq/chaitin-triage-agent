@@ -1,0 +1,10 @@
+{
+  "schema": "chaitin.octobus.service.v1",
+  "name": "triage-capabilities",
+  "displayName": "Triage Capabilities",
+  "description": "研判确定性能力：告警降噪规则评估、私有威胁证据匹配、脱敏报告契约校验、样本风险评分、YARA 候选起草（仅候选，不自动发布）",
+  "runtime": { "mode": "long-running" },
+  "proto": { "roots": ["proto"], "files": ["proto/triage.proto"] },
+  "configSchema": "config.schema.json",
+  "secretSchema": "secret.schema.json"
+}

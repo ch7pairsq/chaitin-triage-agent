@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "triage-capabilities 公开配置",
+  "type": "object",
+  "properties": {
+    "listen_host": { "type": "string", "default": "127.0.0.1", "description": "监听地址（默认仅本机）" },
+    "listen_port": { "type": "integer", "minimum": 1024, "maximum": 65535, "default": 9090, "description": "监听端口" },
+    "access_log_path": { "type": "string", "default": "runtime/access.log", "description": "capset 访问日志（NDJSON 追加写）" }
+  },
+  "additionalProperties": false
+}

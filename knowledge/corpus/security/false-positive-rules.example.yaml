@@ -1,0 +1,45 @@
+version: 1
+rules:
+  - rule_id: fp_dns_001
+    scene: internal_dns_scan
+    description: 在授权扫描窗口内，由已登记扫描资产发起的 DNS 探测，通常应进入降噪复核而非自动升级。
+    evidence_required:
+      - source_asset_tag
+      - event_time
+      - approved_scan_window
+      - destination_port
+    conditions:
+      source_asset_tag: vulnerability_scanner
+      destination_port: 53
+      within_approved_scan_window: true
+    decision:
+      false_positive_score: 0.85
+      action: needs_review
+    counterexamples:
+      - source asset is not registered as a scanner
+      - event occurs outside the approved window
+    # §8.2 失效与误判经验：每条入库知识必须补齐四要素。
+    invalidation:
+      false_positive_conditions:
+        - source asset tag is mis-registered as a scanner
+        - approved window is too broad and covers a real attack
+      false_negative_conditions:
+        - scanner asset tag is missing or named inconsistently
+        - event time and window timestamps use different timezones
+      bypass_points:
+        - DNS tunneling disguised inside the approved scan window
+      unusable_fields:
+        - field: destination_port
+          reason: alone it cannot prove DNS probing; combine with protocol features
+    # §9.2 证据块：优先级须有依据；样本量缺失时显式置 null 并说明，禁止伪造。
+    evidence:
+      priority: 0.85
+      evidence_count: null
+      evidence_note: sample size and case IDs live in the private register; do not
+        promote this rule to automated enforcement until real statistics exist.
+    # §9.1 知识实质性口径：来源 + 积累过程 + 适用边界。
+    knowledge_statement:
+      source: personal_lab_or_redacted_retrospective
+      accumulation: distilled from one authorized-scan false-positive retrospective
+      boundary: only for internal DNS probing by registered scanner assets
+    provenance: personal_lab_or_redacted_retrospective
