@@ -42,7 +42,7 @@ chaitin-triage-agent/
 ├── docs/                      # 历史设计文档
 └── agent/
     ├── package.json           # scripts: check（语法检查）/ test（node --test）
-    ├── tools/                 # 运维工具：VT 查询助手、留痕校验
+    ├── tools/                 # 运维工具：留痕校验
     ├── test/                  # 测试（security / malware / unified-cli / octobus-services）
     └── src/
         ├── domains/           # 领域层：纯函数、零 IO 依赖（可 100% 单测）
