@@ -63,7 +63,6 @@ chaitin-triage-agent/
         │   ├── model-gateway/ #   narrator（LLM 仅解释；不可用时确定性降级）
         │   ├── notify/        #   企业微信出站通知（单向、脱敏、限流）
         │   ├── registry/      #   私有样本登记册加载与引用解析
-        │   └── vt/            #   SHA-256 补全助手（仅哈希的 VT 查询队列）
         ├── interfaces/        # 接口层（触发层）：统一 CLI、事件入口、组合根
         ├── audit/             # 留痕层：追加写 NDJSON 审计日志
         ├── config/            # 配置层：域前缀环境变量别名、必填校验
@@ -128,12 +127,11 @@ OpenAI 兼容端点时才填写。
 
 本项目运行时代码**没有任何静默 mock / 模拟返回**；所有能力调用、LLM 调用与
 通知均为真实请求（Connect RPC / Runtime LLM Facade / 企业微信 HTTP）。仅存在
-以下三处**显式声明**的模拟，均带明确标注且默认关闭：
+以下两处**显式声明**的模拟，均带明确标注且默认关闭：
 
 | 模拟点 | 位置 | 显式标注 | 默认行为 |
 | --- | --- | --- | --- |
 | OctoBus 演示沙箱后端 | OctoBus 网关内托管的后端实例（`security-triage-demo` / `local-sandbox-adapter`），实现 `GetAlertContext` / `GetSanitizedReport` 等 | 报告 `source` 字段显式取值（`offline-static` / `isolated-sandbox` / `mock`）；实例 ID 即"演示后端"；真实沙箱接入后替换实例即可，Agent 代码零改动 | 环境中无真实沙箱，此为唯一数据来源模拟（生产替换实例，不改代码） |
-| 登记册模拟 SHA-256 | `vt-query-assistant` 的 `simulate` 子命令 | 导出独立登记册，逐条带 `simulation_only: true`、`evidence_level: "simulation_only"` 与中文状态说明；导入侧 fail-closed | 不显式传 `--demo-simulation` 时直接抛错，禁止进入真实研判 |
 | 本地能力包联调模式 | `octobus-services/triage-capabilities` 本地启动 | 启动日志输出 `"auth":"none(local-demo)"`；生产中由 OctoBus 网关托管并鉴权 | 仅用于本地联调，不经 capset 不进生产 |
 
 此外，`chaitin-interactive-demo` 回放控制台返回的 12 个案例为**预置脱敏回放
@@ -346,18 +344,6 @@ docker exec agent-compose agent-compose -p chaitin-triage-agent \
 `docs/operations-command-runbook.md`；服务器上也可直接运行其
 `deploy/deploy-and-verify.sh`（一键预检 / 部署 / 重启 / 验证，含上述第 2、3、4、
 6 步的自动化核验，不回显任何 Secret）。
-
-### 附：SHA-256 补全助手（私有登记册回填）
-
-```bash
-cd agent
-node tools\vt-query-assistant.js init    --registry <私有登记册.jsonl> --state <本地状态.json>
-node tools\vt-query-assistant.js next    --state <本地状态.json> [--open]
-node tools\vt-query-assistant.js record  --state <本地状态.json> --sample-ref MAL-0001 --sha256 <64位值>
-node tools\vt-query-assistant.js export  --registry <私有登记册.jsonl> --state <本地状态.json> --out <新登记册.jsonl>
-node tools\vt-query-assistant.js status  --state <本地状态.json>
-# 队列只含哈希：无样本路径、无样本字节、无 API key、无自动上传。
-```
 
 ***
 

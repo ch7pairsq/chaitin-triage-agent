@@ -5,7 +5,7 @@
   "type": "module",
   "engines": { "node": ">=22.5" },
   "scripts": {
-    "check": "node --check src/interfaces/cli.js && node --check src/interfaces/security-cli.js && node --check src/interfaces/malware-cli.js && node --check tools/vt-query-assistant.js && node --check tools/verify-security-state.mjs",
+    "check": "node --check src/interfaces/cli.js && node --check src/interfaces/security-cli.js && node --check src/interfaces/malware-cli.js && node --check tools/verify-security-state.mjs",
     "test": "node --test"
   }
 }
