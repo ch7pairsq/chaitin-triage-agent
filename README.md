@@ -16,16 +16,15 @@ SOC 每天被海量告警淹没，授权扫描、已知误报等重复噪音持�
 
 - **降噪提效**：确定性规则压制已知误报模式，分析师只看值得看的告警；
 - **漏报可控**：IOC 命中即升级研判，证据不足一律 fail-closed 转人工，绝不静默丢弃；
-- **可解释可回放**：结论强制携带 evidenceRefs，trace\_id 贯穿 SQLite 快照、审计日志与网关 access.log，任意研判可完整复盘；
+- **可解释可回放**：结论强制携带 evidenceRefs，traceid 贯穿 SQLite 快照、审计日志与网关 access.log，任意研判可完整复盘；
 - **知识沉淀**：降噪规则结构化入库，支持消融自检与知识-代码双向绑定，运营经验持续积累；
 - **合规内生**：状态最小化、通知脱敏、私有 IOC 绝不导出、凭据不出 daemon。
-  （逻辑架构 / / 代码架构 Clean 分层）。
 
 ***
 
 ## 1. 架构图
 
-**1）在线地址：**<https://www.processon.com/view/link/6a92fbf88d56e8392bab2185>
+**1）在线地址(高清)：**<https://www.processon.com/view/link/6a92fbf88d56e8392bab2185>
 
 **2）架构图：**
 
@@ -37,43 +36,113 @@ SOC 每天被海量告警淹没，授权扫描、已知误报等重复噪音持�
 2. **Docker Stack 只编排常驻容器**（daemon / 网关 / UI / Portainer），不含业务镜像 — `DEFAULT_IMAGE` 是 daemon 的环境变量而非 Stack 声明，installer 预拉 guest 镜像避免首次卡在大文件下载；agent 代码通过 workspace provider（file/git）按需进入 guest 容器。
 3. **Codex Agent 与 chaitin-triage-agent 都在 guest 容器内** — daemon 只负责创建容器和启动 Codex Agent，之后 Codex Agent 靠 LLM 理解 system\_prompt 自主决策执行什么 CLI。system\_prompt 锁死命令格式（`cd agent && node src/interfaces/cli.js --workflow security --alert-id <id>`），LLM 只能填 `<id>` 值不能发明新参数；`--workflow` 选项只来自显式 flag，不受 prompt 文本影响。
 4. **研判流水线 9 状态：每状态先落库（SQLite 快照）再执行** — `#transition()` 先 `stateStore.save()` 写 SQLite 标记阶段起点，落库成功才执行该阶段业务逻辑，失败则回滚抛异常。快照含 `traceId / sequence / state / payload`，进程崩溃后运维从最后一条快照即可完整重建运行。
-5. **转人工四触发点**：(1) 告警不存在或取数失败 (2) 未命中任何降噪规则 (3) 回写 OctoBus 失败 (4) 任何未捕获异常 — 全部走 `exitCode=2`，这不是故障是设计行为（规范 v3.0 红线"非确定性决策恒转人工"）。
+5. **转人工四触发点**：
+(1) 告警不存在或取数失败 
+(2) 未命中任何降噪规则
+(3) 回写 OctoBus 失败
+(4) 任何未捕获异常 — 全部走 `exitCode=2`，这不是故障是设计行为。
 6. **知识资产参与判定**：`kb-security-ioc-escalation`（证据关联）+ `kb-security-fp-dns-001`（降噪规则）— 正向 `consumed_by` 声明被谁消费，反向 `KNOWLEDGE_HIT` 审计日志记录实际命中，双向核对证明知识真实参与；消融开关 `KNOWLEDGE_ABLATION` 可按 `knowledge_id` 关闭知识注入，被消融知识跳过判定并打 `ablated` 标记。
-7. **LLM 只解释不判定** — `narrator.summarize()` 不影响 `decision.status`，判定只能来自确定性规则 `evaluateRules()` 或私有证据关联 `correlateThreatEvidence()`；LLM 异常时降级 `DeterministicNarrator`，`narrativeSource` 置 `"fallback"`，禁止静默失败（规范 §11.3）。
+7. **LLM 只解释不判定** — `narrator.summarize()` 不影响 `decision.status`，判定只能来自确定性规则 `evaluateRules()` 或私有证据关联 `correlateThreatEvidence()`；LLM 异常时降级 `DeterministicNarrator`，`narrativeSource` 置 `"fallback"`，禁止静默失败。
 8. **chaitin-triage-capabilities 是 agent 纯函数的 HTTP 包装器** — 同仓库跨进程 import，基于 `node:http` 零第三方依赖，每个 method 都是确定性纯函数（零 IO · 零 LLM · 零敏感数据）。
 9. **四条通道严格区分，真实密钥从不进沙箱** —
-   | 通道                                                                                                                          | 线型     | 路径                               | 凭据                             |
-   | --------------------------------------------------------------------------------------------------------------------------- | ------ | -------------------------------- | ------------------------------ |
-   | OctoBus 业务能力                                                                                                                | 蓝实线    | 沙箱 → OctoBus 网关（直连，不经 daemon）    | scoped token                   |
-   | LLM 调用                                                                                                                      | 橙点线    | 沙箱 → daemon Facade → 外部 provider | scoped token（真实 key 只在 daemon） |
-   | SQLite 状态持久化                                                                                                                | 青点线    | 沙箱内本地卷 `/triage-state`（不经网络）     | 无                              |
-   | 知识卷直读                                                                                                                       | 灰虚线    | 沙箱内本地卷 `/knowledge`（只读挂载，不经网络）   | 无                              |
-   | 前两条是跨信任边界的外部通道，后两条是沙箱内本地通道。LLM provider key、OctoBus 管理令牌、daemon AUTH\_TOKEN 全部只在 daemon `.env`（0600 权限），沙箱内只有 scoped token。 | <br /> | <br />                           | <br />                         |
+   | 通道                 | 路径                               | 凭据                             |
+   | ------------------ | -------------------------------- | ------------------------------ |
+   | OctoBus 业务能力       | 沙箱 → OctoBus 网关（直连，不经 daemon）    | scoped token                   |
+   | LLM 调用             | 沙箱 → daemon Facade → 外部 provider | scoped token（真实 key 只在 daemon） |
+   | SQLite 状态持久化       | 沙箱内本地卷 `/triage-state`（不经网络）     | 无                              |
+   | 知识卷直读            | 沙箱内本地卷 `/knowledge`（只读挂载，不经网络）   | 无                              |
+
+   前两条是跨信任边界的外部通道，后两条是沙箱内本地通道。LLM provider key、OctoBus 管理令牌、daemon AUTH\_TOKEN 全部只在 daemon `.env`（0600 权限），沙箱内只有 scoped token。
 10. **多个 Agent 各有独立 guest 容器** — 共用同一个 `agent-compose-guest` 镜像，但各自独立容器，隔离 scoped token、隔离卷（知识卷只读可共享，状态卷按 agent 隔离）、隔离 workspace 路径、隔离 system\_prompt。
 11. **信任边界：daemon 持全部真实凭据，guest 沙箱零真实凭据** — daemon `.env`（0600）存 LLM provider key / OctoBus 管理令牌 / AUTH\_TOKEN；沙箱只有 scoped token，真实密钥从文件系统、环境变量、网络三个层面都不进入 guest。
 12. **trace\_id 全链路贯穿** — 从 TaskContext 生成 `traceId` 开始，SQLite 快照、NDJSON audit.log、OctoBus access.log（`x-octobus-ext-business-request-id`）四处同 ID 贯穿，任意时刻可按 traceId 回放完整运行链路。
 
 ***
 
-## 2. 业务逻辑分层
+## 2. 业务逻辑分层（调用链视图：八层映射 + trace_id 全链路贯穿）
 
-| 模块       | 本项目实现                                                                                                                   | 职责落点                                                                                                  |
-| -------- | ----------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| **触发层**  | `agent-compose.yml` scheduler（cron）+ 统一 CLI（`agent/src/interfaces/cli.js`）                                              | 定时 / CLI 触发，解析入参生成标准化 `TaskContext`（`domains/task/task-context.js`，trace\_id / task\_id 在此统一生成并贯穿全链路） |
-| **编排层**  | `application/pipelines/security-triage-pipeline.js`（malware 流水线与会话编排代码保留，演示未启用）                                         | 业务闭环五阶段编排：触发 → 取数 → 判定 → 处置 → 留痕                                                                      |
-| **判定层**  | 结论**只由确定性规则产出**（`capabilities/`）；模型（narrator）仅解释，不改决策                                                                   | 结构化结论 + `evidenceRefs`（无证据引用的结论按规范无效）                                                                 |
-| **能力层**  | `octobus-services/triage-capabilities`（OctoBus service package，Node.js 纯函数）                                             | 取数 / 匹配 / 格式校验 / 评分 / YARA 起草，全部确定性可单测                                                                |
-| **处置层**  | `RecordTriageResult` 结果回写 / 企业微信脱敏通知（`infrastructure/notify/wecom-notifier.js`）/ 高危升级人工（`NEED_HUMAN` / `manual_review`） | 处置动作 + 状态回写；YARA `autoPublish` 恒为 false                                                               |
-| **能力总线** | OctoBus（capset → service → instance → method）                                                                           | 所有能力调用必须经网关（Connect RPC），带 token 鉴权与 `access.log` NDJSON                                              |
-| **知识库**  | `knowledge/`（结构化降噪规则 + RAG 语料 + 私有登记册/证据包，均在仓库外或脱敏入库）                                                                   | 知识资产含判据、失效条件、证据口径、适用边界；私有 IOC 只做标识符关联，绝不导出                                                            |
-| **留痕层**  | SQLite 状态快照（`infrastructure/db/`）+ 追加写审计日志（`audit/audit-log.js`）+ 能力总线 access.log                                       | 全链路 trace\_id 贯穿，任意时刻可回放                                                                              |
+左侧=流水线五阶段主线（触发→编排→判定→处置→留痕）；右侧=三条支撑通道（能力总线/知识库/LLM narrator）；底部=trace_id 锚点。
+调用形式：`--workflow security --alert-id <id>`（scheduler cron `0 * * * *` 安全边界巡检），malware 专属入参一律 fail closed。
 
-依赖单向向下：**触发 → 编排 → （能力总线 / 知识库）→ 判定/处置 → 留痕**；
-能力层不反向调用模型；留痕是所有写路径的必经环节。
+### 左侧主线：五阶段流水线
+
+| 模块 | 本项目实现 | 调用链与约束 |
+| --- | --- | --- |
+| **① 触发层** | `agent/src/interfaces/cli.js` + `security-cli.js`（组合根）· `agent-compose.yml` scheduler · `domains/task/task-context.js` | 工作流选择只来自显式 CLI flag `--workflow`，prompt 永远不能选择权限；触发即生成标准化 `TaskContext`：`traceId` / `taskId` / `workflow` / `trigger` / `subject{alertId}` / `createdAt`（幂等键），`taskId === traceId` 贯穿全链路。malware 入参（--sample-id / --sha256 等）一律抛错拒绝。环境变量别名 `SECURITY_TRIAGE_* → TRIAGE_*` 在此统一装配。 |
+| **② 编排层** | `agent/src/application/pipelines/security-triage-pipeline.js`（`SecurityTriageAgent.triage()`）· `shared/run-metrics.js` | 固化 9 状态机：`RECEIVED → ACQUIRE_CONTEXT → EXTRACT_SIGNALS → CORRELATE_THREAT_EVIDENCE → APPLY_RULES → LLM_SUMMARIZE → DECIDE_ACTION → PERSIST_RESULT → {COMPLETED / NEED_HUMAN}`；**每次状态迁移 #transition() 先 SQLite 快照落库再执行业务逻辑**，失败回滚抛异常。终态指标 `run-metrics`：`stage_durations{state→ms}` / `capability_calls` / `capability_failures` / `knowledge_hits` / `narrative_source` / `manual_escalation`，任务终态挂到 `result.metrics`。 |
+| **③ 判定层** | `capabilities/security/rule-engine.js`（`evaluateRules()`）· `capabilities/security/threat-evidence.js`（`correlateThreatEvidence()` + `decisionFromThreatCorrelation()`）· `domains/judgment/judgment.js`（`finalizeJudgment()` 补齐 evidenceRefs） | **结论只由确定性规则 / 私有证据关联产出，红线：LLM 不可改判定**。<br>Ⅰ 降噪规则匹配：`kb-security-fp-dns-001` 命中 → `suppress_with_review`（`falsePositiveScore=0.85`），证据缺失走 `manual_review / request_missing_evidence`（不静默通过）；<br>Ⅱ IOC/SID 指纹关联：`correlateThreatEvidence()` 将 `networkIndicators` + `matchedSnortSids` 与私有登记册做确定性匹配，`matchedCount >= 1` 时优先级高于降噪规则 → `open_case`；<br>Ⅲ 规则全无命中 → `escalate / open_case`（高优先级人工）。<br>所有结论经 `finalizeJudgment()` 强制补齐 `evidenceRefs[]`，**无证据引用的结论按规范无效**。 |
+| **④ 处置层** | `infrastructure/octobus/connect-client.js`（`RecordTriageResult` 回写）· `infrastructure/notify/wecom-notifier.js`（脱敏通知旁路）· 内置 `manual_review / exitCode=2` 转人工 | **三出口，写路径必经 outbox**：<br>Ⅰ `RecordTriageResult` 回写（**必经 OctoBus 网关**，`idempotencyKey=record:${traceId}` 幂等）；<br>Ⅱ 企业微信脱敏通知（**单向旁路**，只发 `qyapi.weixin.qq.com` 官方机器人，格式化仅含 alertId / status / action / traceId / recorded，绝不夹带 narrative / 证据 / IOC；串行限流 3s 间隔；抛 `WeComNotificationError` 由 outbox 重试）；<br>Ⅲ 非确定性决策恒转人工：告警不存在、未命中降噪规则+无证据关联、OctoBus 回写失败、任何未捕获异常 → `status=manual_review`，**进程退出码 2 是正常业务态，非故障**。YARA `autoPublish` 恒为 false。 |
+| **⑤ 留痕层** | `infrastructure/db/security-state-store.js`（SQLite `workflow_snapshots` + `delivery_outbox`）· `audit/audit-log.js`（追加写 NDJSON）· OctoBus 网关 `access.log`（外部） | **写路径必经留痕，快照可完整回放**：<br>Ⅰ `workflow_snapshots(trace_id, sequence, state, payload_json, created_at)`：9 状态机每次迁移先落库，主键 `(trace_id, sequence)`，payload 只含脱敏恢复必需字段（**绝不快照密钥、原始日志或未脱敏 IOC**）；<br>Ⅱ `delivery_outbox(id, kind, trace_id, idempotency_key, payload_json, attempts, next_run_at, status)`：回写 + 通知双投递，失败按指数退避重试（30s→1m→2m→4m→8m→15m，上限 9 次），超限标记 `manual` 由 `--recover-outbox` CLI 子命令重投，**禁止静默丢失**；<br>Ⅲ `audit/audit.log`（NDJSON append-only）：每次运行至少两条——`workflow.completed`（结论 + evidenceRefs + 输入 + model + promptVersion + metrics）+ `KNOWLEDGE_HIT`（命中知识 id + consumed_by 双向绑定）；写入失败不静默，抛 `ERROR_CODES.AUDIT_WRITE_FAILED`；<br>Ⅳ OctoBus 网关 `access.log`（外部）：能力调用留痕，header `x-octobus-ext-business-request-id=${traceId}`，部署时与 audit.log 统一归档。 |
+
+### 右侧支撑：三条通道
+
+| 通道 | 本项目实现 | 调用约束 |
+| --- | --- | --- |
+| **能力总线（必经通道）** | `capabilities/index.js`（`CAPABILITIES` 注册表）· `octobus-services/triage-capabilities`（HTTP 包装）· OctoBus Connect RPC 网关 | 能力必须注册到 `CAPABILITIES` 表，每条声明 `fn / idempotent / deterministic / timeoutMs`，`getCapability()` 未注册一律抛错。<br>security 域已注册：`security.rules.evaluate_false_positive` · `security.threat.match_indicators` · `security.threat.decision_from_correlation`；对外统一封装为：`security.get_alert_context`（取数）· `security.evaluate_false_positive_rules`（降噪判定）· `security.correlate_threat_evidence`（IOC 关联）· `security.record_triage_result`（结论回写）。所有调用必经网关（token 鉴权 + NDJSON access.log）。 |
+| **知识库（旁路·只读卷）** | `knowledge/corpus/security/false-positive-rules.json`（`kb-security-fp-dns-001`，版本化降噪规则含 `judgment / evidence / tradeoff / invalidation / consumed_by` 完整 schema）· `knowledge/corpus/security/threat-evidence-judgment.json`（`kb-security-ioc-escalation`，私有证据命中升级判据）· 私有登记册挂载卷 `/knowledge`（只读，不经网络） | 知识-代码双向绑定：每条知识 `consumed_by[]` 声明被哪个 capability + pipeline 阶段消费；流水线命中即写 `KNOWLEDGE_HIT` 审计事件（附 consumed_by 合并视图）。<br>消融开关 `KNOWLEDGE_ABLATION` 环境变量：按逗号分隔 `knowledge_id` 关闭知识注入，IOC 判据被消融→跳过关联判定、降噪规则被消融→剔除命中链，结果显式挂 `knowledgeAblated[]`，流程不中断。私有 IOC 仅做标识符关联（evidenceId + sourceType），**绝不导出原始指标字节**。 |
+| **LLM narrator（旁路·仅解释）** | `infrastructure/model-gateway/security-narrator.js`（`OpenAICompatibleNarrator` + `DeterministicNarrator` 降级） | **红线：模型只解释、不改决策；判定输入不可被 LLM 修改**。输入经 `modelSafeAlert()` 脱敏——私有 IOC 只以计数形式进入模型（`rawSignalCount` / `networkIndicatorCount` / `matchedSnortSidCount`）。凭据由 agent-compose LLM Facade 注入 scoped token，真实 key 不进沙箱。<br>LLM 不可用时自动降级 `DeterministicNarrator`，结果 `narrativeSource="fallback"`，**流程绝不中断**（规范 §11.3）。system prompt 锁死"不得更改 action、不得补造事实、输出 ≤ 180 中文字符"。 |
+
+### 底部锚点：trace_id 全链路贯穿
+`traceId` 由 `createTaskContext()` 在**触发层统一生成**，贯穿五处写路径：
+1. `TaskContext.traceId` / `taskId` 进程内传递；
+2. `workflow_snapshots.trace_id` + `sequence`（SQLite 9 状态回放键）；
+3. `delivery_outbox.trace_id`（outbox 投递关联键）；
+4. `audit.log` NDJSON `traceId` 字段（`workflow.completed` + `KNOWLEDGE_HIT` 两条）；
+5. OctoBus 网关 header `x-octobus-ext-business-request-id=${traceId}` → `access.log`。
+
+任意时刻可按 `traceId` 从 5 处同 ID 回放完整运行链路。
+
+### 依赖方向（单向向下，无循环）
+**触发 → 编排 → （能力总线 / 知识库）→ 判定 / 处置 → 留痕**
+- 能力层（capabilities/）是零 IO 纯函数，**不反向调用模型**；
+- 留痕层是**所有写路径的必经环节**（状态迁移先落库，出站先入 outbox，终态先写 audit.log）。
 
 ## 3. 时序图
 
-解释：一段说明
+**1）在线地址(高清)：**<https://www.processon.com/view/link/6a93e8408fda406a11e05faa>
+
+**2）时序图：**
+
+![image](./docs/image/sequence.png)
+
+### 3）时序图要点
+
+> 高清时序图见项目根目录 [时序图.html](../时序图.html)（SVG 交互版）与 [时序图.mmd](../时序图.mmd)（Mermaid 可渲染版）。参与者：**agent-compose guest → SecurityTriageAgent → SQLite state volume → OctoBus 网关 → security-triage-demo 后端 → DeepSeek（LLM Facade）**，共三 phase。
+
+#### phase 1 · 启动期（4 个关键动作，凭据永不进沙箱）
+
+1.  **daemon 读配置**：daemon 容器（宿主机 root:root 0600）加载 `.env`（真实 `OCTOBUS_TOKEN` / `MALWARE_TRIAGE_LLM_API_KEY`）+ `agent-compose.yml`（capset_ids / volumes / env / scheduler）。
+2.  **创建 guest 沙箱**：`Docker run agent-compose-guest:latest`，双卷挂载——`/knowledge` 只读（私有登记册，不经网络）+ `/triage-state`（SQLite WAL）；注入**仅 scoped token**（`SECURITY_TRIAGE_OCTOBUS_TOKEN=scoped` / `LLM_API_KEY=scoped`），真实密钥在文件系统、环境变量、网络三个层面都不进 guest。
+3.  **注册 OctoBus capset**：daemon 用真实 `OCTOBUS_TOKEN` 向 OctoBus 注册 `triage/security-triage`，4 个已启用方法（GetAlertContext / EvaluateFalsePositiveRules / CorrelateThreatEvidence / RecordTriageResult），沙箱只能经网关调用这 4 个。
+4.  **Runtime LLM Facade 就绪**：daemon 监听 `:7410`，接收沙箱 scoped token → 转译注入真实 `MALWARE_TRIAGE_LLM_API_KEY` 调 provider。
+
+#### phase 2 · 运行期（9 状态机主链，malware 入参 fail closed）
+
+5.  **启动 Agent**：daemon 启动 Codex Agent 进程进入 guest，`system_prompt` 锁死：只能调用经批准的 OctoBus 能力 / malware 专属参数一律拒绝 / 不可直连后端。
+6.  **trace_id 统一生成**：CLI 显式 `--workflow security --alert-id <id>` 触发（scheduler cron `0 * * * *`）；`createTaskContext()` 生成 `traceId/taskId`，**malware 专属入参（--sample-id / --sha256）直接抛错 fail closed**。
+7.  **写屏障：先快照后执行**：9 状态机每次 `#transition()` **先写 SQLite workflow_snapshots(trace_id, sequence, state, payload_json) 落库再执行业务逻辑**，失败回滚抛异常，保证可回放。
+8.  **GetAlertContext 必经 OctoBus**：Connect RPC `GET /capsets/triage/security-triage/connect/{instance}/GetAlertContext`，header `x-octobus-ext-business-request-id={trace_id}`，OctoBus 写 access.log NDJSON 归档；沙箱无法越过 OctoBus 直连后端。
+9.  **判定分层**：两条旁路并行（知识库只读卷 `/knowledge` 直读，不走网络）——
+    - IOC/SID 指纹关联：`correlateThreatEvidence()`，命中 `matchedCount≥1` **优先级高于降噪规则** → `escalate / open_case`；
+    - 降噪规则：`evaluateRules()`，命中 `kb-security-fp-dns-001` → `suppress_with_review(falsePositiveScore=0.85)`；
+    - **证据缺失不静默通过**：规则命中但证据不足 → `manual_review / request_missing_evidence`；
+    - 全无命中 → `escalate / open_case`（高优先级人工）。
+10. **LLM 红线：只解释不改判定**：`narrator.summarize()` 经 LLM Facade（scoped token）调用；输入经 `modelSafeAlert()` 三重计数脱敏——私有 IOC 只以 `rawSignalCount / networkIndicatorCount / matchedSnortSidCount` 形式进模型；**LLM 不可用时自动降级 `DeterministicNarrator`（`narrativeSource='fallback'`），流程绝不中断**。
+11. **强制 evidenceRefs**：`finalizeJudgment()` 从判定证据的 `field / evidenceId` 提取补全 evidenceRefs[]，**无证据引用的结论按规范无效**。
+12. **RecordTriageResult 必经 OctoBus + outbox 化**：幂等键 `record:{trace_id}`；先入 SQLite `delivery_outbox`，指数退避重试（30s→15m，上限 9 次），超限标记 `manual` 由 `--recover-outbox` CLI 子命令恢复，**禁止静默丢失**。
+13. **恒转人工四触发点（exitCode=2）**：告警不存在、未命中降噪规则+无证据关联、OctoBus 回写失败、任何未捕获异常 → `status=manual_review`，**进程退出码 2 是正常业务态，非故障**。
+
+#### phase 3 · 留痕期（trace_id 五处贯穿）
+
+14. **五处锚点同一 trace_id**：① TaskContext.traceId 进程内传递 → ② workflow_snapshots(trace_id,sequence) SQLite 9 状态回放键 → ③ delivery_outbox(trace_id) 投递关联键 → ④ audit.log NDJSON（每次运行 2 条：`workflow.completed` 含结论+证据+指标、`KNOWLEDGE_HIT` 含知识 id+consumed_by 双向绑定）→ ⑤ OctoBus access.log header `x-octobus-ext-business-request-id={trace_id}`；任意时刻按 `trace_id` 五处同 ID 可完整回放。
+
+#### 三条旁路色彩语义（SVG/Mermaid 对照）
+
+- **蓝色实线（粗）**：必经 OctoBus Connect RPC（GetAlertContext / RecordTriageResult）
+- **蓝色虚线**：返回方向（OctoBus / 后端回传）
+- **青色虚线（粗）**：SQLite 快照写入（workflow_snapshots + outbox）
+- **橙色虚线**：LLM Facade 旁路（scoped token → daemon 代理真实 key）
+- **灰色虚线**：知识库旁路（/knowledge 只读卷直读）
 
 ## 4. 代码架构（洋葱架构）
 
@@ -81,17 +150,17 @@ SOC 每天被海量告警淹没，授权扫描、已知误报等重复噪音持�
 chaitin-triage-agent/
 ├── agent-compose.yml          # agent-compose 声明（octobus_servers 原生接入 / scheduler 触发）
 ├── .env.example               # 环境变量样例（真实凭据只进 daemon 的 .env）
-├── knowledge/                 # 自建知识库（规范 §8）
+├── knowledge/                 # 自建知识库
 │   ├── corpus/                #   结构化知识资产：降噪规则（脱敏后入库）、脱敏报告契约、RAG 语料
 │   ├── registry/              #   私有登记册 / 证据包（标识符级，不含样本字节与原始 IOC）
 │   └── security/              #   （预留）安全域知识资产
-├── octobus-services/          # OctoBus service package（规范 §7.1，可插拔能力包）
+├── octobus-services/          # OctoBus service package（可插拔能力包）
 │   └── triage-capabilities/
 │       ├── service.json       #   service root 声明（schema / name / proto.roots / proto.files）
 │       ├── proto/triage.proto #   gRPC 能力定义（triage.capabilities.v1.CapabilityService）
 │       ├── dist/index.js      #   Connect RPC JSON 实现（含 access.log 与 token 鉴权）
 │       └── config.schema.json / secret.schema.json
-├── docs/                      # 开发问题记录（规范 §19.2，答辩复盘素材）
+├── docs/                      # 开发问题记录
 │   └── issues.md              #   真实开发问题四要素档案（现象/定位过程/解决方式/改进方向）
 └── agent/
     ├── package.json           # scripts: check（语法检查）/ test（node --test）
@@ -194,7 +263,7 @@ OpenAI 兼容端点时才填写。
   原始入参 + 模型来源 + prompt 版本 + `metrics` 终态指标对象——
   `stage_durations`（各阶段耗时）/ `capability_calls` / `capability_failures` /
   `knowledge_hits` / `narrative_source` / `manual_escalation`
-  （由 `shared/run-metrics.js` 收集器随单次运行在进程内累计，规范 §11.1）；
+  （由 `shared/run-metrics.js` 收集器随单次运行在进程内累计）；
   知识命中时另追加 `KNOWLEDGE_HIT` 独立审计记录（见 §3.4 知识-代码绑定）；
 - OctoBus 网关侧 `access.log`（NDJSON）为能力调用留痕的权威输入，与本日志统一归档。
 
