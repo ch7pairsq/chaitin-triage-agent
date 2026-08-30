@@ -23,6 +23,10 @@ import {
   correlateThreatEvidence,
   decisionFromThreatCorrelation
 } from "../../../agent/src/capabilities/security/threat-evidence.js";
+import {
+  applySeverityGating,
+  applyAssetCriticalityGate
+} from "../../../agent/src/capabilities/security/escalation-gates.js";
 import { normalizeSanitizedReport } from "../../../agent/src/capabilities/malware/report-contract.js";
 import { assessRisk } from "../../../agent/src/capabilities/malware/risk-engine.js";
 import { draftYaraCandidate } from "../../../agent/src/capabilities/malware/yara-drafter.js";
@@ -38,6 +42,8 @@ const HANDLERS = {
   EvaluateFalsePositiveRules: ({ context, rules }) => evaluateRules(context, rules),
   MatchThreatIndicators: ({ context, evidenceRecords = [] }) => correlateThreatEvidence(context, evidenceRecords),
   DecisionFromThreatCorrelation: ({ correlation }) => decisionFromThreatCorrelation(correlation),
+  ApplySeverityGating: ({ decision, context }) => applySeverityGating(decision, context),
+  ApplyAssetCriticalityGate: ({ decision, context }) => applyAssetCriticalityGate(decision, context),
   ValidateSanitizedReport: ({ report }) => normalizeSanitizedReport(report),
   AssessRisk: ({ report }) => assessRisk(report),
   DraftYaraCandidate: ({ report, assessment }) => draftYaraCandidate(report, assessment)

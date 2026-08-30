@@ -15,6 +15,10 @@ import { narratorFromEnvironment } from "../infrastructure/model-gateway/securit
 import { stateStoreFromEnvironment } from "../infrastructure/db/security-state-store.js";
 import { loadThreatEvidenceJsonl } from "../infrastructure/knowledge/threat-evidence-loader.js";
 import { SecurityTriageAgent, IOC_ESCALATION_KNOWLEDGE } from "../application/pipelines/security-triage-pipeline.js";
+import {
+  SEVERITY_GATING_KNOWLEDGE,
+  ASSET_CRITICALITY_KNOWLEDGE
+} from "../capabilities/security/escalation-gates.js";
 import { weComNotifierFromEnvironment } from "../infrastructure/notify/wecom-notifier.js";
 import { auditLogFromEnvironment } from "../audit/audit-log.js";
 import { requiredConfig, knowledgeAblationFromEnvironment } from "../config/env.js";
@@ -105,6 +109,11 @@ try {
     // 知识-代码绑定反向留痕（规范 §9.5）：命中知识独立审计一行，
     // 携带对应资产 consumed_by 的合并视图；仅当命中非空时写入。
     if (Array.isArray(result.knowledgeHits) && result.knowledgeHits.length > 0) {
+      const consumedByViews = new Map([
+        [IOC_ESCALATION_KNOWLEDGE.knowledge_id, IOC_ESCALATION_KNOWLEDGE.consumed_by],
+        [SEVERITY_GATING_KNOWLEDGE.knowledge_id, SEVERITY_GATING_KNOWLEDGE.consumed_by],
+        [ASSET_CRITICALITY_KNOWLEDGE.knowledge_id, ASSET_CRITICALITY_KNOWLEDGE.consumed_by]
+      ]);
       try {
         audit.append({
           event: "KNOWLEDGE_HIT",
@@ -113,9 +122,9 @@ try {
           knowledge_ids: result.knowledgeHits,
           consumed_by: result.knowledgeHits.map((knowledgeId) => ({
             knowledge_id: knowledgeId,
-            consumed_by: knowledgeId === IOC_ESCALATION_KNOWLEDGE.knowledge_id
-              ? IOC_ESCALATION_KNOWLEDGE.consumed_by
-              : (rules.rules ?? []).find((rule) => rule.knowledge_id === knowledgeId)?.consumed_by ?? []
+            consumed_by: consumedByViews.get(knowledgeId)
+              ?? (rules.rules ?? []).find((rule) => rule.knowledge_id === knowledgeId)?.consumed_by
+              ?? []
           }))
         });
       } catch (auditError) {

@@ -17,6 +17,10 @@ service CapabilityService {
   rpc MatchThreatIndicators(google.protobuf.Struct) returns (google.protobuf.Struct);
   // security.threat.decision_from_correlation
   rpc DecisionFromThreatCorrelation(google.protobuf.Struct) returns (google.protobuf.Struct);
+  // security.gates.apply_severity
+  rpc ApplySeverityGating(google.protobuf.Struct) returns (google.protobuf.Struct);
+  // security.gates.apply_asset_criticality
+  rpc ApplyAssetCriticalityGate(google.protobuf.Struct) returns (google.protobuf.Struct);
   // malware.report.validate_sanitized
   rpc ValidateSanitizedReport(google.protobuf.Struct) returns (google.protobuf.Struct);
   // malware.risk.assess

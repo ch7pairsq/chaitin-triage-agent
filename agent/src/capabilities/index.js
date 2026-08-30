@@ -12,6 +12,7 @@
  */
 import { evaluateRules } from "./security/rule-engine.js";
 import { correlateThreatEvidence, decisionFromThreatCorrelation } from "./security/threat-evidence.js";
+import { applySeverityGating, applyAssetCriticalityGate } from "./security/escalation-gates.js";
 import { normalizeSanitizedReport } from "./malware/report-contract.js";
 import { assessRisk } from "./malware/risk-engine.js";
 import { draftYaraCandidate } from "./malware/yara-drafter.js";
@@ -38,6 +39,20 @@ export const CAPABILITIES = Object.freeze({
     deterministic: true,
     timeoutMs: 1000,
     fn: decisionFromThreatCorrelation
+  },
+  "security.gates.apply_severity": {
+    description: "严重度降噪门控：高/严重级告警的降噪复核结论降级人工确认（kb-security-severity-gating）",
+    idempotent: true,
+    deterministic: true,
+    timeoutMs: 1000,
+    fn: applySeverityGating
+  },
+  "security.gates.apply_asset_criticality": {
+    description: "关键资产降噪提级：critical/high 资产上的降噪复核结论降级人工确认（kb-security-asset-criticality-escalation）",
+    idempotent: true,
+    deterministic: true,
+    timeoutMs: 1000,
+    fn: applyAssetCriticalityGate
   },
   "malware.report.validate_sanitized": {
     description: "校验脱敏报告契约：拒绝样本字节 / 路径等禁止字段，失败即关闭",

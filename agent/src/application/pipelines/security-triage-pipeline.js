@@ -16,6 +16,12 @@ import { DeterministicNarrator } from "../../infrastructure/model-gateway/securi
 import { evaluateRules } from "../../capabilities/security/rule-engine.js";
 import { NoopStateStore } from "../../infrastructure/db/security-state-store.js";
 import { correlateThreatEvidence, decisionFromThreatCorrelation } from "../../capabilities/security/threat-evidence.js";
+import {
+  SEVERITY_GATING_KNOWLEDGE,
+  ASSET_CRITICALITY_KNOWLEDGE,
+  applySeverityGating,
+  applyAssetCriticalityGate
+} from "../../capabilities/security/escalation-gates.js";
 import { ResilientExecutor, isTransientError } from "../../shared/resilience.js";
 import { createTaskContext, isValidState } from "../../domains/task/task-context.js";
 import { finalizeJudgment } from "../../domains/judgment/judgment.js";
@@ -124,10 +130,27 @@ export class SecurityTriageAgent {
       const rawDecision = correlation.matchedCount
         ? decisionFromThreatCorrelation(correlation)
         : evaluateRules(context, activeRules);
-      const decision = finalizeJudgment(rawDecision);
+      // 降噪门控判据（kb-security-severity-gating / kb-security-asset-criticality-escalation）：
+      // 仅作用于降噪复核类结论；信号字段未提供视为判据不适用（skipped，不凭空推断）。
+      // 门控放行 / 拦截都把信号字段写入证据链；被消融时跳过门控并留痕（规范 §9.4）。
+      let gatedDecision = rawDecision;
+      const knowledgeHits = [];
+      for (const { knowledge, apply } of [
+        { knowledge: SEVERITY_GATING_KNOWLEDGE, apply: applySeverityGating },
+        { knowledge: ASSET_CRITICALITY_KNOWLEDGE, apply: applyAssetCriticalityGate }
+      ]) {
+        const { decision: candidate, gate } = apply(gatedDecision, context);
+        if (gate.outcome === "skipped") continue;
+        if (this.knowledgeAblation.has(knowledge.knowledge_id)) {
+          knowledgeAblated.push(knowledge.knowledge_id);
+          continue;
+        }
+        gatedDecision = candidate;
+        knowledgeHits.push(knowledge.knowledge_id);
+      }
+      const decision = finalizeJudgment(gatedDecision);
       // 知识-代码绑定反向留痕（规范 §9.5）：判定阶段命中的知识资产去重挂到结果，
       // 并填入终态指标 knowledge_hits（此前为占位 0）。
-      const knowledgeHits = [];
       if (correlation.matchedCount >= 1) knowledgeHits.push(IOC_ESCALATION_KNOWLEDGE.knowledge_id);
       if (decision.matchedRuleId) {
         const decisionRule = (this.rules?.rules ?? []).find((rule) => rule.ruleId === decision.matchedRuleId);
