@@ -36,3 +36,20 @@ export function optionalNumber(value, fallback) {
   const parsed = Number(value);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
 }
+
+/**
+ * 读取知识消融配置（规范 §9.4）：KNOWLEDGE_ABLATION 为逗号分隔的 knowledge_id，
+ * 返回消融集合；未设置或为空串时返回空集（行为与现状完全一致）。
+ * @param {object} [env] 环境变量对象（测试注入）
+ * @returns {Set<string>} 被消融的 knowledge_id 集合
+ */
+export function knowledgeAblationFromEnvironment(env = process.env) {
+  const raw = env.KNOWLEDGE_ABLATION;
+  if (!raw) return new Set();
+  return new Set(
+    String(raw)
+      .split(",")
+      .map((id) => id.trim())
+      .filter(Boolean)
+  );
+}

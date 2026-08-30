@@ -6,7 +6,12 @@
  * - 排序：余弦相似度（0.7）+ 词项重合率重排（0.3）；
  * - 拒绝口径：空语料 / 最高分低于阈值时显式返回 insufficient_evidence，
  *   绝不返回"看起来相关"的弱证据（规范红线 2：证据不足走显式分支）；
- * - 语料契约：逐行校验禁止字段（样本字节 / 路径 / 凭据），失败即抛错关闭。
+ * - 语料契约：逐行校验禁止字段（样本字节 / 路径 / 凭据），失败即抛错关闭；
+ * - knowledge_id 透传：语料行可携带可选 knowledge_id（知识资产标识），
+ *   检索 grounded 时以去重 knowledgeIds 列表回传，供消费方对齐知识资产 schema；
+ *   citations 逐条携带 knowledgeId 供消费方做知识消融过滤（规范 §9.4）；
+ * - consumed_by 透传：语料行可携带可选 consumed_by（知识资产消费方声明），
+ *   检索 grounded 时以 knowledgeConsumedBy 映射回传，供反向留痕（规范 §9.5）。
  */
 import fs from 'node:fs';
 
@@ -68,9 +73,11 @@ export function loadRagCorpusJsonl(filePath) {
     const text = String(record.text ?? '').trim();
     const title = String(record.title ?? id).trim();
     const sourceRef = String(record.source_ref ?? id).trim();
+    const knowledgeId = String(record.knowledge_id ?? '').trim();
+    const consumedBy = Array.isArray(record.consumed_by) ? record.consumed_by : [];
     if (!id || !text || !sourceRef) throw new Error(`RAG 语料第 ${index + 1} 行缺少 id、text 或 source_ref`);
     splitDocument(text).forEach((content, chunkIndex) => chunks.push({
-      citationId: `${id}#${chunkIndex + 1}`, sourceRef, title, content, embedding: embed(content)
+      citationId: `${id}#${chunkIndex + 1}`, sourceRef, title, content, embedding: embed(content), knowledgeId, consumedBy
     }));
   }
   return chunks;
@@ -95,9 +102,14 @@ export class LocalRagRetriever {
     if (!ranked.length || ranked[0].score < this.minScore) {
       return { status: 'insufficient_evidence', reason: 'score_below_threshold', citations: [], topScore: ranked[0]?.score ?? 0 };
     }
+    const knowledgeIds = [...new Set(ranked.map((chunk) => chunk.knowledgeId).filter(Boolean))];
     return {
       status: 'grounded', topScore: ranked[0].score,
-      citations: ranked.map(({ citationId, sourceRef, title, content, score }) => ({ citationId, sourceRef, title, snippet: content, score }))
+      knowledgeIds,
+      knowledgeConsumedBy: Object.fromEntries(
+        knowledgeIds.map((id) => [id, ranked.find((chunk) => chunk.knowledgeId === id)?.consumedBy ?? []])
+      ),
+      citations: ranked.map(({ citationId, sourceRef, title, content, score, knowledgeId }) => ({ citationId, sourceRef, title, snippet: content, score, knowledgeId }))
     };
   }
 }

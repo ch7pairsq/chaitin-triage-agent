@@ -3,6 +3,7 @@
   "rules": [
     {
       "ruleId": "fp_dns_001",
+      "knowledge_id": "kb-security-fp-dns-001",
       "scene": "internal_dns_scan",
       "description": "在授权扫描窗口内，由已登记扫描资产发起的 DNS 探测，应先进入降噪复核而非自动升级。",
       "evidenceRequired": [
@@ -19,6 +20,13 @@
       "decision": {
         "falsePositiveScore": 0.85,
         "action": "suppress_with_review"
+      },
+      "judgment": {
+        "threshold": {
+          "falsePositiveScore": 0.85
+        },
+        "feature_string": "sourceAssetTag=vulnerability_scanner + approvedScanWindow=true + destinationPort=53",
+        "predicate": "sourceAssetTag === 'vulnerability_scanner' && approvedScanWindow === true && destinationPort === 53 → suppress_with_review"
       },
       "counterexamples": [
         "源资产未登记为扫描器",
@@ -53,6 +61,14 @@
         "accumulation": "由一次授权扫描误报的人工复盘提炼而成，未经批量工单统计",
         "boundary": "仅适用于已登记扫描资产的内部 DNS 探测降噪；跨出该场景须重新评定"
       },
+      "tradeoff": {
+        "leveling": "仅单级降噪复核（suppress_with_review），不做多档自动处置",
+        "manual_confirm": [
+          "任一 evidenceRequired 字段缺失",
+          "命中 IOC 关联（correlation.matchedCount >= 1）时优先升级，本规则让位"
+        ],
+        "insufficient_evidence": "证据不足时进入 needs_review，不自动降噪也不自动升级"
+      },
       "provenance": {
         "sourceClass": "personal_lab_or_redacted_retrospective",
         "evidenceVersion": "fp-rules-v1",
@@ -67,7 +83,11 @@
           "授权窗口与告警时间无法关联",
           "资产标签与扫描器登记不一致"
         ]
-      }
+      },
+      "consumed_by": [
+        { "type": "capability", "ref": "security.evaluate_false_positive_rules" },
+        { "type": "prompt", "ref": "security-triage-pipeline#APPLY_RULES" }
+      ]
     }
   ]
 }

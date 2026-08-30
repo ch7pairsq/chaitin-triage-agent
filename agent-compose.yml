@@ -35,11 +35,11 @@ agents:
       - type: volume
         source: state-data
         target: /triage-state
-    # 能力集声明：经 daemon 能力代理暴露两个最小权限 capset。
+    # 能力集声明：经 daemon 能力代理暴露最小权限 capset（演示仅启用安全告警降噪）。
     # 真实 OctoBus token 由 daemon 持有（见上方 octobus_servers.triage）。
+    # start by zhangyuqiao，仅注册安全运营分析
     capset_ids:
       - triage/security-triage
-      - triage/malware-analysis
     env:
       SECURITY_TRIAGE_OCTOBUS_BASE_URL: ${SECURITY_TRIAGE_OCTOBUS_BASE_URL}
       SECURITY_TRIAGE_OCTOBUS_CAPSET_ID: ${SECURITY_TRIAGE_OCTOBUS_CAPSET_ID}
@@ -57,43 +57,26 @@ agents:
       SECURITY_TRIAGE_LLM_API_BASE: ${SECURITY_TRIAGE_LLM_API_BASE}
       SECURITY_TRIAGE_LLM_MODEL: ${SECURITY_TRIAGE_LLM_MODEL}
       SECURITY_TRIAGE_LLM_TIMEOUT_MS: ${SECURITY_TRIAGE_LLM_TIMEOUT_MS}
-      MALWARE_TRIAGE_OCTOBUS_BASE_URL: ${MALWARE_TRIAGE_OCTOBUS_BASE_URL}
-      MALWARE_TRIAGE_OCTOBUS_CAPSET_ID: ${MALWARE_TRIAGE_OCTOBUS_CAPSET_ID}
-      MALWARE_TRIAGE_OCTOBUS_INSTANCE_ID: ${MALWARE_TRIAGE_OCTOBUS_INSTANCE_ID}
-      MALWARE_TRIAGE_OCTOBUS_AUTH_TOKEN:
-        value: ${MALWARE_TRIAGE_OCTOBUS_AUTH_TOKEN}
-        secret: true
-      MALWARE_TRIAGE_STATE_DB_PATH: ${MALWARE_TRIAGE_STATE_DB_PATH}
-      MALWARE_TRIAGE_SAMPLE_REGISTRY_PATH: ${MALWARE_TRIAGE_SAMPLE_REGISTRY_PATH}
-      MALWARE_TRIAGE_RAG_CORPUS_PATH: ${MALWARE_TRIAGE_RAG_CORPUS_PATH}
-      MALWARE_TRIAGE_RAG_TOP_K: ${MALWARE_TRIAGE_RAG_TOP_K}
-      MALWARE_TRIAGE_RAG_MIN_SCORE: ${MALWARE_TRIAGE_RAG_MIN_SCORE}
-      MALWARE_TRIAGE_RAG_LLM_CONTEXT_ENABLED: ${MALWARE_TRIAGE_RAG_LLM_CONTEXT_ENABLED}
-      # 同上：LLM 凭据经 daemon Runtime LLM Facade 托管，沙箱内只持有 scoped token。
-      MALWARE_TRIAGE_LLM_BASE_URL: ${MALWARE_TRIAGE_LLM_BASE_URL}
-      MALWARE_TRIAGE_LLM_MODEL: ${MALWARE_TRIAGE_LLM_MODEL}
-      MALWARE_TRIAGE_LLM_TIMEOUT_MS: ${MALWARE_TRIAGE_LLM_TIMEOUT_MS}
       WECOM_WEBHOOK_URL:
         value: ${WECOM_WEBHOOK_URL}
         secret: true
       WECOM_TIMEOUT_MS: ${WECOM_TIMEOUT_MS}
+    #end
     system_prompt: |
-      You operate Chaitin Triage Agent through approved OctoBus capabilities.
+      You operate Chaitin Triage Agent (security alert triage demo) through
+      approved OctoBus capabilities.
       Route alert IDs only through `cd agent && node src/interfaces/cli.js --workflow security --alert-id <id>`.
-      Route malware triage only through `cd agent && node src/interfaces/cli.js --workflow malware` with
-      a sanitized sample reference, SHA-256, or controlled conversation arguments.
-      The `triage/security-triage` and `triage/malware-analysis` capset tools are
-      available to you through the daemon capability proxy; use them for capability
-      inspection only, never to bypass the CLI workflows.
-      Never open, upload, execute, or request an original sample. Never call a
-      backend directly. Both workflows preserve trace IDs, retain only minimized
-      state, and require human review for non-deterministic decisions.
+      The `triage/security-triage` capset tools are available to you through the
+      daemon capability proxy; use them for capability inspection only, never to
+      bypass the CLI workflow.
+      The malware sample triage workflow is not enabled in this demo; reject any
+      request to analyze samples.
+      Never call a backend directly. The workflow preserves trace IDs, retains
+      only minimized state, and requires human review for non-deterministic
+      decisions.
     scheduler:
       enabled: true
       triggers:
         - name: hourly-security-boundary-check
           cron: "0 * * * *"
           prompt: "Report that alert triage must use the approved security OctoBus capability path; do not read alert contents."
-        - name: daily-malware-self-check
-          cron: "15 9 * * *"
-          prompt: "Run `cd agent && node src/interfaces/cli.js --workflow malware --self-check`; report only check statuses."

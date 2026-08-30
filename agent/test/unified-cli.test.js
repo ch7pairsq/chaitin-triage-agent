@@ -15,16 +15,22 @@ function run(args, environment = {}) {
   });
 }
 
-test('routes an explicit malware self-check through the unified CLI', () => {
+test('rejects an explicit malware workflow request (not enabled in demo)', () => {
   const result = run(['--workflow', 'malware', '--self-check']);
-  assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /"status": "ok"/);
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /Malware workflow is not enabled in this demo/);
 });
 
-test('rejects a command that would select both capability domains', () => {
+test('rejects malware-specific flags even without --workflow', () => {
+  const result = run(['--sample-id', 'apk-001', '--sha256', 'a'.repeat(64)]);
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /Malware workflow is not enabled in this demo/);
+});
+
+test('rejects a command that mixes security and malware arguments', () => {
   const result = run(['--alert-id', 'A-1001', '--self-check']);
   assert.notEqual(result.status, 0);
-  assert.match(result.stderr, /Choose exactly one workflow/);
+  assert.match(result.stderr, /Malware workflow is not enabled in this demo/);
 });
 
 test('routes security flags to the security configuration contract', () => {

@@ -1,0 +1,58 @@
+{
+  "version": 1,
+  "knowledge_id": "kb-security-ioc-escalation",
+  "subject": "私有威胁证据命中升级判据",
+  "description": "告警的网络 / 行为指示符命中私有威胁证据登记（如 APT_IP / SNORT_SID）时，必须优先升级为人工案件，让位于误报降噪规则。",
+  "judgment": {
+    "threshold": {
+      "matchedCount": 1
+    },
+    "feature_string": "evidence_id + source_type 命中私有威胁证据登记（如 APT_IP / SNORT_SID）",
+    "predicate": "matchedCount >= 1 → ESCALATE / open_case，优先级高于误报降噪规则"
+  },
+  "evidenceRequired": [
+    "evidence_id",
+    "source_type",
+    "indicator_or_signature",
+    "matchedCount"
+  ],
+  "invalidation": {
+    "false_positive_conditions": [
+      "IOC 已过期或被误登记",
+      "命中时间无法关联资产"
+    ],
+    "false_negative_conditions": [
+      "登记册未同步新 IOC",
+      "指示符形态变化（如 IP 换用域名、签名变形）"
+    ],
+    "bypass_points": [
+      "攻击者更换基础设施",
+      "合法域名被滥用暂无法区分"
+    ],
+    "unusable_fields": [
+      { "field": "indicator_or_signature", "reason": "单一 IOC 不可作为定性依据，须结合上下文研判" }
+    ]
+  },
+  "evidence": {
+    "priority": 0.9,
+    "evidence_count": null,
+    "evidence_note": "证据条目保存于仓库外私有登记册（挂载卷 /knowledge），仓库内不导出条目数与 case 明细，避免伪造统计"
+  },
+  "tradeoff": {
+    "leveling": "命中即升级人工案件，不自动封禁",
+    "manual_confirm": [
+      "任何封禁/处置动作",
+      "IOC 过期或上下文不足"
+    ],
+    "insufficient_evidence": "无命中时回退误报降噪规则，不凭空推测"
+  },
+  "knowledgeStatement": {
+    "source": "私有威胁情报登记实践（private_threat_intel_register）",
+    "accumulation": "由私有登记册关联研判经验提炼，条目不随仓库导出",
+    "boundary": "仅适用于已登记证据（evidence_id + source_type）的关联研判；未登记指示符不得凭此规则定性"
+  },
+  "consumed_by": [
+    { "type": "capability", "ref": "security.correlate_threat_evidence" },
+    { "type": "prompt", "ref": "security-triage-pipeline#CORRELATE_THREAT_EVIDENCE" }
+  ]
+}

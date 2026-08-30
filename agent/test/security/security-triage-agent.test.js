@@ -191,25 +191,77 @@ test("the committed false-positive rule carries safe provenance and explicit rev
 
 test("the committed false-positive rule satisfies the knowledge substance schema", () => {
   const ruleFile = path.resolve(import.meta.dirname, "../../../knowledge/corpus/security/false-positive-rules.json");
-  const [rule] = JSON.parse(readFileSync(ruleFile, "utf8")).rules;
-  // 判据具体可执行：条件为显式取值，而非"疑似/可能"式描述。
-  for (const value of Object.values(rule.conditions)) {
-    assert.notEqual(typeof value, "undefined");
+  const committedRules = JSON.parse(readFileSync(ruleFile, "utf8")).rules;
+  for (const rule of committedRules) {
+    // 判据具体可执行：条件为显式取值，而非"疑似/可能"式描述。
+    for (const value of Object.values(rule.conditions)) {
+      assert.notEqual(typeof value, "undefined");
+    }
+    assert.doesNotMatch(rule.description, /疑似|可能/);
+    // 失效与误判经验四要素齐备。
+    for (const key of ["false_positive_conditions", "false_negative_conditions", "bypass_points", "unusable_fields"]) {
+      assert.ok(Array.isArray(rule.invalidation[key]) && rule.invalidation[key].length >= 1, `invalidation.${key} 缺失`);
+    }
+    // 证据块：优先级存在；样本量缺失时必须显式声明为 null 而非伪造数字。
+    assert.equal(typeof rule.evidence.priority, "number");
+    if (rule.evidence.evidence_count === null) {
+      assert.ok(rule.evidence.evidence_note, "evidence_count 为 null 时必须说明证据缺口");
+    }
+    // 知识实质性口径：来源 + 积累过程 + 适用边界。
+    for (const key of ["source", "accumulation", "boundary"]) {
+      assert.ok(rule.knowledgeStatement[key], `knowledgeStatement.${key} 缺失`);
+    }
+    // 知识资产 schema 对齐（规范 §8.2/§9.5）：knowledge_id + judgment + tradeoff + consumed_by。
+    assert.ok(rule.knowledge_id, "knowledge_id 缺失");
+    assert.ok(rule.judgment.threshold && Object.keys(rule.judgment.threshold).length >= 1, "judgment.threshold 缺失");
+    assert.ok(rule.judgment.feature_string, "judgment.feature_string 缺失");
+    assert.ok(rule.judgment.predicate, "judgment.predicate 缺失");
+    assert.ok(rule.tradeoff.leveling, "tradeoff.leveling 缺失");
+    assert.ok(Array.isArray(rule.tradeoff.manual_confirm) && rule.tradeoff.manual_confirm.length >= 1, "tradeoff.manual_confirm 缺失");
+    assert.ok(rule.tradeoff.insufficient_evidence, "tradeoff.insufficient_evidence 缺失");
+    assert.ok(Array.isArray(rule.consumed_by) && rule.consumed_by.length >= 1, "consumed_by 缺失");
+    assert.ok(
+      rule.consumed_by.some((consumer) => consumer.type === "capability" && consumer.ref),
+      "consumed_by 至少一个 type=capability 的消费方"
+    );
+    for (const consumer of rule.consumed_by) {
+      assert.ok(["capability", "prompt"].includes(consumer.type), `consumed_by 存在非法 type: ${consumer.type}`);
+      assert.ok(consumer.ref, "consumed_by 消费方缺少 ref");
+    }
   }
-  assert.doesNotMatch(rule.description, /疑似|可能/);
+});
+
+test("the committed threat-evidence judgment satisfies the knowledge asset schema", () => {
+  const judgmentFile = path.resolve(import.meta.dirname, "../../../knowledge/corpus/security/threat-evidence-judgment.json");
+  const asset = JSON.parse(readFileSync(judgmentFile, "utf8"));
+  assert.equal(asset.knowledge_id, "kb-security-ioc-escalation");
+  assert.equal(asset.subject, "私有威胁证据命中升级判据");
+  // 判据：阈值 + 特征串 + 可执行谓词（命中即升级，优先级高于误报降噪）。
+  assert.equal(asset.judgment.threshold.matchedCount, 1);
+  assert.ok(asset.judgment.feature_string, "judgment.feature_string 缺失");
+  assert.match(asset.judgment.predicate, /matchedCount\s*>=\s*1/);
+  assert.match(asset.judgment.predicate, /ESCALATE|open_case/);
   // 失效与误判经验四要素齐备。
   for (const key of ["false_positive_conditions", "false_negative_conditions", "bypass_points", "unusable_fields"]) {
-    assert.ok(Array.isArray(rule.invalidation[key]) && rule.invalidation[key].length >= 1, `invalidation.${key} 缺失`);
+    assert.ok(Array.isArray(asset.invalidation[key]) && asset.invalidation[key].length >= 1, `invalidation.${key} 缺失`);
   }
-  // 证据块：优先级存在；样本量缺失时必须显式声明为 null 而非伪造数字。
-  assert.equal(typeof rule.evidence.priority, "number");
-  if (rule.evidence.evidence_count === null) {
-    assert.ok(rule.evidence.evidence_note, "evidence_count 为 null 时必须说明证据缺口");
-  }
+  // 证据块：优先级存在；条目数不导出，必须显式为 null 且说明证据缺口。
+  assert.equal(typeof asset.evidence.priority, "number");
+  assert.equal(asset.evidence.evidence_count, null);
+  assert.ok(asset.evidence.evidence_note);
+  // 取舍：升级人工案件但不自动封禁；无命中回退降噪规则。
+  assert.ok(asset.tradeoff.leveling);
+  assert.ok(Array.isArray(asset.tradeoff.manual_confirm) && asset.tradeoff.manual_confirm.length >= 1);
+  assert.ok(asset.tradeoff.insufficient_evidence);
   // 知识实质性口径：来源 + 积累过程 + 适用边界。
   for (const key of ["source", "accumulation", "boundary"]) {
-    assert.ok(rule.knowledgeStatement[key], `knowledgeStatement.${key} 缺失`);
+    assert.ok(asset.knowledgeStatement[key], `knowledgeStatement.${key} 缺失`);
   }
+  // 消费方：capability + prompt 双入口。
+  assert.ok(asset.consumed_by.some((consumer) => consumer.type === "capability" && consumer.ref === "security.correlate_threat_evidence"));
+  assert.ok(asset.consumed_by.some((consumer) => consumer.type === "prompt" && consumer.ref === "security-triage-pipeline#CORRELATE_THREAT_EVIDENCE"));
+  // 红线：仓库内不携带任何真实 IOC 正文（IP / 域名形态指示符）。
+  assert.doesNotMatch(JSON.stringify(asset), /\b\d{1,3}(\.\d{1,3}){3}\b/);
 });
 
 test("LLM narrator can explain evidence but receives an immutable policy decision", async () => {
@@ -243,7 +295,7 @@ test("Connect RPC adapter targets only the configured OctoBus capset and forward
   const client = new OctoBusConnectClient({
     baseUrl: "http://octobus.internal:9000/",
     capsetId: "triage-agent",
-    instanceId: "security-triage-demo",
+    instanceId: "chaitin-triage-capabilities",
     fullService: "security.triage.v1.SecurityTriageService",
     token: "test-token",
     fetchImpl: async (url, init) => {
@@ -255,7 +307,7 @@ test("Connect RPC adapter targets only the configured OctoBus capset and forward
   await client.getAlertContext("A-1001", "trace-test-002");
   assert.equal(
     requests[0].url,
-    "http://octobus.internal:9000/capsets/triage-agent/connect/security-triage-demo/security.triage.v1.SecurityTriageService/GetAlertContext"
+    "http://octobus.internal:9000/capsets/triage-agent/connect/chaitin-triage-capabilities/security.triage.v1.SecurityTriageService/GetAlertContext"
   );
   assert.equal(requests[0].init.headers.authorization, "Bearer test-token");
   assert.equal(requests[0].init.headers["x-octobus-ext-business-request-id"], "trace-test-002");
