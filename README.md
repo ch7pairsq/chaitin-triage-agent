@@ -29,7 +29,7 @@ SOC 每天被海量告警淹没，授权扫描、已知误报等重复噪音持�
 
 **2）架构图：**
 
-![image](https://github.com/ch7pairsq/chaitin-triage-agent/tree/main/docs/image/architecture.png)
+![image](./docs/image/architecture.png)
 
 ### 3）关键架构要点
 
