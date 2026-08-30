@@ -107,8 +107,6 @@ SOC 每天被海量告警淹没，授权扫描、已知误报等重复噪音持�
 
 ### 3）时序图要点
 
-> 高清时序图见项目根目录 [时序图.html](../时序图.html)（SVG 交互版）与 [时序图.mmd](../时序图.mmd)（Mermaid 可渲染版）。参与者：**agent-compose guest → SecurityTriageAgent → SQLite state volume → OctoBus 网关 → security-triage-demo 后端 → DeepSeek（LLM Facade）**，共三 phase。
-
 #### phase 1 · 启动期（4 个关键动作，凭据永不进沙箱）
 
 1.  **daemon 读配置**：daemon 容器（宿主机 root:root 0600）加载 `.env`（真实 `OCTOBUS_TOKEN` / `MALWARE_TRIAGE_LLM_API_KEY`）+ `agent-compose.yml`（capset_ids / volumes / env / scheduler）。
@@ -135,14 +133,6 @@ SOC 每天被海量告警淹没，授权扫描、已知误报等重复噪音持�
 #### phase 3 · 留痕期（trace_id 五处贯穿）
 
 14. **五处锚点同一 trace_id**：① TaskContext.traceId 进程内传递 → ② workflow_snapshots(trace_id,sequence) SQLite 9 状态回放键 → ③ delivery_outbox(trace_id) 投递关联键 → ④ audit.log NDJSON（每次运行 2 条：`workflow.completed` 含结论+证据+指标、`KNOWLEDGE_HIT` 含知识 id+consumed_by 双向绑定）→ ⑤ OctoBus access.log header `x-octobus-ext-business-request-id={trace_id}`；任意时刻按 `trace_id` 五处同 ID 可完整回放。
-
-#### 三条旁路色彩语义（SVG/Mermaid 对照）
-
-- **蓝色实线（粗）**：必经 OctoBus Connect RPC（GetAlertContext / RecordTriageResult）
-- **蓝色虚线**：返回方向（OctoBus / 后端回传）
-- **青色虚线（粗）**：SQLite 快照写入（workflow_snapshots + outbox）
-- **橙色虚线**：LLM Facade 旁路（scoped token → daemon 代理真实 key）
-- **灰色虚线**：知识库旁路（/knowledge 只读卷直读）
 
 ## 4. 代码架构（洋葱架构）
 
