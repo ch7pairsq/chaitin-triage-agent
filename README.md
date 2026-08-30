@@ -29,7 +29,7 @@ SOC 每天被海量告警淹没，授权扫描、已知误报等重复噪音持�
 
 **2）架构图：**
 
-!\[image]\([https://github.com/ch7pairsq/chaitin-triage-agent/tree/main/docs/image/architecture diagram.png](https://github.com/ch7pairsq/chaitin-triage-agent/tree/main/agent))
+![image](https://github.com/ch7pairsq/chaitin-triage-agent/tree/main/docs/image/architecture.png)
 
 ### 3）关键架构要点
 
@@ -42,13 +42,13 @@ SOC 每天被海量告警淹没，授权扫描、已知误报等重复噪音持�
 7. **LLM 只解释不判定** — `narrator.summarize()` 不影响 `decision.status`，判定只能来自确定性规则 `evaluateRules()` 或私有证据关联 `correlateThreatEvidence()`；LLM 异常时降级 `DeterministicNarrator`，`narrativeSource` 置 `"fallback"`，禁止静默失败（规范 §11.3）。
 8. **chaitin-triage-capabilities 是 agent 纯函数的 HTTP 包装器** — 同仓库跨进程 import，基于 `node:http` 零第三方依赖，每个 method 都是确定性纯函数（零 IO · 零 LLM · 零敏感数据）。
 9. **四条通道严格区分，真实密钥从不进沙箱** —
-   | 通道           | 线型  | 路径                               | 凭据                             |
-   | ------------ | --- | -------------------------------- | ------------------------------ |
-   | OctoBus 业务能力 | 蓝实线 | 沙箱 → OctoBus 网关（直连，不经 daemon）    | scoped token                   |
-   | LLM 调用       | 橙点线 | 沙箱 → daemon Facade → 外部 provider | scoped token（真实 key 只在 daemon） |
-   | SQLite 状态持久化 | 青点线 | 沙箱内本地卷 `/triage-state`（不经网络）     | 无                              |
-   | 知识卷直读        | 灰虚线 | 沙箱内本地卷 `/knowledge`（只读挂载，不经网络）   | 无                              |
-   前两条是跨信任边界的外部通道，后两条是沙箱内本地通道。LLM provider key、OctoBus 管理令牌、daemon AUTH\_TOKEN 全部只在 daemon `.env`（0600 权限），沙箱内只有 scoped token。
+   | 通道                                                                                                                          | 线型     | 路径                               | 凭据                             |
+   | --------------------------------------------------------------------------------------------------------------------------- | ------ | -------------------------------- | ------------------------------ |
+   | OctoBus 业务能力                                                                                                                | 蓝实线    | 沙箱 → OctoBus 网关（直连，不经 daemon）    | scoped token                   |
+   | LLM 调用                                                                                                                      | 橙点线    | 沙箱 → daemon Facade → 外部 provider | scoped token（真实 key 只在 daemon） |
+   | SQLite 状态持久化                                                                                                                | 青点线    | 沙箱内本地卷 `/triage-state`（不经网络）     | 无                              |
+   | 知识卷直读                                                                                                                       | 灰虚线    | 沙箱内本地卷 `/knowledge`（只读挂载，不经网络）   | 无                              |
+   | 前两条是跨信任边界的外部通道，后两条是沙箱内本地通道。LLM provider key、OctoBus 管理令牌、daemon AUTH\_TOKEN 全部只在 daemon `.env`（0600 权限），沙箱内只有 scoped token。 | <br /> | <br />                           | <br />                         |
 10. **多个 Agent 各有独立 guest 容器** — 共用同一个 `agent-compose-guest` 镜像，但各自独立容器，隔离 scoped token、隔离卷（知识卷只读可共享，状态卷按 agent 隔离）、隔离 workspace 路径、隔离 system\_prompt。
 11. **信任边界：daemon 持全部真实凭据，guest 沙箱零真实凭据** — daemon `.env`（0600）存 LLM provider key / OctoBus 管理令牌 / AUTH\_TOKEN；沙箱只有 scoped token，真实密钥从文件系统、环境变量、网络三个层面都不进入 guest。
 12. **trace\_id 全链路贯穿** — 从 TaskContext 生成 `traceId` 开始，SQLite 快照、NDJSON audit.log、OctoBus access.log（`x-octobus-ext-business-request-id`）四处同 ID 贯穿，任意时刻可按 traceId 回放完整运行链路。
