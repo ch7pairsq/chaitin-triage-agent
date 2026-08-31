@@ -48,9 +48,9 @@
 | `agent-compose-ui` | `chaitin/agent-compose-ui:latest` | `always` | `127.0.0.1:7412 → 8000/tcp`（nginx） | 浏览器控制台（回环绑定）。公网唯一访问方式是 SSH 本地端口转发隧道。含 `healthcheck`（wget `/`）。 |
 | `octobus` | `ghcr.io/chaitin/octobus:latest` | `always` | 无端口映射（`chaitin-net` 内部） | 能力网关。沙箱 → capset → instance → service → method 四段式 Connect RPC 路由。access.log（NDJSON）为能力调用的权威审计。 |
 
-**公网监听（`ss -tlnp`）仅应有 `sshd 22`**；其余业务端口均为 `127.0.0.1` 回环或 Docker 内部，安全边界符合要求。
+**公网监听（`ss -tlnp`）仅应有 `sshd 22`**；其余业务端口均为 `127.0.0.1` 回环或 Docker 内部。
 
-### 验证人员常用入口命令
+### 入口命令
 
 | 目标 | 命令（服务器 sh 或本地 PowerShell SSH） |
 | --- | --- |
@@ -59,9 +59,9 @@
 | daemon 项目与触发器列表 | `docker exec agent-compose agent-compose project ls` / `docker exec agent-compose agent-compose schedule list` |
 | 从本地浏览器访问 UI（SSH 隧道） | PowerShell 前台：`ssh -i "D:\ai_ws_2026\lifetree-pro.pem" -N -L 7412:127.0.0.1:7412 root@8.147.68.154`，然后浏览器打开 `http://127.0.0.1:7412`（使用 `AUTH_USERNAME/AUTH_PASSWORD` 登录） |
 
-## 场景：
+## 使用场景：
 
-SOC 每天被海量告警淹没，授权扫描、已知误报等重复噪音持续消耗分析师精力。本 Agent 聚焦**安全告警降噪研判**这一条有界工作流：接收告警 ID 后经 OctoBus 取数，先与私有威胁证据做 IOC 关联，再按结构化降噪规则判定误报（如授权漏扫 DNS 活动 → 误报分 0.85，抑制并复核），结论回写并发送企业微信脱敏通知，证据不足则显式转人工。整条链路"触发→取数→判定→处置→留痕"五阶段闭环，结论只由确定性规则与证据关联产出，模型仅解释、不改决策。
+SOC 每天被海量告警淹没，授权扫描、已知误报等重复噪音持续消耗分析师精力。本 Agent 聚焦**安全告警降噪研判**这一条有界工作流：接收告警 ID 后经 OctoBus 取数，先与私有威胁证据做 IOC 关联，再按结构化降噪规则判定误报（如授权漏扫 DNS 活动 → 误报分 0.85，抑制并复核），结论回写并发送脱敏通知，证据不足则显式转人工。整条链路"触发→取数→判定→处置→留痕"五阶段闭环，结论只由确定性规则与证据关联产出，模型仅解释、不改决策。
 
 ## 预期价值：
 
@@ -112,7 +112,7 @@ SOC 每天被海量告警淹没，授权扫描、已知误报等重复噪音持�
 
 ***
 
-## 2. 业务逻辑分层（调用链视图：五阶段主线 + trace_id 全链路贯穿）
+## 2. 业务分层（五阶段主线 + trace_id 全链路贯穿）
 
 主线五阶段：触发 → 编排 → 判定 → 处置 → 留痕。能力总线 / 知识库 / LLM narrator 三条支撑通道并入对应阶段，调用形式 `--workflow security --alert-id <id>`。
 
@@ -123,7 +123,7 @@ SOC 每天被海量告警淹没，授权扫描、已知误报等重复噪音持�
 | **① 触发层** | `interfaces/cli.js` + `security-cli.js`（组合根）· `agent-compose.yml` scheduler · `domains/task/task-context.js` | 工作流只由显式 CLI flag `--workflow` 选择；触发即生成 `TaskContext`（`traceId === taskId` 贯穿全链路）；域前缀环境变量 `SECURITY_TRIAGE_* → TRIAGE_*` 在此统一装配。 |
 | **② 编排层** | `application/pipelines/security-triage-pipeline.js`（`SecurityTriageAgent.triage()`）· `shared/run-metrics.js` · **能力总线**：`capabilities/index.js` 注册表 + OctoBus Connect RPC | 9 状态机：`RECEIVED → ACQUIRE_CONTEXT → EXTRACT_SIGNALS → CORRELATE_THREAT_EVIDENCE → APPLY_RULES → LLM_SUMMARIZE → DECIDE_ACTION → PERSIST_RESULT → {COMPLETED / NEED_HUMAN}`；每次 `#transition()` 先 SQLite 快照再执行业务逻辑，失败回滚。能力必须注册到 `CAPABILITIES` 表（`fn / idempotent / deterministic / timeoutMs`），未注册一律抛错；所有能力调用必经 OctoBus 网关（token 鉴权 + NDJSON access.log）。 |
 | **③ 判定层** | `capabilities/security/rule-engine.js`（`evaluateRules()`）· `capabilities/security/threat-evidence.js`（关联 + 决策）· `domains/judgment/judgment.js`（补齐 evidenceRefs）· **知识库**：`knowledge/corpus/security/`（只读卷 `/knowledge`） | **红线：结论只由确定性规则 / 私有证据关联产出，LLM 不可改判定**。降噪命中 `kb-security-fp-dns-001` → `suppress_with_review`；IOC 命中 `kb-security-ioc-escalation`（`matchedCount≥1`）优先级更高 → `open_case`；证据缺失或全无命中 → 转人工。知识-代码双向绑定（`consumed_by` 正向 + `KNOWLEDGE_HIT` 反向留痕）；消融开关 `KNOWLEDGE_ABLATION` 可按 id 关闭知识注入。结论经 `finalizeJudgment()` 强制补齐 `evidenceRefs[]`，无证据引用的结论按规范无效。 |
-| **④ 处置层** | `infrastructure/octobus/connect-client.js`（回写）· `infrastructure/notify/wecom-notifier.js`（脱敏通知）· 内置 `manual_review / exitCode=2` 转人工 | **三出口必经 outbox**：Ⅰ OctoBus 回写（幂等键 `record:${traceId}`）；Ⅱ 企业微信通知（旁路，只发 alertId/status/action/traceId，不夹带 narrative/IOC/证据，限流 3s）；Ⅲ 非确定性决策恒转人工（告警不存在、规则+证据都无命中、回写失败、未捕获异常）→ `exitCode=2`（正常业务态，非故障）。outbox 指数退避重试（上限 9 次），超限由 `--recover-outbox` 恢复。 |
+| **④ 处置层** | `infrastructure/octobus/connect-client.js`（回写）· `infrastructure/notify/wecom-notifier.js`（脱敏通知）· 内置 `manual_review / exitCode=2` 转人工 | **三出口必经 outbox**：Ⅰ OctoBus 回写（幂等键 `record:${traceId}`）；Ⅱ 通知（旁路，只发 alertId/status/action/traceId，不夹带 narrative/IOC/证据，限流 3s）；Ⅲ 非确定性决策恒转人工（告警不存在、规则+证据都无命中、回写失败、未捕获异常）→ `exitCode=2`（正常业务态，非故障）。outbox 指数退避重试（上限 9 次），超限由 `--recover-outbox` 恢复。 |
 | **⑤ 留痕层 + LLM narrator 旁路** | `infrastructure/db/security-state-store.js`（SQLite 快照 + outbox）· `audit/audit-log.js`（NDJSON）· OctoBus 网关 `access.log` · **LLM narrator**：`infrastructure/model-gateway/security-narrator.js`（`OpenAICompatibleNarrator` + 确定性降级） | **写路径必经留痕**：Ⅰ `workflow_snapshots`（9 状态有序落库，payload 只含脱敏恢复字段，绝不存密钥/原始日志）；Ⅱ `delivery_outbox`（双投递 + 指数退避，禁止静默丢失）；Ⅲ `audit.log`（每次运行至少 `workflow.completed` + `KNOWLEDGE_HIT` 两条，写入失败不静默）；Ⅳ 网关 `access.log`（`x-octobus-ext-business-request-id=${traceId}`）。**LLM 红线：只解释不改决策**，输入经 `modelSafeAlert()` 脱敏（IOC 只以计数形式）；失败自动降级 `DeterministicNarrator`（`narrativeSource="fallback"`），流程不中断；真实 key 只在 daemon，沙箱仅持 scoped token。 |
 
 ### 底部锚点：trace_id 全链路贯穿
@@ -222,7 +222,7 @@ chaitin-triage-agent/
         │   ├── db/            #   SQLite 状态快照 + outbox
         │   ├── knowledge/     #   本地 RAG 检索、威胁证据加载
         │   ├── model-gateway/ #   narrator（LLM 仅解释；不可用时确定性降级）
-        │   └── notify/        #   企业微信出站通知（单向、脱敏、限流）
+        │   └── notify/        #   出站通知（单向、脱敏、限流）
         ├── interfaces/        # 接口层：统一 CLI / 安全 CLI / 事件入口
         ├── audit/             # 留痕层：追加写 NDJSON 审计日志
         ├── config/            # 配置层：域前缀环境变量别名、必填校验
@@ -277,7 +277,7 @@ daemon 向沙箱注入 scoped token 与 facade URL。**LLM 默认真实调用**�
 用于解释，**永远不能修改**规则引擎给出的 ``status / action / matchedRuleId``
 （规范 6 权限边界，流水线在调用前后均不读取模型字段改写结论）。
 
-### 5.4 知识资产实质性口径
+### 5.4 知识资产
 
 `knowledge/corpus/security/false-positive-rules.json` 是脱敏后入库的结构化
 知识资产，每条规则必须携带：
@@ -308,7 +308,7 @@ daemon 向沙箱注入 scoped token 与 facade URL。**LLM 默认真实调用**�
 结果 JSON 携带 `knowledgeAblated` 标记显式可见，
 用于自检知识是否真实参与判定（用法见 7.5 步骤 2）。
 
-### 5.5 留痕
+### 5.5 日志留痕
 
 - SQLite 状态快照：`workflow_snapshots`（trace\_id + sequence 有序落库）、
   `delivery_outbox`（通知失败重投）、会话槽位表、事件幂等表；
@@ -323,7 +323,7 @@ daemon 向沙箱注入 scoped token 与 facade URL。**LLM 默认真实调用**�
 ### 5.6 模拟边界
 
 本项目运行时代码**没有任何静默 mock / 模拟返回**；所有能力调用、LLM 调用与
-通知均为真实请求（Connect RPC / Runtime LLM Facade / 企业微信 HTTP）。仅存在
+通知均为真实请求（Connect RPC / Runtime LLM Facade / 通知 HTTP）。仅存在
 以下两处**显式声明**的模拟，均带明确标注且默认关闭：
 
 | 模拟点         | 位置                                                                                                                                                 | 显式标注                                                                                                       | 默认行为                             |
@@ -337,7 +337,7 @@ daemon 向沙箱注入 scoped token 与 facade URL。**LLM 默认真实调用**�
 
 ***
 
-## 6. 部署说明
+## 6. 部署步骤说明
 
 线上环境：OctoBus 与 agent-compose daemon 均以容器方式运行在 `chaitin` Stack 内（Portainer 管理，网络 `chaitin-net`，均不发布公网端口），Agent 项目部署目录为 `/data/chaitin/deploy-manifests/chaitin-triage-agent`。以下命令在本地 PowerShell 发起 SSH；私钥路径按实际情况替换，不要写入仓库。
 
@@ -474,7 +474,7 @@ ssh -i "D:\ai_ws_2026\lifetree-pro.pem" -N -L 7412:127.0.0.1:7412 root@8.147.68.
 
 服务器上可直接运行 `deploy/deploy-and-verify.sh`（一键部署 / 冒烟 / 重启核验，含上述步骤 2、3、4、6 的自动化核验，不回显任何 Secret；`reboot-verify` 子命令即步骤 7 的重启自愈验收）。
 
-## 7. 完整验证流程说明
+## 7. 完整流程验证
 
 > 环境：Node.js ≥ 22.5（内置 `node:sqlite` / `node:test`），无需 npm install（零第三方依赖）。
 > 以下命令在仓库根 `chaitin-triage-agent/` 下执行；PowerShell 中 curl 请用 `curl.exe`。
@@ -519,7 +519,7 @@ npm test
 # 预期：tests 86 / pass 86 / fail 0
 # 覆盖：规则引擎、威胁关联、RAG、
 #       OctoBus 客户端、安全流水线闭环、
-#       SQLite 留痕、outbox 恢复、企业微信通知、统一 CLI 分发、
+#       SQLite 留痕、outbox 恢复、通知、统一 CLI 分发、
 #       service package 端到端、知识-代码绑定与消融（test/knowledge/）、
 #       终态指标（test/observability/）
 ```
@@ -701,7 +701,7 @@ findstr /C:"workflow.completed" runtime\audit.log
 | 测试出现 `node:sqlite` 报错                          | Node 版本低于 22.5，升级 Node                                                                                      |
 | 想看能力目录                                         | `node -e "import('./src/capabilities/index.js').then(m => console.log(m.listCapabilityIds()))"`（在 agent/ 下） |
 
-### 8.2 开发 / 联调真实问题复盘
+### 8.2 开发调试问题复盘
 
 联调问题复盘统一维护在仓库根的
 [development-debugging-retrospective.md](../development-debugging-retrospective.md)
@@ -781,7 +781,7 @@ Agent 侧四类问题的完整定位过程（现象 / 定位过程 / 解决方�
 | 高   | 可观测性体系      | access.log 仅 NDJSON、无反向查询后台；trace 检索靠手动 grep，网关侧 SQLite 单文件长期会成为瓶颈。建议内置基于 ClickHouse 类 OLAP 的审计查询后台，支持按 `trace_id` 反向检索全链路调用 | Agent 侧以 SQLite 状态快照 + NDJSON 审计日志 + 网关 access.log 三源交叉核验（见 8.2 P11，属待生产侧复验项） |
 | 高   | LLM 统一管控与降级 | Runtime LLM Facade 已有雏形。建议增强：模型欠费 / 超限 / 配额耗尽时自动降级到备选模型或确定性路径；支持网关侧配置多模型路由，按成本与场景选择模型（开源节流）；LLM 调用与能力调用统一 `trace_id` 串通      | 确定性降级已实现（`narrativeSource: "fallback"`，结论不受模型故障影响），但仅覆盖本项目                     |
 | 中   | 阶段性 ID      | 每次调用除 `trace_id` 外补充 stage / sequence 级 ID，在网关侧即可定位到具体执行阶段，缩短排障路径                                                            | 状态机 sequence 已落 SQLite 快照（`workflow_snapshots` 按 trace\_id + sequence 有序）      |
-| 中   | 全链路网关化      | 人工复核等出网动作也应经网关统一鉴权与审计，避免旁路调用破坏审计完整性                                                                                          | 人工复核走 `NEED_HUMAN` / `manual_review` 状态留痕，通知经企业微信脱敏通道                          |
+| 中   | 全链路网关化      | 人工复核等出网动作也应经网关统一鉴权与审计，避免旁路调用破坏审计完整性                                                                                          | 人工复核走 `NEED_HUMAN` / `manual_review` 状态留痕，通知经脱敏通道                          |
 | 中   | 运营统计能力      | 按 capset / agent 维度的流量统计、费用统计（Token 用量 / 调用次数），支撑成本核算与配额管理                                                                   | 暂无，靠 access.log 手工统计；终态 metrics 含 `capability_calls` 计数（仅单次运行粒度）               |
 | 低   | 认证增强        | Bearer Token 之外支持 jwt / oidc 等策略，适配企业多租户与细粒度授权                                                                               | token 由 daemon Secret 注入、root-only 文件管控（600），权限边界已在演示范围内收紧                     |
 | 低   | Skill 沉淀机制  | 支持将业务实操经验固化为可分发的 skill / 知识包，并与 capset 联动（能力 + 经验一起交付）                                                                       | 以 `knowledge/corpus` 结构化知识资产 + `consumed_by` 知识-代码绑定实现（见 5.4），但不可跨项目分发        |
