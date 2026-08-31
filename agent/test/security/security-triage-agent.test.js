@@ -12,6 +12,7 @@ import { SecurityTriageAgent } from "../../src/application/pipelines/security-tr
 import { SqliteStateStore } from "../../src/infrastructure/db/security-state-store.js";
 import { correlateThreatEvidence } from "../../src/capabilities/security/threat-evidence.js";
 import { WeComWebhookNotifier, formatWeComResult, validateWeComWebhookUrl } from "../../src/infrastructure/notify/wecom-notifier.js";
+import { assertJudgmentGrounded, finalizeJudgment } from "../../src/domains/judgment/judgment.js";
 
 const rules = {
   rules: [
@@ -52,13 +53,23 @@ test("rule engine uses deterministic conditions before producing a suppression r
   assert.equal(result.matchedRuleId, "fp_dns_001");
 });
 
-test("rule engine escalates an alert that contradicts the known suppression rule", () => {
+test("rule engine sends an unmatched alert to manual review with observed evidence", () => {
   const result = evaluateRules(
     { ...matchingContext, sourceAssetTag: "workstation", approvedScanWindow: undefined },
     rules
   );
-  assert.equal(result.status, "escalate");
-  assert.equal(result.action, "open_case");
+  assert.equal(result.status, "manual_review");
+  assert.equal(result.action, "request_additional_evidence");
+  assert.ok(result.evidence.length > 0);
+});
+
+test("grounding rejects conclusions with an empty evidence reference list", () => {
+  const unsupported = finalizeJudgment({
+    status: "escalate",
+    action: "open_case",
+    evidence: []
+  });
+  assert.throws(() => assertJudgmentGrounded(unsupported), /非空 evidenceRefs/);
 });
 
 test("agent obtains context and persists its result through the OctoBus adapter", async () => {
@@ -275,7 +286,7 @@ test("LLM narrator can explain evidence but receives an immutable policy decisio
       return {
         ok: true,
         status: 200,
-        text: async () => JSON.stringify({ choices: [{ message: { content: "证据充分，建议进入降噪复核。" } }] })
+        json: async () => ({ choices: [{ message: { content: "证据充分，建议进入降噪复核。" } }] })
       };
     }
   });
@@ -313,7 +324,7 @@ test("Connect RPC adapter targets only the configured OctoBus capset and forward
   assert.equal(requests[0].init.headers["x-octobus-ext-business-request-id"], "trace-test-002");
   assert.equal(requests[0].init.headers["x-idempotency-key"], "context:trace-test-002");
   assert.ok(requests[0].init.signal instanceof AbortSignal);
-  assert.deepEqual(JSON.parse(requests[0].init.body), { alertId: "A-1001" });
+  assert.deepEqual(JSON.parse(requests[0].init.body), { alert_id: "A-1001" });
 });
 
 test("resilient executor retries transient failures and opens a per-operation circuit", async () => {

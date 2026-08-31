@@ -78,7 +78,7 @@ try {
   if (recoverOutbox) {
     // 恢复模式：重投 outbox 中到期 / 租约过期的投递项。
     const deliveries = await agent.recoverOutbox({ limit: Number(argumentValue("--limit")) || 20 });
-    process.stdout.write(`${JSON.stringify({ recovered: deliveries.filter(item => item.delivered).length, pending: deliveries.filter(item => !item.delivered).length, deliveries }, null, 2)}\n`);
+    process.stdout.write(`${JSON.stringify({ recovered: deliveries.filter(item => item.delivered).length, pending: deliveries.filter(item => !item.delivered).length, deliveries })}\n`);
     process.exitCode = deliveries.some(item => !item.delivered) ? 2 : 0;
   } else {
     const result = await agent.triage({ alertId });
@@ -132,7 +132,9 @@ try {
         result.auditError = auditError.message;
       }
     }
-    process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+    // One compact JSON object keeps CLI output machine-verifiable by deployment
+    // scripts while remaining readable through jq when an operator wants it.
+    process.stdout.write(`${JSON.stringify(result)}\n`);
     process.exitCode = result.status === "manual_review" ? 2 : 0;
   }
 } finally {

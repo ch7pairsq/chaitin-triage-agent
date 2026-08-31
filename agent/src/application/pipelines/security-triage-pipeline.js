@@ -24,7 +24,7 @@ import {
 } from "../../capabilities/security/escalation-gates.js";
 import { ResilientExecutor, isTransientError } from "../../shared/resilience.js";
 import { createTaskContext, isValidState } from "../../domains/task/task-context.js";
-import { finalizeJudgment } from "../../domains/judgment/judgment.js";
+import { finalizeJudgment, assertJudgmentGrounded } from "../../domains/judgment/judgment.js";
 
 /**
  * IOC 升级判据知识资产（knowledge/corpus/security/threat-evidence-judgment.json）
@@ -148,7 +148,7 @@ export class SecurityTriageAgent {
         gatedDecision = candidate;
         knowledgeHits.push(knowledge.knowledge_id);
       }
-      const decision = finalizeJudgment(gatedDecision);
+      const decision = assertJudgmentGrounded(finalizeJudgment(gatedDecision));
       // 知识-代码绑定反向留痕（规范 §9.5）：判定阶段命中的知识资产去重挂到结果，
       // 并填入终态指标 knowledge_hits（此前为占位 0）。
       if (correlation.matchedCount >= 1) knowledgeHits.push(IOC_ESCALATION_KNOWLEDGE.knowledge_id);

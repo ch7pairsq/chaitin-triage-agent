@@ -77,7 +77,7 @@ export class OpenAICompatibleNarrator {
         },
         body: JSON.stringify({
           model: this.model,
-          temperature: 0.2,
+          temperature: 0,
           stream: false,
           messages: [
             {
@@ -87,6 +87,7 @@ export class OpenAICompatibleNarrator {
                 "输入包含：脱敏告警 + 规则引擎 policyDecision(status/action/matchedRuleId/reason/evidence)。",
                 "输出必须覆盖：告警摘要、结论 status、命中规则原因、关键证据（evidence 每项说明 present/缺失/取值）、建议动作 action。",
                 "禁止加入输入中不存在的 IOC、域名、IP、URL、用户名；禁止推翻 status/action/matchedRuleId。",
+                "不得更改 action、status 或 matchedRuleId。",
                 "结果控制在 160 字以内。"
               ].join(" ")
             },

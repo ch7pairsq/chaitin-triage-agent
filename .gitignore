@@ -11,6 +11,7 @@ keys.txt
 *.jks
 id_rsa
 id_ed25519
+kh.md
 
 runtime/
 node_modules/
@@ -19,15 +20,15 @@ build/
 *.log
 *.tsbuildinfo
 
-# deploy/ 下以下划线开头的一次性运维脚本（含 Secret / 环境差异内容）
+# 一次性本地运维脚本默认忽略；可复现部署入口明确纳入版本控制。
 deploy/_*.sh
+!deploy/_daemon_entry.sh
 # 备份文件（运维生成的 .env.bak-* 等）
 *.bak
 *.bak-*
 .tmp/
 tmp/
 
-# Stack deployment files (server-specific, never commit)
+# Stack secrets stay local; the secret-free compose template is tracked.
 stack.env
-chaitin-stack.yml
 

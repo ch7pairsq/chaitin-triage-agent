@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ---------------------------------------------------------------------------
-# deploy-and-verify.sh — 一键预检 / 部署 / 冒烟 / 重启自愈核验
+# deploy-and-verify.sh — Portainer Stack 更新后的项目预检 / 注册 / 冒烟
 #
 # 用法（在服务器项目根执行）：
 #   bash deploy/deploy-and-verify.sh fast-verify
@@ -11,7 +11,7 @@
 #
 # 可选环境变量：
 #   DEPLOY_DAEMON_PROJECT_PATH  覆盖 agent-compose -p 在 daemon 内的项目绝对路径
-#                               （README 6 默认：/data/chaitin/deploy-manifests/chaitin-triage-agent）
+#                               （daemon 容器内默认：/deploy/chaitin-triage-agent）
 #   SMOKE_TIMEOUT_SECONDS       guest 冒烟超时，默认 300
 # 约束：不回显任何 Secret；失败即非零退出。
 # ---------------------------------------------------------------------------
@@ -27,7 +27,7 @@ EXPECTED_CONTAINERS=(agent-compose agent-compose-ui octobus)
 STACK_LABEL="com.docker.compose.project=chaitin"
 LOG_PREFIX="[triage-verify]"
 SMOKE_TIMEOUT_SECONDS="${SMOKE_TIMEOUT_SECONDS:-300}"
-DEFAULT_DAEMON_PATH="/data/chaitin/deploy-manifests/chaitin-triage-agent"
+DEFAULT_DAEMON_PATH="/deploy/chaitin-triage-agent"
 DEPLOY_DAEMON_PROJECT_PATH="${DEPLOY_DAEMON_PROJECT_PATH:-${DEFAULT_DAEMON_PATH}}"
 
 if [ -t 1 ]; then
@@ -68,8 +68,7 @@ resolve_daemon_project_path() {
     echo "${DEPLOY_DAEMON_PROJECT_PATH}"
     return 0
   fi
-  log_warn "daemon 内未发现 ${DEPLOY_DAEMON_PROJECT_PATH}/agent-compose.yml，回退使用宿主路径 ${PROJECT_ROOT}（请确认为 daemon 容器挂载目录）"
-  echo "${PROJECT_ROOT}"
+  fail "daemon 内未发现 ${DEPLOY_DAEMON_PROJECT_PATH}/agent-compose.yml；请核对 /data/chaitin/deploy-manifests:/deploy:ro 挂载"
 }
 
 cmd_fast_verify() {
@@ -93,10 +92,10 @@ cmd_fast_verify() {
   for nm in "${EXPECTED_CONTAINERS[@]}"; do
     check_container_up "${nm}" && running_count=$((running_count+1))
   done
-  if [ "${running_count}" -ge 2 ]; then
-    log_ok "至少 2 个常驻容器在运行（当前 ${running_count}/${#EXPECTED_CONTAINERS[@]} 预期）"
+  if [ "${running_count}" -eq "${#EXPECTED_CONTAINERS[@]}" ]; then
+    log_ok "全部 ${running_count} 个常驻容器在运行"
   else
-    log_fail "常驻容器不足（检测到 ${running_count} 个，预期至少 2）"; failed=$((failed+1))
+    log_fail "常驻容器不足（检测到 ${running_count} 个，预期 ${#EXPECTED_CONTAINERS[@]}）"; failed=$((failed+1))
   fi
 
   log_info "核验全部常驻容器 restart=always..."
@@ -114,20 +113,16 @@ cmd_fast_verify() {
   log_info "核验 agent-compose daemon CLI..."
   if check_container_up "${DAEMON_CONTAINER}"; then
     local version daemon_rc
-    # 优先 version 子命令，回退 --version（不同 daemon 版本参数名不一致），均失败时仅 warn 不计数失败
     set +e
     docker exec "${DAEMON_CONTAINER}" agent-compose version > /tmp/ac-version.$$ 2>&1
     daemon_rc=$?
-    if [ "${daemon_rc}" -ne 0 ]; then
-      docker exec "${DAEMON_CONTAINER}" agent-compose --version > /tmp/ac-version.$$ 2>&1
-      daemon_rc=$?
-    fi
     set -e
     version="$(cat /tmp/ac-version.$$ 2>/dev/null || true)"; rm -f /tmp/ac-version.$$
     if [ "${daemon_rc}" -eq 0 ] && [ -n "${version}" ] && ! echo "${version}" | grep -qiE "Error response|Container .* restarting|container is restarting|unknown flag"; then
       log_ok "agent-compose version => ${version}"
     else
-      log_info "  version 标志不可用（${version:-rc=${daemon_rc}}），以 project ls 作为 CLI 存活探针"
+      log_fail "agent-compose version 失败（${version:-rc=${daemon_rc}}）"
+      failed=$((failed+1))
     fi
     log_info "agent-compose project ls："
     if docker exec "${DAEMON_CONTAINER}" agent-compose project ls > /tmp/ac-projects.$$ 2>&1; then
@@ -138,14 +133,12 @@ cmd_fast_verify() {
       failed=$((failed+1))
     fi
     rm -f /tmp/ac-projects.$$
-    # scheduler 子命令仅在新版 daemon 存在，静默探测不失败
     log_info "agent-compose 调度信息："
-    if docker exec "${DAEMON_CONTAINER}" agent-compose scheduler list > /tmp/ac-sched.$$ 2>&1; then
-      cat /tmp/ac-sched.$$
-    elif docker exec "${DAEMON_CONTAINER}" agent-compose schedule list > /tmp/ac-sched.$$ 2>&1; then
+    if docker exec "${DAEMON_CONTAINER}" agent-compose -p "${PROJECT_NAME}" scheduler ls --json > /tmp/ac-sched.$$ 2>&1; then
       cat /tmp/ac-sched.$$
     else
-      log_info "  （当前 daemon 版本未提供 scheduler/schedule 子命令或暂未配置调度）"
+      log_fail "scheduler ls --json 失败：$(head -n 2 /tmp/ac-sched.$$ 2>/dev/null)"
+      failed=$((failed+1))
     fi
     rm -f /tmp/ac-sched.$$ 2>/dev/null || true
   else
@@ -164,8 +157,11 @@ cmd_fast_verify() {
     esac
     for key in OCTOBUS_BASE_URL OCTOBUS_TOKEN \
                SECURITY_TRIAGE_OCTOBUS_BASE_URL SECURITY_TRIAGE_OCTOBUS_TOKEN SECURITY_TRIAGE_OCTOBUS_CAPSET_ID SECURITY_TRIAGE_OCTOBUS_INSTANCE_ID SECURITY_TRIAGE_OCTOBUS_FULL_SERVICE \
-               LLM_API_ENDPOINT LLM_API_KEY LLM_MODEL; do
-      grep -q "^${key}=" "${env_file}" 2>/dev/null || log_warn ".env 缺少键：${key}（首次部署为空属正常，按 README 6.2 步骤 2c 填写）"
+               SECURITY_TRIAGE_LLM_API_BASE SECURITY_TRIAGE_LLM_API_KEY SECURITY_TRIAGE_LLM_MODEL; do
+      if ! grep -q "^${key}=..*" "${env_file}" 2>/dev/null; then
+        log_fail ".env 缺少非空配置：${key}"
+        failed=$((failed+1))
+      fi
     done
   else
     log_warn ".env 尚未创建（deploy 子命令会生成占位副本）"
@@ -204,16 +200,19 @@ cmd_fast_verify() {
   fi
 
   echo
-  if [ "${failed}" -eq 0 ]; then log_ok "=== fast-verify：全部关键检查通过 ==="
-  else log_warn "=== fast-verify：完成，共 ${failed} 项警告/失败（首次部署可接受）==="; fi
-  return 0
+  if [ "${failed}" -eq 0 ]; then
+    log_ok "=== fast-verify：全部关键检查通过 ==="
+    return 0
+  fi
+  log_fail "=== fast-verify：失败，共 ${failed} 项未通过 ==="
+  return 1
 }
 
 cmd_deploy() {
   log_info "=== deploy：完整部署开始 ==="
   need_cmd docker
   need_cmd install
-  cmd_fast_verify || true
+  cmd_fast_verify || fail "部署前检查失败"
 
   if [ ! -f "${PROJECT_ROOT}/agent-compose.yml" ] || [ ! -f "${PROJECT_ROOT}/.env.example" ]; then
     fail "PROJECT_ROOT=${PROJECT_ROOT} 不是有效仓库根（缺少 agent-compose.yml 或 .env.example）"
@@ -246,12 +245,14 @@ cmd_deploy() {
     || fail "agent-compose project up 失败"
 
   log_info "核验注册结果 project ls --json："
-  docker exec "${DAEMON_CONTAINER}" agent-compose project ls --json 2>&1 || true
-  log_info "核验调度 schedule list："
-  docker exec "${DAEMON_CONTAINER}" agent-compose schedule list 2>&1 || true
+  docker exec "${DAEMON_CONTAINER}" agent-compose project ls --json 2>&1 \
+    || fail "project ls --json 失败"
+  log_info "核验调度 scheduler ls --json："
+  docker exec "${DAEMON_CONTAINER}" agent-compose -p "${PROJECT_NAME}" scheduler ls --json 2>&1 \
+    || fail "scheduler ls --json 失败"
 
   log_info "执行 guest 冒烟（alert-id=A-1001）..."
-  cmd_smoke || log_warn "首次冒烟未成功，可稍后单独运行 smoke 复验"
+  cmd_smoke || fail "smoke 未通过，部署中止"
 
   log_ok "=== deploy：完成 ==="
 }
@@ -260,33 +261,42 @@ cmd_smoke() {
   log_info "=== smoke：guest 正向冒烟开始（超时 ${SMOKE_TIMEOUT_SECONDS}s，alert-id=A-1001） ==="
   need_cmd docker
   check_container_up "${DAEMON_CONTAINER}" || fail "daemon 容器 ${DAEMON_CONTAINER} 未运行"
-  local run_rc=0
+  local run_rc=0 smoke_output="" terminal_json=""
   local timeout_cmd=""
   if command -v timeout >/dev/null 2>&1; then timeout_cmd="timeout ${SMOKE_TIMEOUT_SECONDS}"
   else log_warn "系统无 timeout 命令，无法限制 guest 冒烟时长（建议安装 coreutils）"; fi
   set +e
   if [ -n "${timeout_cmd}" ]; then
     # shellcheck disable=SC2086
-    ${timeout_cmd} docker exec "${DAEMON_CONTAINER}" agent-compose -p "${PROJECT_NAME}" \
+    smoke_output="$(${timeout_cmd} docker exec "${DAEMON_CONTAINER}" agent-compose -p "${PROJECT_NAME}" \
       run triage-operator --rm \
       --command 'cd agent && node src/interfaces/cli.js --workflow security --alert-id A-1001' \
-      </dev/null
+      </dev/null 2>&1)"
     run_rc=$?
     if [ "${run_rc}" = "124" ]; then
       log_fail "smoke 超时（${SMOKE_TIMEOUT_SECONDS}s）"; return 124
     fi
   else
-    docker exec "${DAEMON_CONTAINER}" agent-compose -p "${PROJECT_NAME}" \
+    smoke_output="$(docker exec "${DAEMON_CONTAINER}" agent-compose -p "${PROJECT_NAME}" \
       run triage-operator --rm \
       --command 'cd agent && node src/interfaces/cli.js --workflow security --alert-id A-1001' \
-      </dev/null
+      </dev/null 2>&1)"
     run_rc=$?
   fi
   set -e
-  case "${run_rc}" in
-    0|2) log_ok "smoke 完成（退出码 ${run_rc}；2 = manual_review 属正常业务态）"; return 0 ;;
-    *) log_fail "smoke 失败（退出码 ${run_rc}）"; return "${run_rc}" ;;
-  esac
+  printf '%s\n' "${smoke_output}"
+  [ "${run_rc}" -eq 0 ] || { log_fail "smoke 失败（退出码 ${run_rc}）"; return "${run_rc}"; }
+  terminal_json="$(printf '%s\n' "${smoke_output}" | awk '/^\{.*\}$/ {line=$0} END {print line}')"
+  [ -n "${terminal_json}" ] || { log_fail "smoke 未找到终态 JSON"; return 1; }
+  echo "${terminal_json}" | grep -q '"COMPLETED"' \
+    || { log_fail "smoke 终态不是 COMPLETED"; return 1; }
+  echo "${terminal_json}" | grep -qE '"evidenceRefs":\[[^]]+' \
+    || { log_fail "smoke evidenceRefs 为空"; return 1; }
+  echo "${terminal_json}" | grep -q '"recorded":true' \
+    || { log_fail "smoke recorded 不是 true"; return 1; }
+  echo "${terminal_json}" | grep -q '"narrativeSource":"llm"' \
+    || { log_fail "smoke 未完成真实模型调用"; return 1; }
+  log_ok "smoke 通过：COMPLETED / evidenceRefs 非空 / recorded=true / narrativeSource=llm"
 }
 
 cmd_reboot_verify() {
@@ -354,23 +364,23 @@ cmd_reboot_verify() {
 
 cmd_help() {
   cat <<'HELP_EOF'
-deploy/deploy-and-verify.sh — 一键预检 / 部署 / 冒烟 / 重启自愈核验
+deploy/deploy-and-verify.sh — Portainer Stack 更新后的项目预检 / 注册 / 冒烟
 
 用法（在服务器项目根执行）：
   bash deploy/deploy-and-verify.sh <子命令>
 
 子命令：
   fast-verify    只读预检（容器/重启策略/.env/卷/安全边界）
-  deploy         完整部署：预检 -> .env 占位 -> 建卷 -> agent-compose up -> 注册 -> smoke
-  smoke          仅 guest 正向冒烟（alert-id=A-1001，0 或 2 视为正常）
-  reboot-verify  服务器重启自愈核验（README 6 步骤 7，需要先 reboot 服务器）
+  deploy         项目部署：预检 -> .env 占位 -> 建卷 -> project up -> 注册核验 -> smoke
+  smoke          guest 正向冒烟；四项强校验全部通过才返回 0
+  reboot-verify  可选运维子命令；不属于本次交付流程
   help           显示本帮助
 
 环境变量：
-  DEPLOY_DAEMON_PROJECT_PATH    覆盖 daemon 内项目绝对路径（默认：/data/chaitin/deploy-manifests/chaitin-triage-agent）
+  DEPLOY_DAEMON_PROJECT_PATH    覆盖 daemon 内项目绝对路径（默认：/deploy/chaitin-triage-agent）
   SMOKE_TIMEOUT_SECONDS         guest 冒烟超时（默认：300）
 
-说明：不回显任何 Secret；deploy 是唯一产生变更的子命令。
+说明：脚本不更新 Portainer Stack，不回显任何 Secret；deploy 是唯一产生变更的子命令。
 HELP_EOF
 }
 

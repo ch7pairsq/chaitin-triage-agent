@@ -43,8 +43,8 @@ export function finalizeJudgment(decision) {
 
 /** 断言结论携带证据引用（供留痕层 / 输出过滤做最后一道校验）。 */
 export function assertJudgmentGrounded(judgment) {
-  if (!Array.isArray(judgment?.evidenceRefs)) {
-    throw new Error("结论缺少 evidenceRefs：无证据引用的结论按规范无效");
+  if (!Array.isArray(judgment?.evidenceRefs) || judgment.evidenceRefs.length === 0) {
+    throw new Error("结论缺少非空 evidenceRefs：无证据引用的结论按规范无效");
   }
   return judgment;
 }

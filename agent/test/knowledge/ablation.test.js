@@ -62,7 +62,8 @@ test('ablating the matched false-positive rule removes suppression and marks the
   }).triage({ alertId: 'A-abl-fp' });
 
   assert.notEqual(result.action, 'suppress_with_review', '被消融规则不应再驱动降噪复核');
-  assert.deepEqual([result.status, result.action], ['escalate', 'open_case']);
+  assert.deepEqual([result.status, result.action], ['manual_review', 'request_additional_evidence']);
+  assert.ok(result.evidenceRefs.length > 0, '消融后仍必须携带已有上下文证据引用');
   assert.ok(result.knowledgeAblated.includes('kb-security-fp-dns-001'), 'knowledgeAblated 应含被消融规则 id');
   assert.ok(!result.knowledgeHits.includes('kb-security-fp-dns-001'), '被消融规则不得再计入命中');
   assert.equal(result.metrics.knowledge_hits, 0);

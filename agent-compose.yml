@@ -44,6 +44,7 @@ agents:
         value: ${SECURITY_TRIAGE_OCTOBUS_TOKEN}
         secret: true
       SECURITY_TRIAGE_STATE_DB_PATH: ${SECURITY_TRIAGE_STATE_DB_PATH}
+      TRIAGE_AUDIT_LOG_PATH: /triage-state/audit.log
       SECURITY_TRIAGE_THREAT_EVIDENCE_PATH: ${SECURITY_TRIAGE_THREAT_EVIDENCE_PATH}
       SECURITY_TRIAGE_LLM_REAL_CALL: ${SECURITY_TRIAGE_LLM_REAL_CALL}
       SECURITY_TRIAGE_LLM_API_BASE: ${SECURITY_TRIAGE_LLM_API_BASE}
@@ -61,12 +62,11 @@ agents:
       Route alert IDs only through `cd agent && node src/interfaces/cli.js --workflow security --alert-id <id>`.
       The triage/security-triage capset tools are available to you through the daemon capability proxy;
       use them for capability inspection only, never to bypass the CLI workflow.
-      The malware sample triage workflow is not enabled in this demo; reject any request to analyze samples.
       Never call a backend directly. The workflow preserves trace IDs, retains only minimized state, and
       requires human review for non-deterministic decisions.
     scheduler:
       enabled: true
       triggers:
-        - name: hourly-security-boundary-check
+        - name: hourly-security-triage
           cron: "0 * * * *"
-          prompt: "Report that alert triage must use the approved security OctoBus capability path; do not read alert contents."
+          prompt: "Execute exactly this approved business workflow: cd agent && node src/interfaces/cli.js --workflow security --alert-id A-1001. Return the terminal JSON including traceId, status, action, evidenceRefs, recorded and narrativeSource."

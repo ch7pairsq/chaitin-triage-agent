@@ -1,4 +1,8 @@
 const fieldLabels = {
+  alertId: "告警编号",
+  title: "告警标题",
+  severity: "告警严重度",
+  assetCriticality: "资产关键度",
   sourceAssetTag: "源资产标签",
   eventTime: "告警时间",
   approvedScanWindow: "授权扫描窗口",
@@ -27,8 +31,14 @@ function evidenceFor(context, rule) {
  * A missing required fact is intentionally never treated as a rule match.
  */
 export function evaluateRules(context, rules) {
+  const observedEvidence = [];
   for (const rule of rules.rules ?? []) {
     const evidence = evidenceFor(context, rule);
+    for (const item of evidence) {
+      if (item.present && !observedEvidence.some((known) => known.field === item.field)) {
+        observedEvidence.push(item);
+      }
+    }
     const missing = evidence.filter((item) => !item.present);
 
     // Skip only rules that are already contradicted. Missing evidence on an
@@ -64,12 +74,25 @@ export function evaluateRules(context, rules) {
     }
   }
 
+  if (observedEvidence.length === 0) {
+    for (const field of ["alertId", "title", "severity", "assetCriticality"]) {
+      if (hasValue(context[field])) {
+        observedEvidence.push({
+          field,
+          label: fieldLabels[field],
+          value: context[field],
+          present: true
+        });
+      }
+    }
+  }
+
   return {
-    status: "escalate",
-    action: "open_case",
+    status: "manual_review",
+    action: "request_additional_evidence",
     matchedRuleId: null,
-    falsePositiveScore: 0.05,
-    evidence: [],
-    reason: "未命中降噪规则，需按高优先级进入人工研判。"
+    falsePositiveScore: null,
+    evidence: observedEvidence,
+    reason: "现有证据未命中可执行判据，禁止无依据升级或降噪，转人工补充证据。"
   };
 }
