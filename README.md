@@ -12,8 +12,9 @@
 
 部署采用 **单宿主机 + Docker compose CLI**，所有业务数据、项目源码、凭据、知识库、容器状态卷统一收敛到
 `/data/chaitin/` 之下（非分散的 `/var/lib/docker` volume），便于整体备份、迁移与权限审计。
-业务知识库与流水线状态使用独立命名 Docker volume（`chaitin-private-knowledge-base`、`chaitin-triage-state`），
-与 bind mount 解耦，支持 daemon 在任意工作目录创建 guest 时可靠挂载。
+业务知识库与流水线状态由 daemon 自管的本地卷供给（物理路径 `agent-compose/data/volumes/local/<uuid>/data/`，
+随宿主 bind mount 持久化，容器重启不丢数据）；`agent-compose.yml` 另声明两个 external Docker 命名卷
+（`chaitin-private-knowledge-base`、`chaitin-triage-state`）供 daemon 启动校验，guest 实际挂载以 daemon 本地卷为准。
 
 | 路径（相对 `/data/chaitin/`） | 类型 | 权限 | 作用说明 |
 | --- | --- | --- | --- |
@@ -30,9 +31,10 @@
 | `agent-compose/data/sandboxes/YYYY/MM/DD/<id>/workspace/` | 目录 | daemon 自管 | 真实 guest 沙箱运行目录（每 run 一份），含执行产物、状态 SQLite WAL、audit.log NDJSON。按 traceId 查找 run 路径从 daemon 运行记录反查即可。 |
 | `agent-compose/ui/` | 目录 | daemon 自管 | `agent-compose-ui.db` 与 UI 本地脚本服务运行目录。 |
 | `octobus/data/` | 目录 | `999:systemd-journal` | OctoBus 网关状态（capset / instance / service 注册）与 `access.log`（能力调用 NDJSON，含 `trace_id`）。网关仅在 `chaitin-net` 内网运行，**不发布任何公网端口**。 |
-| `private-knowledge-base/` | 目录 | `700 root:root` | 私有知识库宿主源目录（3 个结构化语料文件：IOC 证据包 816 条 + 威胁情报语料 + 判定规则证据语料）。由 Stack 只读挂载进 daemon（用于 UI 引用），同名 Docker 命名 volume（见下表）内容已从此目录 1:1 拷贝，**guest 容器内 `/knowledge` 以命名 volume 挂载为准**。 |
-| **`chaitin-private-knowledge-base`** | Docker 命名 volume | `local driver` | 与 `agent-compose.yml` `volumes.private-knowledge` 绑定（`external: true`）。daemon 创建 guest 沙箱时以只读方式挂到 `/knowledge`，安全域 RAG 直接从该卷文件读取，不经网络。用 `docker volume inspect chaitin-private-knowledge-base` 查物理路径；新增/更新知识文件后，需用 `docker run --rm -v /data/chaitin/private-knowledge-base:/from:ro -v chaitin-private-knowledge-base:/to alpine cp -a /from/. /to/` 重新同步。 |
-| **`chaitin-triage-state`** | Docker 命名 volume | `local driver` | 与 `agent-compose.yml` `volumes.state-data` 绑定（`external: true`）。daemon 创建 guest 沙箱时以读写方式挂到 `/triage-state`，存放流水线状态 SQLite、审计 WAL、执行产物。初始化时为空，guest 首次运行会自动生成目录结构与状态库文件；用 `docker volume inspect chaitin-triage-state` 查物理路径，用于跨宿主机迁移。 |
+| `private-knowledge-base/` | 目录 | `700 root:root` | 私有知识库宿主源目录（3 个结构化语料文件：IOC 证据包 816 条 + 威胁情报语料 + 判定规则证据语料）。由 Stack 只读挂载进 daemon（用于 UI 引用）；guest 容器内 `/knowledge` 实际由 daemon 本地卷供给（见下两行）。 |
+| `agent-compose/data/volumes/local/<uuid>/data/`（知识库卷） | 目录 | daemon 自管 | **guest 内 `/knowledge` 的真实数据源**（daemon 本地卷驱动，v2608.5.0 实测：external Docker 命名卷不会被 guest 挂载）。当前 uuid 目录 `4dfc2f22-…/data/` 内为 3 个语料文件（与 `private-knowledge-base/` 源目录 1:1）。更新知识文件的正确做法：先覆盖 `/data/chaitin/private-knowledge-base/` 源目录，再 `cp -a` 同步到该 uuid 目录的 `data/` 下。 |
+| `agent-compose/data/volumes/local/<uuid>/data/`（状态卷） | 目录 | daemon 自管 | **guest 内 `/triage-state` 的真实数据源**（当前 uuid 目录 `ca0c07e6-…/data/`）。存放 `security-triage-state.db`（研判记录 SQLite，TR-* 全量递增）、审计 WAL 与执行产物；随宿主 bind mount 持久化，**容器/daemon 重启记录零丢失**（已实测三轮重启验证）。 |
+| **`chaitin-private-knowledge-base` / `chaitin-triage-state`** | Docker 命名 volume | `local driver` | `agent-compose.yml` 声明的 external 卷（`external: true`），daemon 启动/建 guest 时校验其存在性（`fast-verify` 亦检查）；若被误删，用 `docker volume create` 重建即可，**不影响 guest 运行与已落盘数据**（真实数据在上两行 daemon 本地卷内）。 |
 | `secrets/` | 目录 | `700 root:root` | root 可读的运行时 token。仅保留 **1 个在用文件**： |
 | `secrets/agent-compose-ui-script-token` | 文件 | `600 root:root` | `agent-compose-ui` 容器本地脚本服务 token（唯一在用）。由 Stack 以 `/run/secrets/agent-compose-ui-script-token` 只读挂载进 UI 容器，启动时由 entrypoint 读取并注入为 `SCRIPT_SERVICE_TOKEN`。 |
 
@@ -389,7 +391,7 @@ stat -c '%a %U:%G %n' /data/chaitin/deploy-manifests/chaitin-triage-agent/.env
 
 #### 步骤 3：准备外部卷
 
-私有知识库只读挂载 `/knowledge`，状态库挂载 `/triage-state`。
+`agent-compose.yml` 声明的 external 卷需存在（daemon 启动校验用；guest 实际挂载数据来自 daemon 本地卷 `agent-compose/data/volumes/local/`，见总览表）。
 
 ```sh
 docker volume inspect chaitin-private-knowledge-base chaitin-triage-state
