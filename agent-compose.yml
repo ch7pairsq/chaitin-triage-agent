@@ -9,8 +9,6 @@ volumes:
     name: chaitin-triage-state
     external: true
 
-# OctoBus 能力总线原生接入：token 只保存在 daemon，不进入 guest 沙箱。
-# agent 通过 capset_ids 声明所需能力集，daemon 以 MCP/Connect/gRPC 代理调用。
 octobus_servers:
   triage:
     url: ${OCTOBUS_BASE_URL}
@@ -23,10 +21,8 @@ agents:
     driver:
       docker: {}
     workspace:
-      provider: git
-      url: https://github.com/ch7pairsq/chaitin-triage-agent.git
-      ref: main
-      target: .
+      provider: file
+      path: .
     volumes:
       - type: volume
         source: private-knowledge
@@ -35,9 +31,8 @@ agents:
       - type: volume
         source: state-data
         target: /triage-state
-    # 能力集声明：经 daemon 能力代理暴露最小权限 capset（演示仅启用安全告警降噪）。
-    # 真实 OctoBus token 由 daemon 持有（见上方 octobus_servers.triage）。
-    # start by zhangyuqiao，仅注册安全运营分析
+    # qualified capset id: <server>/<capset>
+    # server 名必须与上方 octobus_servers.triage 键名一致。
     capset_ids:
       - triage/security-triage
     env:
@@ -50,30 +45,25 @@ agents:
         secret: true
       SECURITY_TRIAGE_STATE_DB_PATH: ${SECURITY_TRIAGE_STATE_DB_PATH}
       SECURITY_TRIAGE_THREAT_EVIDENCE_PATH: ${SECURITY_TRIAGE_THREAT_EVIDENCE_PATH}
-      # LLM 走 agent-compose Runtime LLM Facade：真实 provider key 只配置在
-      # daemon .env（LLM_API_ENDPOINT/LLM_API_KEY/LLM_MODEL），daemon 向沙箱
-      # 注入 scoped token 与 facade URL，不注入真实 key。下列 BASE/MODEL 仅作
-      # 覆盖项，留空即回退到 daemon 注入的 LLM_API_ENDPOINT / LLM_MODEL。
+      SECURITY_TRIAGE_LLM_REAL_CALL: ${SECURITY_TRIAGE_LLM_REAL_CALL}
       SECURITY_TRIAGE_LLM_API_BASE: ${SECURITY_TRIAGE_LLM_API_BASE}
       SECURITY_TRIAGE_LLM_MODEL: ${SECURITY_TRIAGE_LLM_MODEL}
       SECURITY_TRIAGE_LLM_TIMEOUT_MS: ${SECURITY_TRIAGE_LLM_TIMEOUT_MS}
+      SECURITY_TRIAGE_LLM_API_KEY:
+        value: ${SECURITY_TRIAGE_LLM_API_KEY}
+        secret: true
       WECOM_WEBHOOK_URL:
         value: ${WECOM_WEBHOOK_URL}
         secret: true
       WECOM_TIMEOUT_MS: ${WECOM_TIMEOUT_MS}
-    #end
     system_prompt: |
-      You operate Chaitin Triage Agent (security alert triage demo) through
-      approved OctoBus capabilities.
+      You operate Chaitin Triage Agent (security alert triage demo) through approved OctoBus capabilities.
       Route alert IDs only through `cd agent && node src/interfaces/cli.js --workflow security --alert-id <id>`.
-      The `triage/security-triage` capset tools are available to you through the
-      daemon capability proxy; use them for capability inspection only, never to
-      bypass the CLI workflow.
-      The malware sample triage workflow is not enabled in this demo; reject any
-      request to analyze samples.
-      Never call a backend directly. The workflow preserves trace IDs, retains
-      only minimized state, and requires human review for non-deterministic
-      decisions.
+      The triage/security-triage capset tools are available to you through the daemon capability proxy;
+      use them for capability inspection only, never to bypass the CLI workflow.
+      The malware sample triage workflow is not enabled in this demo; reject any request to analyze samples.
+      Never call a backend directly. The workflow preserves trace IDs, retains only minimized state, and
+      requires human review for non-deterministic decisions.
     scheduler:
       enabled: true
       triggers:

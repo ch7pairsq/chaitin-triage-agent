@@ -1,3 +1,33 @@
-.env
+﻿.env
+.env.*
+!.env.example
+# 管理员本地一次性密钥文件（含 DeepSeek 等真实 Secret）；绝不提交仓库
+key.txt
+keys.txt
+*.key
+*.pem
+*.p12
+*.pfx
+*.jks
+id_rsa
+id_ed25519
+
 runtime/
 node_modules/
+dist/
+build/
+*.log
+*.tsbuildinfo
+
+# deploy/ 下以下划线开头的一次性运维脚本（含 Secret / 环境差异内容）
+deploy/_*.sh
+# 备份文件（运维生成的 .env.bak-* 等）
+*.bak
+*.bak-*
+.tmp/
+tmp/
+
+# Stack deployment files (server-specific, never commit)
+stack.env
+chaitin-stack.yml
+

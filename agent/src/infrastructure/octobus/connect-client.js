@@ -141,7 +141,9 @@ export class OctoBusConnectClient {
   getAlertContext(alertId, traceId) {
     return this.call({
       method: "GetAlertContext",
-      body: { alertId },
+      // proto JSON 会合并 snake_case / camelCase 别名，同时出现会被解析器视为 duplicate field。
+      // 这里统一只发送 snake_case，服务端 protobuf-json 同样接受，避免 400。
+      body: { alert_id: alertId },
       traceId,
       idempotencyKey: `context:${traceId}`
     });
@@ -151,16 +153,17 @@ export class OctoBusConnectClient {
   recordTriageResult(result, traceId, idempotencyKey = `record:${traceId}`) {
     return this.call({
       method: "RecordTriageResult",
+      // body 只放 proto 定义字段；trace_id / idempotency_key 是网关/HTTP 级别
+      // 元数据，由 call() 通过 x-octobus-ext-business-request-id / x-idempotency-key
+      // 两个请求头传递，放入 body 会被 proto JSON 当作 unknown field 拒收。
       body: {
-        alertId: result.alertId,
+        alert_id: result.alertId,
         decision: result.status,
         action: result.action,
-        matchedRuleId: result.matchedRuleId ?? "",
-        falsePositiveScore: result.falsePositiveScore ?? 0,
-        evidenceJson: JSON.stringify(result.evidence),
-        narrative: result.narrative,
-        traceId,
-        idempotencyKey
+        matched_rule_id: result.matchedRuleId ?? "",
+        false_positive_score: result.falsePositiveScore ?? 0,
+        evidence_json: JSON.stringify(result.evidence),
+        narrative: result.narrative
       },
       traceId,
       idempotencyKey

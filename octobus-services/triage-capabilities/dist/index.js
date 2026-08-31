@@ -35,10 +35,76 @@ import { getCapability, listCapabilityIds } from "../../../agent/src/capabilitie
 const SERVICE_NAME = "triage.capabilities.v1.CapabilityService";
 
 /**
+ * 预置脱敏回放数据集（dataSource: "replay"）：
+ * 本服务是「唯一数据来源模拟」（README 5.6 模拟边界），
+ * 真实后端沙箱接入后替换实例，Agent 代码零改动；
+ * 预置数据只覆盖已在 README 案例中登记的 alertId，未登记告警按 found:false 处理。
+ */
+const REPLAY_ALERTS = {
+  "A-1001": {
+    found: true,
+    alertId: "A-1001",
+    title: "Outbound DNS query to rare domain",
+    severity: "medium",
+    assetCriticality: "medium",
+    sourceAssetTag: "vulnerability_scanner",
+    sourceAddress: "10.0.8.15",
+    eventTime: "2026-08-25T10:00:00Z",
+    approvedScanWindow: true,
+    destinationPort: 53,
+    rawSignalCount: 4,
+    networkIndicatorCount: 1,
+    matchedSnortSidCount: 0,
+    replayNotice: "Replay data: authorized vulnerability scanner DNS activity within approved window; suppress with review."
+  },
+  "A-1002": {
+    found: true,
+    alertId: "A-1002",
+    title: "Internal host connecting to known APT IP",
+    severity: "high",
+    assetCriticality: "critical",
+    sourceAssetTag: "workstation",
+    sourceAddress: "10.0.3.22",
+    eventTime: "2026-08-25T11:30:00Z",
+    approvedScanWindow: false,
+    destinationPort: 443,
+    rawSignalCount: 12,
+    networkIndicatorCount: 3,
+    networkIndicators: ["91.121.84.115", "aptcmd.example.org", "drop.example.net"],
+    matchedSnortSidCount: 1,
+    matchedSnortSids: ["9999999"],
+    replayNotice: "Replay data: high-severity network egress on critical asset; requires escalation."
+  }
+};
+/** 幂等写登记：RecordTriageResult 的幂等键 → 已写入记录。 */
+const replayRecordStore = new Map();
+
+/**
  * 方法路由表：gRPC method → 确定性能力实现。
  * 每个实现只做「解析 JSON 入参 → 调用纯函数 → 返回 JSON」，不掺入任何判定外逻辑。
+ * 能力分为两组：
+ *   A) 业务端点（沙箱 ↔ 后端沙箱实例）：GetAlertContext / RecordTriageResult
+ *      （README 3.3.2 capset 4 个已启用方法中的 2 个数据通路端点）
+ *   B) 纯函数确定性能力（规则引擎 / 关联引擎 / 门控 / 样本域能力）：
+ *      沙箱 guest 内本地直接 import 调用（零 IO）；本服务同步暴露以支持
+ *      其他消费者（如审计查询、可视化）经网关统一路由。
  */
 const HANDLERS = {
+  // ----- A) 业务数据端点（capset security-triage 必选）-----
+  GetAlertContext: ({ alertId }) => {
+    const hit = REPLAY_ALERTS[String(alertId ?? "")];
+    if (hit) return { ...hit, dataSource: "replay" };
+    return { found: false, alertId: String(alertId ?? ""), dataSource: "replay", replayNotice: "Replay data: alert id not registered in local replay set." };
+  },
+  RecordTriageResult: ({ alertId, decision, action, matchedRuleId = "", falsePositiveScore = 0, evidenceJson = "[]", narrative = "", traceId = "", idempotencyKey = "" }) => {
+    const key = String(idempotencyKey || `record:${traceId}:${alertId}`);
+    const existing = replayRecordStore.get(key);
+    if (existing) return { accepted: true, recordId: existing.recordId, duplicate: true };
+    const recordId = `TR-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
+    replayRecordStore.set(key, { recordId, alertId, decision, action, matchedRuleId, falsePositiveScore, evidenceJson, narrative, traceId, idempotencyKey: key, writtenAt: new Date().toISOString() });
+    return { accepted: true, recordId, dataSource: "replay" };
+  },
+  // ----- B) 纯函数确定性能力（与 capabilities/index.js 一一对应）-----
   EvaluateFalsePositiveRules: ({ context, rules }) => evaluateRules(context, rules),
   MatchThreatIndicators: ({ context, evidenceRecords = [] }) => correlateThreatEvidence(context, evidenceRecords),
   DecisionFromThreatCorrelation: ({ correlation }) => decisionFromThreatCorrelation(correlation),

@@ -1,11 +1,13 @@
-/**
- * 基础设施层：安全告警「模型解释」网关（规范 §5.2 infrastructure/model-gateway/）。
+﻿/**
+ * Infrastructure layer: security alert "model explanation" gateway (spec §5.2).
  *
- * 分工红线（规范 §6）：模型只解释已被规则引擎约束的结论，收不到任何
- * 工具端点，也无权覆盖 policy action。输入经过 modelSafeAlert 脱敏——
- * 私有 IOC 只以计数形式进入模型。LLM 凭据经 agent-compose Runtime
- * LLM Facade 注入（scoped token），真实 provider key 不进沙箱；
- * 模型不可达时降级为确定性叙述（DeterministicNarrator）。
+ * Division-of-labor red line (spec §6): the model only explains decisions
+ * already constrained by the rule engine. It never receives a tool endpoint
+ * and cannot override policy action. Input is sanitised through modelSafeAlert
+ * — private IOCs enter the model as counts only. LLM credentials are injected
+ * via the agent-compose Runtime LLM Facade (scoped token), the real provider
+ * key never reaches the sandbox. When the model is unreachable we fall back
+ * to deterministic narration (DeterministicNarrator).
  */
 
 function fallbackNarrative(context, decision) {
@@ -26,7 +28,6 @@ function modelSafeAlert(context) {
     title: context.title,
     severity: context.severity,
     assetCriticality: context.assetCriticality,
-    // Signals may contain private IOCs. The model learns only their count.
     rawSignalCount: Array.isArray(context.rawSignals) ? context.rawSignals.length : 0,
     networkIndicatorCount: Array.isArray(context.networkIndicators) ? context.networkIndicators.length : 0,
     matchedSnortSidCount: Array.isArray(context.matchedSnortSids) ? context.matchedSnortSids.length : 0
@@ -41,10 +42,6 @@ export class DeterministicNarrator {
   }
 }
 
-/**
- * The model is deliberately limited to explaining an already-constrained decision.
- * It never receives a tool endpoint and cannot override the policy action.
- */
 export class OpenAICompatibleNarrator {
   constructor({ apiBase, apiKey, model, timeoutMs = 8000, fetchImpl = fetch }) {
     this.kind = "llm";
@@ -57,9 +54,7 @@ export class OpenAICompatibleNarrator {
 
   async summarize(context, decision) {
     const input = {
-      alert: {
-        ...modelSafeAlert(context)
-      },
+      alert: { ...modelSafeAlert(context) },
       policyDecision: {
         status: decision.status,
         action: decision.action,
@@ -82,46 +77,69 @@ export class OpenAICompatibleNarrator {
         },
         body: JSON.stringify({
           model: this.model,
-          temperature: 0,
+          temperature: 0.2,
+          stream: false,
           messages: [
             {
               role: "system",
-              content: "你是安全运营报告助手。只能基于提供的证据和既定 policyDecision 解释结论；不得更改 action、不得补造事实。输出不超过 180 个中文字符。"
+              content: [
+                "你是安全运营分析师助理，只能对已经确定的研判结论给出简洁中文叙述，不做任何修改。",
+                "输入包含：脱敏告警 + 规则引擎 policyDecision(status/action/matchedRuleId/reason/evidence)。",
+                "输出必须覆盖：告警摘要、结论 status、命中规则原因、关键证据（evidence 每项说明 present/缺失/取值）、建议动作 action。",
+                "禁止加入输入中不存在的 IOC、域名、IP、URL、用户名；禁止推翻 status/action/matchedRuleId。",
+                "结果控制在 160 字以内。"
+              ].join(" ")
             },
-            { role: "user", content: JSON.stringify(input) }
+            {
+              role: "user",
+              content: `请基于以下已完成研判的安全告警给出中文叙述：\n${JSON.stringify(input, null, 2)}`
+            }
           ]
         })
       });
-      body = await response.text();
+    } catch (error) {
+      if (controller.signal.aborted) throw new Error("LLM 请求超时");
+      throw error;
     } finally {
       clearTimeout(timer);
     }
     if (!response.ok) {
-      throw new Error(`LLM narration failed with HTTP ${response.status}`);
+      const preview = await response.text().catch(() => "");
+      throw new Error(`LLM 请求失败：HTTP ${response.status} ${(preview || "").slice(0, 200)}`);
     }
-
-    const payload = JSON.parse(body);
-    const content = payload.choices?.[0]?.message?.content?.trim();
-    if (!content) {
-      throw new Error("LLM narration returned no content");
+    try {
+      body = await response.json();
+    } catch (error) {
+      throw new Error(`LLM 响应非 JSON：${String(error)}`);
+    }
+    const content = body?.choices?.[0]?.message?.content;
+    if (typeof content !== "string" || !content.trim()) {
+      throw new Error(`LLM 响应为空：${JSON.stringify(body).slice(0, 300)}`);
     }
     return content;
   }
 }
 
 export function narratorFromEnvironment(environment = process.env) {
-  // Offline tests remain deterministic; deployed Agents use the configured
-  // model only for explanation, never for policy selection.
-  // LLM_API_ENDPOINT / LLM_API_KEY 由 agent-compose Runtime LLM Facade 注入
-  // （scoped token，真实 provider key 不进入沙箱）；LLM_API_BASE 仅为本地
-  // 直连覆盖项。
-  const apiBase = environment.LLM_API_BASE || environment.LLM_API_ENDPOINT;
-  if (apiBase && environment.LLM_API_KEY && environment.LLM_MODEL) {
+  // Real-call switch (defaults to true, so deployments make a real external
+  // /chat/completions call out-of-the-box, matching the audit requirements).
+  // Disable explicitly by setting SECURITY_TRIAGE_LLM_REAL_CALL (or the
+  // generic LLM_REAL_CALL) to one of: 0 | false | off (case-insensitive).
+  const realCallRaw = environment.SECURITY_TRIAGE_LLM_REAL_CALL ?? environment.LLM_REAL_CALL;
+  if (typeof realCallRaw === "string" && /^(0|false|off)$/i.test(realCallRaw.trim())) {
+    return new DeterministicNarrator();
+  }
+  // SECURITY_TRIAGE_* scoped variables win over the generic facade-injected
+  // ones, keeping the same priority as the CLI alias layer.
+  const apiBase = environment.SECURITY_TRIAGE_LLM_API_BASE || environment.LLM_API_BASE || environment.LLM_API_ENDPOINT;
+  const apiKey  = environment.SECURITY_TRIAGE_LLM_API_KEY  || environment.LLM_API_KEY;
+  const model   = environment.SECURITY_TRIAGE_LLM_MODEL    || environment.LLM_MODEL;
+  if (apiBase && apiKey && model) {
     return new OpenAICompatibleNarrator({
       apiBase,
-      apiKey: environment.LLM_API_KEY,
-      model: environment.LLM_MODEL,
-      timeoutMs: environment.LLM_TIMEOUT_MS
+      apiKey,
+      model,
+      timeoutMs: environment.SECURITY_TRIAGE_LLM_TIMEOUT_MS || environment.LLM_TIMEOUT_MS
     });
   }
   return new DeterministicNarrator();

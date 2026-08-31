@@ -59,7 +59,7 @@ const octobus = new OctoBusConnectClient({
   baseUrl: requiredConfig(process.env.OCTOBUS_BASE_URL, "OCTOBUS_BASE_URL"),
   capsetId: requiredConfig(process.env.OCTOBUS_CAPSET_ID, "OCTOBUS_CAPSET_ID"),
   instanceId: requiredConfig(process.env.OCTOBUS_INSTANCE_ID, "OCTOBUS_INSTANCE_ID"),
-  fullService: process.env.OCTOBUS_FULL_SERVICE ?? "security.triage.v1.SecurityTriageService",
+  fullService: process.env.OCTOBUS_FULL_SERVICE ?? "triage.capabilities.v1.CapabilityService",
   token: process.env.OCTOBUS_TOKEN
 });
 

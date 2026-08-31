@@ -35,7 +35,11 @@ aliasEnvironment('SECURITY_TRIAGE_', [
   ['LLM_API_BASE', 'LLM_API_BASE'],
   ['LLM_API_KEY', 'LLM_API_KEY'],
   ['LLM_MODEL', 'LLM_MODEL'],
-  ['LLM_TIMEOUT_MS', 'LLM_TIMEOUT_MS']
+  ['LLM_TIMEOUT_MS', 'LLM_TIMEOUT_MS'],
+  // LLM 开关：REAL_CALL=false/0/off 时走 deterministic，其余（含空）均走真实调用；
+  // 真实 Key 允许通过 SECURITY_TRIAGE_LLM_API_KEY 注入（服务器 .env 可直填 DeepSeek key，
+  // 也可留空走 agent-compose Runtime LLM Facade 注入）。
+  ['LLM_REAL_CALL', 'LLM_REAL_CALL']
 ]);
 await import('./security-cli.js');
 
@@ -49,6 +53,8 @@ function option(name) {
 function aliasEnvironment(prefix, pairs) {
   for (const [suffix, plainName] of pairs) {
     const scoped = `${prefix}${suffix}`;
-    if (!process.env[plainName] && process.env[scoped]) process.env[plainName] = process.env[scoped];
+    // 工作流域前缀变量优先：若显式声明域变量则覆盖同名通用变量，避免 daemon 侧 OCTOBUS_*
+    // （admin）抢占本工作流声明的最小权限 capset 凭证与网关地址。
+    if (process.env[scoped]) process.env[plainName] = process.env[scoped];
   }
 }
