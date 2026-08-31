@@ -267,7 +267,7 @@ cmd_smoke() {
   set +e
   if [ -n "${timeout_cmd}" ]; then
     # shellcheck disable=SC2086
-    docker exec "${DAEMON_CONTAINER}" agent-compose -p "${PROJECT_NAME}" \
+    ${timeout_cmd} docker exec "${DAEMON_CONTAINER}" agent-compose -p "${PROJECT_NAME}" \
       run triage-operator --rm \
       --command 'cd agent && node src/interfaces/cli.js --workflow security --alert-id A-1001' \
       </dev/null
