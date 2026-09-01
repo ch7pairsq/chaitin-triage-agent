@@ -1,0 +1,123 @@
+{
+  "knowledgeId": "kb-iot_platform-p2p_worm",
+  "domainId": "iot_platform",
+  "domainName": "物联网平台安全",
+  "attackTypeId": "p2p_worm",
+  "attackTypeName": "P2P-Worm",
+  "aliases": [
+    "P2P蠕虫"
+  ],
+  "subtypes": [
+    "共享目录传播",
+    "P2P 协议传播"
+  ],
+  "applicability": "limited",
+  "description": "用于物联网平台安全中P2P-Worm的证据化研判，适用于 IoT 网关、OTA 服务、设备身份服务 等资产。",
+  "assets": [
+    "IoT 网关",
+    "OTA 服务",
+    "设备身份服务"
+  ],
+  "protocols": [
+    "MQTT",
+    "CoAP",
+    "TLS"
+  ],
+  "domainFocus": "网关进程、设备固件、凭据与 OTA 发布基线",
+  "wazuhMapping": {
+    "ruleGroups": [
+      "worm",
+      "p2p_worm"
+    ],
+    "requiredFields": [
+      "rule.id",
+      "rule.level",
+      "agent.id",
+      "timestamp"
+    ],
+    "wazuhObservability": "partial",
+    "additionalTelemetryRequired": [
+      "P2P 流量、文件审计与终端进程"
+    ]
+  },
+  "observableSignals": [
+    "载荷写入共享目录并借助 P2P 协议或节点发现继续传播",
+    "多个资产出现相同异常并横向扩散",
+    "同一进程或文件触发连续网络连接"
+  ],
+  "requiredTelemetry": [
+    "Wazuh 主机与应用日志",
+    "消息代理审计",
+    "设备管理审计",
+    "设备身份日志",
+    "P2P 流量、文件审计与终端进程"
+  ],
+  "evidenceRequired": [
+    "共享文件哈希、P2P 进程、节点连接和跨资产命中",
+    "跨资产时间线",
+    "文件、进程和网络关联"
+  ],
+  "evidencePolicy": {
+    "kind": "minimum_independent_evidence",
+    "minimumIndependentEvidence": 2,
+    "basis": "内部安全运营经验与边界验证记录共同确认",
+    "statisticalThreshold": false,
+    "calibrationRule": "任何频率、比例或风险分数阈值必须引用已完成人工复核的 Wazuh 告警与工单记录"
+  },
+  "supportingEvidence": [
+    "至少两类相互独立证据支持P2P-Worm判断",
+    "事件时间、主体、资产和动作可形成一致时间线"
+  ],
+  "counterexamples": [
+    "批准的点对点分发使用签名内容",
+    "集中软件分发",
+    "批量资产管理任务"
+  ],
+  "falsePositiveConditions": [
+    "授权活动未与审批记录正确关联",
+    "资产或协议标签配置错误"
+  ],
+  "falseNegativeConditions": [
+    "关键遥测未接入或采集间断",
+    "攻击行为变形且未触发现有规则"
+  ],
+  "bypassPoints": [
+    "攻击者使用可信账号或合法工具隐藏行为",
+    "跨资产分阶段执行导致单点证据不足"
+  ],
+  "unusableFields": [
+    {
+      "field": "rule.level",
+      "reason": "单一规则等级不能完成攻击定性"
+    },
+    {
+      "field": "source.ip",
+      "reason": "单一来源地址不能证明主体或攻击意图"
+    }
+  ],
+  "judgment": {
+    "confirmed": "escalate_with_manual_review",
+    "authorizedOrBenign": "suppress_with_manual_review",
+    "insufficientEvidence": "request_additional_evidence",
+    "unmatched": "manual_classification"
+  },
+  "recommendedAction": "记录研判结果，创建人工工单并发送飞书通知，等待人工确认后处置。",
+  "policyStatus": "operational_knowledge",
+  "autoCloseAllowed": false,
+  "ticketRequired": true,
+  "knowledgeStatement": "在物联网平台安全中，P2P-Worm必须由告警、资产、身份或网络等多源证据共同支持；证据不足时不得自动定性或关闭。",
+  "reviewFocus": "确认传播由 P2P 共享机制驱动",
+  "provenance": {
+    "sourceClass": "internal_security_operations_experience",
+    "sourceDescription": "内部安全运营经验整理"
+  },
+  "consumedBy": [
+    "security.ops.v1.SecurityOpsService/MatchKnowledge",
+    "security.ops.v1.SecurityOpsService/EvaluatePolicy"
+  ],
+  "version": "2026.09.01",
+  "reviewStatus": "approved",
+  "reviewedBy": "zhangyuqiao",
+  "reviewedAt": "2026-09-01T22:49:09.998Z",
+  "reviewMarker": "Reviewed_Approved"
+}

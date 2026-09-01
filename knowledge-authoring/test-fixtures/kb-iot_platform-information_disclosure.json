@@ -1,0 +1,87 @@
+[
+  {
+    "knowledgeId": "kb-iot_platform-information_disclosure",
+    "domainId": "iot_platform",
+    "attackTypeId": "information_disclosure",
+    "fixtureId": "kb-iot_platform-information_disclosure-confirmed-attack",
+    "scenarioType": "confirmed_attack",
+    "input": {
+      "evidence": [
+        "数据分类、访问主体、响应或文件内容和脱敏策略",
+        "数据分类与访问主体",
+        "响应或文件访问审计"
+      ],
+      "authorizationRecord": false,
+      "recurrence": 1
+    },
+    "expected": {
+      "action": "escalate_with_manual_review",
+      "ticketRequired": true,
+      "autoCloseAllowed": false
+    }
+  },
+  {
+    "knowledgeId": "kb-iot_platform-information_disclosure",
+    "domainId": "iot_platform",
+    "attackTypeId": "information_disclosure",
+    "fixtureId": "kb-iot_platform-information_disclosure-authorized-or-benign",
+    "scenarioType": "authorized_or_benign",
+    "input": {
+      "evidence": [
+        "数据分类、访问主体、响应或文件内容和脱敏策略",
+        "数据分类与访问主体",
+        "响应或文件访问审计"
+      ],
+      "authorizationRecord": true,
+      "recurrence": 1
+    },
+    "expected": {
+      "action": "suppress_with_manual_review",
+      "ticketRequired": true,
+      "autoCloseAllowed": false
+    }
+  },
+  {
+    "knowledgeId": "kb-iot_platform-information_disclosure",
+    "domainId": "iot_platform",
+    "attackTypeId": "information_disclosure",
+    "fixtureId": "kb-iot_platform-information_disclosure-insufficient-evidence",
+    "scenarioType": "insufficient_evidence",
+    "input": {
+      "evidence": [
+        "数据分类、访问主体、响应或文件内容和脱敏策略"
+      ],
+      "authorizationRecord": false,
+      "recurrence": 1
+    },
+    "expected": {
+      "action": "request_additional_evidence",
+      "ticketRequired": true,
+      "autoCloseAllowed": false
+    }
+  },
+  {
+    "knowledgeId": "kb-iot_platform-information_disclosure",
+    "domainId": "iot_platform",
+    "attackTypeId": "information_disclosure",
+    "fixtureId": "kb-iot_platform-information_disclosure-compound-or-recurrent",
+    "scenarioType": "compound_or_recurrent",
+    "input": {
+      "evidence": [
+        "数据分类、访问主体、响应或文件内容和脱敏策略",
+        "数据分类与访问主体",
+        "响应或文件访问审计"
+      ],
+      "authorizationRecord": false,
+      "recurrence": 3,
+      "relatedAttackTypes": [
+        "information_disclosure"
+      ]
+    },
+    "expected": {
+      "action": "escalate_with_manual_review",
+      "ticketRequired": true,
+      "autoCloseAllowed": false
+    }
+  }
+]

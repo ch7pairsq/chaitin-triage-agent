@@ -1,0 +1,87 @@
+[
+  {
+    "knowledgeId": "kb-industrial_internet-command_execution",
+    "domainId": "industrial_internet",
+    "attackTypeId": "command_execution",
+    "fixtureId": "kb-industrial_internet-command_execution-confirmed-attack",
+    "scenarioType": "confirmed_attack",
+    "input": {
+      "evidence": [
+        "输入参数、应用调用链、子进程命令行和执行结果",
+        "进程树与命令行",
+        "文件哈希及创建来源"
+      ],
+      "authorizationRecord": false,
+      "recurrence": 1
+    },
+    "expected": {
+      "action": "escalate_with_manual_review",
+      "ticketRequired": true,
+      "autoCloseAllowed": false
+    }
+  },
+  {
+    "knowledgeId": "kb-industrial_internet-command_execution",
+    "domainId": "industrial_internet",
+    "attackTypeId": "command_execution",
+    "fixtureId": "kb-industrial_internet-command_execution-authorized-or-benign",
+    "scenarioType": "authorized_or_benign",
+    "input": {
+      "evidence": [
+        "输入参数、应用调用链、子进程命令行和执行结果",
+        "进程树与命令行",
+        "文件哈希及创建来源"
+      ],
+      "authorizationRecord": true,
+      "recurrence": 1
+    },
+    "expected": {
+      "action": "suppress_with_manual_review",
+      "ticketRequired": true,
+      "autoCloseAllowed": false
+    }
+  },
+  {
+    "knowledgeId": "kb-industrial_internet-command_execution",
+    "domainId": "industrial_internet",
+    "attackTypeId": "command_execution",
+    "fixtureId": "kb-industrial_internet-command_execution-insufficient-evidence",
+    "scenarioType": "insufficient_evidence",
+    "input": {
+      "evidence": [
+        "输入参数、应用调用链、子进程命令行和执行结果"
+      ],
+      "authorizationRecord": false,
+      "recurrence": 1
+    },
+    "expected": {
+      "action": "request_additional_evidence",
+      "ticketRequired": true,
+      "autoCloseAllowed": false
+    }
+  },
+  {
+    "knowledgeId": "kb-industrial_internet-command_execution",
+    "domainId": "industrial_internet",
+    "attackTypeId": "command_execution",
+    "fixtureId": "kb-industrial_internet-command_execution-compound-or-recurrent",
+    "scenarioType": "compound_or_recurrent",
+    "input": {
+      "evidence": [
+        "输入参数、应用调用链、子进程命令行和执行结果",
+        "进程树与命令行",
+        "文件哈希及创建来源"
+      ],
+      "authorizationRecord": false,
+      "recurrence": 3,
+      "relatedAttackTypes": [
+        "command_execution"
+      ]
+    },
+    "expected": {
+      "action": "escalate_with_manual_review",
+      "ticketRequired": true,
+      "autoCloseAllowed": false
+    }
+  }
+]

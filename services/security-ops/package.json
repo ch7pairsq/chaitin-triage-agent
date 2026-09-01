@@ -1,0 +1,38 @@
+{
+  "name": "@chaitin-triage/security-ops",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "OctoBus SecurityOps service for Wazuh alert triage, business audit, manual tickets and Feishu delivery",
+  "bin": {
+    "security-ops": "src/runtime.js"
+  },
+  "files": [
+    "src/",
+    "proto/",
+    "migrations/",
+    "resources/",
+    "tools/validate-package.mjs",
+    "service.json",
+    "config.schema.json",
+    "secret.schema.json",
+    "README.md"
+  ],
+  "scripts": {
+    "check": "node --check src/errors.js && node --check src/validation.js && node --check src/decision-token.js && node --check src/knowledge-repository.js && node --check src/outbox.js && node --check src/store.js && node --check src/service.js && node --check src/runtime.js",
+    "build:descriptor": "protoc --descriptor_set_out=proto/descriptor.pb --include_imports -I proto proto/security_ops.proto",
+    "validate:package": "npm run build:descriptor && node tools/validate-package.mjs",
+    "validate:deployment": "node tools/validate-deployment.mjs",
+    "test": "node --test",
+    "pack:check": "npm pack --dry-run"
+  },
+  "engines": {
+    "node": ">=22.12"
+  },
+  "dependencies": {
+    "@chaitin-ai/octobus-sdk": "0.6.0"
+  },
+  "devDependencies": {
+    "protoc": "36.0.0"
+  }
+}

@@ -1,72 +1,32 @@
 name: chaitin-triage-agent
-env_file: .env
-
-volumes:
-  private-knowledge:
-    name: chaitin-private-knowledge-base
-    external: true
-  state-data:
-    name: chaitin-triage-state
-    external: true
+env_file: ${AGENT_COMPOSE_PROJECT_ENV_FILE:-.env}
 
 octobus_servers:
+  wazuh:
+    url: ${OCTOBUS_BASE_URL}
+    token: ${WAZUH_INGRESS_TOKEN}
   triage:
     url: ${OCTOBUS_BASE_URL}
-    token: ${OCTOBUS_TOKEN}
+    token: ${TRIAGE_RUNNER_TOKEN}
 
 agents:
   triage-operator:
     provider: codex
-    image: chaitin/agent-compose-guest:latest
+    image: ${AGENT_COMPOSE_GUEST_IMAGE}
     driver:
       docker: {}
-    workspace:
-      provider: file
-      path: .
-    volumes:
-      - type: volume
-        source: private-knowledge
-        target: /knowledge
-        read_only: true
-      - type: volume
-        source: state-data
-        target: /triage-state
-    # qualified capset id: <server>/<capset>
-    # server 名必须与上方 octobus_servers.triage 键名一致。
     capset_ids:
-      - triage/security-triage
-    env:
-      SECURITY_TRIAGE_OCTOBUS_BASE_URL: ${SECURITY_TRIAGE_OCTOBUS_BASE_URL}
-      SECURITY_TRIAGE_OCTOBUS_CAPSET_ID: ${SECURITY_TRIAGE_OCTOBUS_CAPSET_ID}
-      SECURITY_TRIAGE_OCTOBUS_INSTANCE_ID: ${SECURITY_TRIAGE_OCTOBUS_INSTANCE_ID}
-      SECURITY_TRIAGE_OCTOBUS_FULL_SERVICE: ${SECURITY_TRIAGE_OCTOBUS_FULL_SERVICE}
-      SECURITY_TRIAGE_OCTOBUS_TOKEN:
-        value: ${SECURITY_TRIAGE_OCTOBUS_TOKEN}
-        secret: true
-      SECURITY_TRIAGE_STATE_DB_PATH: ${SECURITY_TRIAGE_STATE_DB_PATH}
-      TRIAGE_AUDIT_LOG_PATH: /triage-state/audit.log
-      SECURITY_TRIAGE_THREAT_EVIDENCE_PATH: ${SECURITY_TRIAGE_THREAT_EVIDENCE_PATH}
-      SECURITY_TRIAGE_LLM_REAL_CALL: ${SECURITY_TRIAGE_LLM_REAL_CALL}
-      SECURITY_TRIAGE_LLM_API_BASE: ${SECURITY_TRIAGE_LLM_API_BASE}
-      SECURITY_TRIAGE_LLM_MODEL: ${SECURITY_TRIAGE_LLM_MODEL}
-      SECURITY_TRIAGE_LLM_TIMEOUT_MS: ${SECURITY_TRIAGE_LLM_TIMEOUT_MS}
-      SECURITY_TRIAGE_LLM_API_KEY:
-        value: ${SECURITY_TRIAGE_LLM_API_KEY}
-        secret: true
-      WECOM_WEBHOOK_URL:
-        value: ${WECOM_WEBHOOK_URL}
-        secret: true
-      WECOM_TIMEOUT_MS: ${WECOM_TIMEOUT_MS}
+      - wazuh/wazuh-ingress
+      - triage/triage-runner
     system_prompt: |
-      You operate Chaitin Triage Agent (security alert triage demo) through approved OctoBus capabilities.
-      Route alert IDs only through `cd agent && node src/interfaces/cli.js --workflow security --alert-id <id>`.
-      The triage/security-triage capset tools are available to you through the daemon capability proxy;
-      use them for capability inspection only, never to bypass the CLI workflow.
-      Never call a backend directly. The workflow preserves trace IDs, retains only minimized state, and
-      requires human review for non-deterministic decisions.
+      You orchestrate Wazuh alert ingestion and security alert triage only through the OctoBus MCP
+      tools exposed by the wazuh-ingress and triage-runner capsets. Never call Wazuh, SQLite, Feishu, HTTP endpoints, shell commands,
+      local files, or service implementations directly. Treat SecurityOps responses as the
+      authoritative business state. Use returned evidence and identifiers exactly, preserve the
+      decisionToken unchanged, and never invent evidence, decisions, actions, tickets, delivery
+      status, or terminal state. Every path requires a manual ticket and must not auto-close.
     scheduler:
       enabled: true
-      triggers:
-        - name: hourly-security-triage
-          cron: "0 * * * *"
-          prompt: "Execute exactly this approved business workflow: cd agent && node src/interfaces/cli.js --workflow security --alert-id A-1001. Return the terminal JSON including traceId, status, action, evidenceRefs, recorded and narrativeSource."
+      script:
+        provider: file
+        path: ./scheduler/triage-scheduler.js

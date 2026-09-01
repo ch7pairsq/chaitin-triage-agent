@@ -1,0 +1,93 @@
+import dgram from "node:dgram";
+import { pathToFileURL } from "node:url";
+
+const profiles = Object.freeze([
+  {
+    domain_id: "vehicle_platform",
+    attack_type_id: "brute_force",
+    asset_id: "vehicle-cloud-auth-gateway",
+    protocol: "HTTPS",
+    srcip: "198.51.100.41",
+    dstuser: "fleet-operator",
+    outcome: "failed"
+  },
+  {
+    domain_id: "iot_platform",
+    attack_type_id: "unauthorized_access",
+    asset_id: "iot-device-management-api",
+    protocol: "MQTT",
+    srcip: "198.51.100.42",
+    dstuser: "device-service",
+    outcome: "denied"
+  },
+  {
+    domain_id: "industrial_internet",
+    attack_type_id: "command_execution",
+    asset_id: "industrial-edge-gateway",
+    protocol: "OPC-UA",
+    srcip: "198.51.100.43",
+    dstuser: "edge-runtime",
+    outcome: "blocked"
+  }
+]);
+
+export function buildEvent({ sequence, now = new Date() }) {
+  if (!Number.isSafeInteger(sequence) || sequence < 0) throw new TypeError("sequence must be a non-negative safe integer");
+  const profile = profiles[sequence % profiles.length];
+  return {
+    security_program: "triage_event_injector",
+    event_version: "1",
+    event_id: `test-event-${now.getTime()}-${sequence}`,
+    occurred_at: now.toISOString(),
+    authorized: false,
+    ...profile
+  };
+}
+
+export function sendEvent(event, { host, port, socketFactory = () => dgram.createSocket("udp4") }) {
+  if (!host) return Promise.reject(new TypeError("WAZUH_SYSLOG_HOST is required"));
+  if (!Number.isInteger(port) || port < 1 || port > 65535) return Promise.reject(new TypeError("WAZUH_SYSLOG_PORT is invalid"));
+  const payload = Buffer.from(JSON.stringify(event));
+  const socket = socketFactory();
+  return new Promise((resolve, reject) => {
+    socket.send(payload, port, host, (error) => {
+      socket.close();
+      if (error) reject(error);
+      else resolve({ bytes: payload.length, eventId: event.event_id });
+    });
+  });
+}
+
+export async function run({
+  host = process.env.WAZUH_SYSLOG_HOST,
+  port = Number(process.env.WAZUH_SYSLOG_PORT ?? 514),
+  intervalMs = Number(process.env.INJECT_INTERVAL_MS ?? 300_000),
+  enabled = String(process.env.INJECT_ENABLED ?? "false").toLowerCase() === "true",
+  once = String(process.env.INJECT_ONCE ?? "false").toLowerCase() === "true",
+  socketFactory
+} = {}) {
+  if (!enabled) {
+    console.log(JSON.stringify({ status: "disabled" }));
+    return;
+  }
+  if (!Number.isInteger(intervalMs) || intervalMs < 60_000 || intervalMs > 86_400_000) {
+    throw new TypeError("INJECT_INTERVAL_MS must be between 60000 and 86400000");
+  }
+  let sequence = 0;
+  const emit = async () => {
+    const event = buildEvent({ sequence: sequence++ });
+    const result = await sendEvent(event, { host, port, ...(socketFactory ? { socketFactory } : {}) });
+    console.log(JSON.stringify({ status: "sent", eventId: result.eventId, bytes: result.bytes }));
+  };
+  await emit();
+  if (once) return () => {};
+  const timer = setInterval(() => emit().catch((error) => console.error(JSON.stringify({ status: "failed", message: error.message }))), intervalMs);
+  return () => clearInterval(timer);
+}
+
+if (import.meta.url === pathToFileURL(process.argv[1]).href) {
+  run().catch((error) => {
+    console.error(JSON.stringify({ status: "failed", message: error.message }));
+    process.exitCode = 1;
+  });
+}

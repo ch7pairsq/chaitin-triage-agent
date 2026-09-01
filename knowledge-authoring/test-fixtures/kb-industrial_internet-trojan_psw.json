@@ -1,0 +1,87 @@
+[
+  {
+    "knowledgeId": "kb-industrial_internet-trojan_psw",
+    "domainId": "industrial_internet",
+    "attackTypeId": "trojan_psw",
+    "fixtureId": "kb-industrial_internet-trojan_psw-confirmed-attack",
+    "scenarioType": "confirmed_attack",
+    "input": {
+      "evidence": [
+        "凭据访问、进程树、文件哈希和外联目的地",
+        "文件哈希与签名",
+        "进程树、持久化和网络证据"
+      ],
+      "authorizationRecord": false,
+      "recurrence": 1
+    },
+    "expected": {
+      "action": "escalate_with_manual_review",
+      "ticketRequired": true,
+      "autoCloseAllowed": false
+    }
+  },
+  {
+    "knowledgeId": "kb-industrial_internet-trojan_psw",
+    "domainId": "industrial_internet",
+    "attackTypeId": "trojan_psw",
+    "fixtureId": "kb-industrial_internet-trojan_psw-authorized-or-benign",
+    "scenarioType": "authorized_or_benign",
+    "input": {
+      "evidence": [
+        "凭据访问、进程树、文件哈希和外联目的地",
+        "文件哈希与签名",
+        "进程树、持久化和网络证据"
+      ],
+      "authorizationRecord": true,
+      "recurrence": 1
+    },
+    "expected": {
+      "action": "suppress_with_manual_review",
+      "ticketRequired": true,
+      "autoCloseAllowed": false
+    }
+  },
+  {
+    "knowledgeId": "kb-industrial_internet-trojan_psw",
+    "domainId": "industrial_internet",
+    "attackTypeId": "trojan_psw",
+    "fixtureId": "kb-industrial_internet-trojan_psw-insufficient-evidence",
+    "scenarioType": "insufficient_evidence",
+    "input": {
+      "evidence": [
+        "凭据访问、进程树、文件哈希和外联目的地"
+      ],
+      "authorizationRecord": false,
+      "recurrence": 1
+    },
+    "expected": {
+      "action": "request_additional_evidence",
+      "ticketRequired": true,
+      "autoCloseAllowed": false
+    }
+  },
+  {
+    "knowledgeId": "kb-industrial_internet-trojan_psw",
+    "domainId": "industrial_internet",
+    "attackTypeId": "trojan_psw",
+    "fixtureId": "kb-industrial_internet-trojan_psw-compound-or-recurrent",
+    "scenarioType": "compound_or_recurrent",
+    "input": {
+      "evidence": [
+        "凭据访问、进程树、文件哈希和外联目的地",
+        "文件哈希与签名",
+        "进程树、持久化和网络证据"
+      ],
+      "authorizationRecord": false,
+      "recurrence": 3,
+      "relatedAttackTypes": [
+        "trojan_psw"
+      ]
+    },
+    "expected": {
+      "action": "escalate_with_manual_review",
+      "ticketRequired": true,
+      "autoCloseAllowed": false
+    }
+  }
+]

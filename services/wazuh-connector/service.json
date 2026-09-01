@@ -1,0 +1,15 @@
+{
+  "schema": "chaitin.octobus.service.v1",
+  "name": "wazuh-connector",
+  "displayName": "Wazuh Alert Connector",
+  "description": "通过 Wazuh Indexer API 查询真实告警并以最小化契约提供给 Agent",
+  "runtime": {
+    "mode": "long-running"
+  },
+  "proto": {
+    "roots": ["proto"],
+    "files": ["proto/wazuh_connector.proto"]
+  },
+  "configSchema": "config.schema.json",
+  "secretSchema": "secret.schema.json"
+}

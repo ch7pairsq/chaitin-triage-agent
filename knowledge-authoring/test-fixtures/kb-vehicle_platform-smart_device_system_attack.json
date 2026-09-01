@@ -1,0 +1,87 @@
+[
+  {
+    "knowledgeId": "kb-vehicle_platform-smart_device_system_attack",
+    "domainId": "vehicle_platform",
+    "attackTypeId": "smart_device_system_attack",
+    "fixtureId": "kb-vehicle_platform-smart_device_system_attack-confirmed-attack",
+    "scenarioType": "confirmed_attack",
+    "input": {
+      "evidence": [
+        "固件签名、启动完整性、设备身份和指令审计",
+        "固件与配置完整性",
+        "设备身份和指令审计"
+      ],
+      "authorizationRecord": false,
+      "recurrence": 1
+    },
+    "expected": {
+      "action": "escalate_with_manual_review",
+      "ticketRequired": true,
+      "autoCloseAllowed": false
+    }
+  },
+  {
+    "knowledgeId": "kb-vehicle_platform-smart_device_system_attack",
+    "domainId": "vehicle_platform",
+    "attackTypeId": "smart_device_system_attack",
+    "fixtureId": "kb-vehicle_platform-smart_device_system_attack-authorized-or-benign",
+    "scenarioType": "authorized_or_benign",
+    "input": {
+      "evidence": [
+        "固件签名、启动完整性、设备身份和指令审计",
+        "固件与配置完整性",
+        "设备身份和指令审计"
+      ],
+      "authorizationRecord": true,
+      "recurrence": 1
+    },
+    "expected": {
+      "action": "suppress_with_manual_review",
+      "ticketRequired": true,
+      "autoCloseAllowed": false
+    }
+  },
+  {
+    "knowledgeId": "kb-vehicle_platform-smart_device_system_attack",
+    "domainId": "vehicle_platform",
+    "attackTypeId": "smart_device_system_attack",
+    "fixtureId": "kb-vehicle_platform-smart_device_system_attack-insufficient-evidence",
+    "scenarioType": "insufficient_evidence",
+    "input": {
+      "evidence": [
+        "固件签名、启动完整性、设备身份和指令审计"
+      ],
+      "authorizationRecord": false,
+      "recurrence": 1
+    },
+    "expected": {
+      "action": "request_additional_evidence",
+      "ticketRequired": true,
+      "autoCloseAllowed": false
+    }
+  },
+  {
+    "knowledgeId": "kb-vehicle_platform-smart_device_system_attack",
+    "domainId": "vehicle_platform",
+    "attackTypeId": "smart_device_system_attack",
+    "fixtureId": "kb-vehicle_platform-smart_device_system_attack-compound-or-recurrent",
+    "scenarioType": "compound_or_recurrent",
+    "input": {
+      "evidence": [
+        "固件签名、启动完整性、设备身份和指令审计",
+        "固件与配置完整性",
+        "设备身份和指令审计"
+      ],
+      "authorizationRecord": false,
+      "recurrence": 3,
+      "relatedAttackTypes": [
+        "smart_device_system_attack"
+      ]
+    },
+    "expected": {
+      "action": "escalate_with_manual_review",
+      "ticketRequired": true,
+      "autoCloseAllowed": false
+    }
+  }
+]

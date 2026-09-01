@@ -1,0 +1,401 @@
+{
+  "version": "2026.09.01",
+  "knowledge": [
+    {
+      "knowledgeId": "kb-vehicle_platform-denial_of_service",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-vehicle_platform-sniffing",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-vehicle_platform-dns_hijacking",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-vehicle_platform-brute_force",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-vehicle_platform-sql_injection",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-vehicle_platform-webshell",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-vehicle_platform-xss",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-vehicle_platform-request_forgery",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-vehicle_platform-xml_external_entity",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-vehicle_platform-command_execution",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-vehicle_platform-code_execution",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-vehicle_platform-business_logic_exploitation",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-vehicle_platform-unauthorized_access",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-vehicle_platform-information_disclosure",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-vehicle_platform-file_inclusion",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-vehicle_platform-other_attack",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-vehicle_platform-buffer_overflow",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-vehicle_platform-privilege_escalation",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-vehicle_platform-system_code_execution",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-vehicle_platform-smart_device_system_attack",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-vehicle_platform-network_worm",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-vehicle_platform-mail_worm",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-vehicle_platform-p2p_worm",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-vehicle_platform-im_worm",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-vehicle_platform-web_worm",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-vehicle_platform-trojan_psw",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-vehicle_platform-trojan_downloader",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-vehicle_platform-trojan_clicker",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-vehicle_platform-trojan_spy",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-vehicle_platform-trojan_proxy",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-vehicle_platform-trojan",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-vehicle_platform-trojan_dropper",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-vehicle_platform-remote_access_trojan",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-iot_platform-denial_of_service",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-iot_platform-sniffing",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-iot_platform-dns_hijacking",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-iot_platform-brute_force",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-iot_platform-sql_injection",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-iot_platform-webshell",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-iot_platform-xss",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-iot_platform-request_forgery",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-iot_platform-xml_external_entity",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-iot_platform-command_execution",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-iot_platform-code_execution",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-iot_platform-business_logic_exploitation",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-iot_platform-unauthorized_access",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-iot_platform-information_disclosure",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-iot_platform-file_inclusion",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-iot_platform-other_attack",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-iot_platform-buffer_overflow",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-iot_platform-privilege_escalation",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-iot_platform-system_code_execution",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-iot_platform-smart_device_system_attack",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-iot_platform-network_worm",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-iot_platform-mail_worm",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-iot_platform-p2p_worm",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-iot_platform-im_worm",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-iot_platform-web_worm",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-iot_platform-trojan_psw",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-iot_platform-trojan_downloader",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-iot_platform-trojan_clicker",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-iot_platform-trojan_spy",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-iot_platform-trojan_proxy",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-iot_platform-trojan",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-iot_platform-trojan_dropper",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-iot_platform-remote_access_trojan",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-industrial_internet-denial_of_service",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-industrial_internet-sniffing",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-industrial_internet-dns_hijacking",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-industrial_internet-brute_force",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-industrial_internet-sql_injection",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-industrial_internet-webshell",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-industrial_internet-xss",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-industrial_internet-request_forgery",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-industrial_internet-xml_external_entity",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-industrial_internet-command_execution",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-industrial_internet-code_execution",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-industrial_internet-business_logic_exploitation",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-industrial_internet-unauthorized_access",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-industrial_internet-information_disclosure",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-industrial_internet-file_inclusion",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-industrial_internet-other_attack",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-industrial_internet-buffer_overflow",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-industrial_internet-privilege_escalation",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-industrial_internet-system_code_execution",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-industrial_internet-smart_device_system_attack",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-industrial_internet-network_worm",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-industrial_internet-mail_worm",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-industrial_internet-p2p_worm",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-industrial_internet-im_worm",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-industrial_internet-web_worm",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-industrial_internet-trojan_psw",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-industrial_internet-trojan_downloader",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-industrial_internet-trojan_clicker",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-industrial_internet-trojan_spy",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-industrial_internet-trojan_proxy",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-industrial_internet-trojan",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-industrial_internet-trojan_dropper",
+      "reviewStatus": "approved"
+    },
+    {
+      "knowledgeId": "kb-industrial_internet-remote_access_trojan",
+      "reviewStatus": "approved"
+    }
+  ]
+}

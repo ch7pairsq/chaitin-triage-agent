@@ -1,0 +1,87 @@
+[
+  {
+    "knowledgeId": "kb-vehicle_platform-sniffing",
+    "domainId": "vehicle_platform",
+    "attackTypeId": "sniffing",
+    "fixtureId": "kb-vehicle_platform-sniffing-confirmed-attack",
+    "scenarioType": "confirmed_attack",
+    "input": {
+      "evidence": [
+        "进程身份、网卡模式变更与抓包文件创建记录",
+        "进程与网卡状态证据",
+        "网络流量或终端检测证据"
+      ],
+      "authorizationRecord": false,
+      "recurrence": 1
+    },
+    "expected": {
+      "action": "escalate_with_manual_review",
+      "ticketRequired": true,
+      "autoCloseAllowed": false
+    }
+  },
+  {
+    "knowledgeId": "kb-vehicle_platform-sniffing",
+    "domainId": "vehicle_platform",
+    "attackTypeId": "sniffing",
+    "fixtureId": "kb-vehicle_platform-sniffing-authorized-or-benign",
+    "scenarioType": "authorized_or_benign",
+    "input": {
+      "evidence": [
+        "进程身份、网卡模式变更与抓包文件创建记录",
+        "进程与网卡状态证据",
+        "网络流量或终端检测证据"
+      ],
+      "authorizationRecord": true,
+      "recurrence": 1
+    },
+    "expected": {
+      "action": "suppress_with_manual_review",
+      "ticketRequired": true,
+      "autoCloseAllowed": false
+    }
+  },
+  {
+    "knowledgeId": "kb-vehicle_platform-sniffing",
+    "domainId": "vehicle_platform",
+    "attackTypeId": "sniffing",
+    "fixtureId": "kb-vehicle_platform-sniffing-insufficient-evidence",
+    "scenarioType": "insufficient_evidence",
+    "input": {
+      "evidence": [
+        "进程身份、网卡模式变更与抓包文件创建记录"
+      ],
+      "authorizationRecord": false,
+      "recurrence": 1
+    },
+    "expected": {
+      "action": "request_additional_evidence",
+      "ticketRequired": true,
+      "autoCloseAllowed": false
+    }
+  },
+  {
+    "knowledgeId": "kb-vehicle_platform-sniffing",
+    "domainId": "vehicle_platform",
+    "attackTypeId": "sniffing",
+    "fixtureId": "kb-vehicle_platform-sniffing-compound-or-recurrent",
+    "scenarioType": "compound_or_recurrent",
+    "input": {
+      "evidence": [
+        "进程身份、网卡模式变更与抓包文件创建记录",
+        "进程与网卡状态证据",
+        "网络流量或终端检测证据"
+      ],
+      "authorizationRecord": false,
+      "recurrence": 3,
+      "relatedAttackTypes": [
+        "sniffing"
+      ]
+    },
+    "expected": {
+      "action": "escalate_with_manual_review",
+      "ticketRequired": true,
+      "autoCloseAllowed": false
+    }
+  }
+]

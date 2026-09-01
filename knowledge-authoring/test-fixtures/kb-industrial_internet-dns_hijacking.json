@@ -1,0 +1,87 @@
+[
+  {
+    "knowledgeId": "kb-industrial_internet-dns_hijacking",
+    "domainId": "industrial_internet",
+    "attackTypeId": "dns_hijacking",
+    "fixtureId": "kb-industrial_internet-dns_hijacking-confirmed-attack",
+    "scenarioType": "confirmed_attack",
+    "input": {
+      "evidence": [
+        "同一域名的请求响应、配置变更和可信解析基线",
+        "解析请求与响应记录",
+        "配置变更审计"
+      ],
+      "authorizationRecord": false,
+      "recurrence": 1
+    },
+    "expected": {
+      "action": "escalate_with_manual_review",
+      "ticketRequired": true,
+      "autoCloseAllowed": false
+    }
+  },
+  {
+    "knowledgeId": "kb-industrial_internet-dns_hijacking",
+    "domainId": "industrial_internet",
+    "attackTypeId": "dns_hijacking",
+    "fixtureId": "kb-industrial_internet-dns_hijacking-authorized-or-benign",
+    "scenarioType": "authorized_or_benign",
+    "input": {
+      "evidence": [
+        "同一域名的请求响应、配置变更和可信解析基线",
+        "解析请求与响应记录",
+        "配置变更审计"
+      ],
+      "authorizationRecord": true,
+      "recurrence": 1
+    },
+    "expected": {
+      "action": "suppress_with_manual_review",
+      "ticketRequired": true,
+      "autoCloseAllowed": false
+    }
+  },
+  {
+    "knowledgeId": "kb-industrial_internet-dns_hijacking",
+    "domainId": "industrial_internet",
+    "attackTypeId": "dns_hijacking",
+    "fixtureId": "kb-industrial_internet-dns_hijacking-insufficient-evidence",
+    "scenarioType": "insufficient_evidence",
+    "input": {
+      "evidence": [
+        "同一域名的请求响应、配置变更和可信解析基线"
+      ],
+      "authorizationRecord": false,
+      "recurrence": 1
+    },
+    "expected": {
+      "action": "request_additional_evidence",
+      "ticketRequired": true,
+      "autoCloseAllowed": false
+    }
+  },
+  {
+    "knowledgeId": "kb-industrial_internet-dns_hijacking",
+    "domainId": "industrial_internet",
+    "attackTypeId": "dns_hijacking",
+    "fixtureId": "kb-industrial_internet-dns_hijacking-compound-or-recurrent",
+    "scenarioType": "compound_or_recurrent",
+    "input": {
+      "evidence": [
+        "同一域名的请求响应、配置变更和可信解析基线",
+        "解析请求与响应记录",
+        "配置变更审计"
+      ],
+      "authorizationRecord": false,
+      "recurrence": 3,
+      "relatedAttackTypes": [
+        "dns_hijacking"
+      ]
+    },
+    "expected": {
+      "action": "escalate_with_manual_review",
+      "ticketRequired": true,
+      "autoCloseAllowed": false
+    }
+  }
+]

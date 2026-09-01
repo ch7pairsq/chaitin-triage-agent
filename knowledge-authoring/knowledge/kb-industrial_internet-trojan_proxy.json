@@ -1,0 +1,123 @@
+{
+  "knowledgeId": "kb-industrial_internet-trojan_proxy",
+  "domainId": "industrial_internet",
+  "domainName": "工业互联网平台安全",
+  "attackTypeId": "trojan_proxy",
+  "attackTypeName": "代理木马Trojan-Proxy",
+  "aliases": [
+    "Trojan-Proxy"
+  ],
+  "subtypes": [
+    "网络代理",
+    "隧道转发"
+  ],
+  "applicability": "direct",
+  "description": "用于工业互联网平台安全中代理木马Trojan-Proxy的证据化研判，适用于 工业网关、PLC、工程站 等资产。",
+  "assets": [
+    "工业网关",
+    "PLC",
+    "工程站"
+  ],
+  "protocols": [
+    "OPC UA",
+    "Modbus/TCP",
+    "S7"
+  ],
+  "domainFocus": "工程站进程、控制程序、固件与变更审批基线",
+  "wazuhMapping": {
+    "ruleGroups": [
+      "trojan",
+      "trojan_proxy"
+    ],
+    "requiredFields": [
+      "rule.id",
+      "rule.level",
+      "agent.id",
+      "timestamp"
+    ],
+    "wazuhObservability": "partial",
+    "additionalTelemetryRequired": [
+      "网络连接、进程监听与配置审计"
+    ]
+  },
+  "observableSignals": [
+    "主机开启非授权代理、隧道或端口转发供外部使用",
+    "非授权持久化或隐蔽进程",
+    "异常命令控制或数据外传"
+  ],
+  "requiredTelemetry": [
+    "Wazuh 主机与应用日志",
+    "工程站审计",
+    "工业网关日志",
+    "SCADA/MES 审计",
+    "网络连接、进程监听与配置审计"
+  ],
+  "evidenceRequired": [
+    "监听端口、隧道进程、双向流量和持久化项",
+    "文件哈希与签名",
+    "进程树、持久化和网络证据"
+  ],
+  "evidencePolicy": {
+    "kind": "minimum_independent_evidence",
+    "minimumIndependentEvidence": 2,
+    "basis": "内部安全运营经验与边界验证记录共同确认",
+    "statisticalThreshold": false,
+    "calibrationRule": "任何频率、比例或风险分数阈值必须引用已完成人工复核的 Wazuh 告警与工单记录"
+  },
+  "supportingEvidence": [
+    "至少两类相互独立证据支持代理木马Trojan-Proxy判断",
+    "事件时间、主体、资产和动作可形成一致时间线"
+  ],
+  "counterexamples": [
+    "批准的网络代理配置与资产清单一致",
+    "经审批的远程运维工具",
+    "合法代理或监控组件"
+  ],
+  "falsePositiveConditions": [
+    "授权活动未与审批记录正确关联",
+    "资产或协议标签配置错误"
+  ],
+  "falseNegativeConditions": [
+    "关键遥测未接入或采集间断",
+    "攻击行为变形且未触发现有规则"
+  ],
+  "bypassPoints": [
+    "攻击者使用可信账号或合法工具隐藏行为",
+    "跨资产分阶段执行导致单点证据不足"
+  ],
+  "unusableFields": [
+    {
+      "field": "rule.level",
+      "reason": "单一规则等级不能完成攻击定性"
+    },
+    {
+      "field": "source.ip",
+      "reason": "单一来源地址不能证明主体或攻击意图"
+    }
+  ],
+  "judgment": {
+    "confirmed": "escalate_with_manual_review",
+    "authorizedOrBenign": "suppress_with_manual_review",
+    "insufficientEvidence": "request_additional_evidence",
+    "unmatched": "manual_classification"
+  },
+  "recommendedAction": "记录研判结果，创建人工工单并发送飞书通知，等待人工确认后处置。",
+  "policyStatus": "operational_knowledge",
+  "autoCloseAllowed": false,
+  "ticketRequired": true,
+  "knowledgeStatement": "在工业互联网平台安全中，代理木马Trojan-Proxy必须由告警、资产、身份或网络等多源证据共同支持；证据不足时不得自动定性或关闭。",
+  "reviewFocus": "确认主机承担代理转发而非普通客户端通信",
+  "provenance": {
+    "sourceClass": "internal_security_operations_experience",
+    "sourceDescription": "内部安全运营经验整理"
+  },
+  "consumedBy": [
+    "security.ops.v1.SecurityOpsService/MatchKnowledge",
+    "security.ops.v1.SecurityOpsService/EvaluatePolicy"
+  ],
+  "version": "2026.09.01",
+  "reviewStatus": "approved",
+  "reviewedBy": "zhangyuqiao",
+  "reviewedAt": "2026-09-01T22:49:09.998Z",
+  "reviewMarker": "Reviewed_Approved"
+}

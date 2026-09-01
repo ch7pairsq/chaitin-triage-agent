@@ -1,0 +1,87 @@
+[
+  {
+    "knowledgeId": "kb-industrial_internet-sql_injection",
+    "domainId": "industrial_internet",
+    "attackTypeId": "sql_injection",
+    "fixtureId": "kb-industrial_internet-sql_injection-confirmed-attack",
+    "scenarioType": "confirmed_attack",
+    "input": {
+      "evidence": [
+        "规范化请求、数据库审计和应用调用链的参数对应关系",
+        "规范化请求字段",
+        "应用与数据层错误日志"
+      ],
+      "authorizationRecord": false,
+      "recurrence": 1
+    },
+    "expected": {
+      "action": "escalate_with_manual_review",
+      "ticketRequired": true,
+      "autoCloseAllowed": false
+    }
+  },
+  {
+    "knowledgeId": "kb-industrial_internet-sql_injection",
+    "domainId": "industrial_internet",
+    "attackTypeId": "sql_injection",
+    "fixtureId": "kb-industrial_internet-sql_injection-authorized-or-benign",
+    "scenarioType": "authorized_or_benign",
+    "input": {
+      "evidence": [
+        "规范化请求、数据库审计和应用调用链的参数对应关系",
+        "规范化请求字段",
+        "应用与数据层错误日志"
+      ],
+      "authorizationRecord": true,
+      "recurrence": 1
+    },
+    "expected": {
+      "action": "suppress_with_manual_review",
+      "ticketRequired": true,
+      "autoCloseAllowed": false
+    }
+  },
+  {
+    "knowledgeId": "kb-industrial_internet-sql_injection",
+    "domainId": "industrial_internet",
+    "attackTypeId": "sql_injection",
+    "fixtureId": "kb-industrial_internet-sql_injection-insufficient-evidence",
+    "scenarioType": "insufficient_evidence",
+    "input": {
+      "evidence": [
+        "规范化请求、数据库审计和应用调用链的参数对应关系"
+      ],
+      "authorizationRecord": false,
+      "recurrence": 1
+    },
+    "expected": {
+      "action": "request_additional_evidence",
+      "ticketRequired": true,
+      "autoCloseAllowed": false
+    }
+  },
+  {
+    "knowledgeId": "kb-industrial_internet-sql_injection",
+    "domainId": "industrial_internet",
+    "attackTypeId": "sql_injection",
+    "fixtureId": "kb-industrial_internet-sql_injection-compound-or-recurrent",
+    "scenarioType": "compound_or_recurrent",
+    "input": {
+      "evidence": [
+        "规范化请求、数据库审计和应用调用链的参数对应关系",
+        "规范化请求字段",
+        "应用与数据层错误日志"
+      ],
+      "authorizationRecord": false,
+      "recurrence": 3,
+      "relatedAttackTypes": [
+        "sql_injection"
+      ]
+    },
+    "expected": {
+      "action": "escalate_with_manual_review",
+      "ticketRequired": true,
+      "autoCloseAllowed": false
+    }
+  }
+]

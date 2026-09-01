@@ -1,0 +1,87 @@
+[
+  {
+    "knowledgeId": "kb-industrial_internet-unauthorized_access",
+    "domainId": "industrial_internet",
+    "attackTypeId": "unauthorized_access",
+    "fixtureId": "kb-industrial_internet-unauthorized_access-confirmed-attack",
+    "scenarioType": "confirmed_attack",
+    "input": {
+      "evidence": [
+        "认证上下文、授权策略、目标对象和请求响应",
+        "身份认证与授权日志",
+        "资源权限策略"
+      ],
+      "authorizationRecord": false,
+      "recurrence": 1
+    },
+    "expected": {
+      "action": "escalate_with_manual_review",
+      "ticketRequired": true,
+      "autoCloseAllowed": false
+    }
+  },
+  {
+    "knowledgeId": "kb-industrial_internet-unauthorized_access",
+    "domainId": "industrial_internet",
+    "attackTypeId": "unauthorized_access",
+    "fixtureId": "kb-industrial_internet-unauthorized_access-authorized-or-benign",
+    "scenarioType": "authorized_or_benign",
+    "input": {
+      "evidence": [
+        "认证上下文、授权策略、目标对象和请求响应",
+        "身份认证与授权日志",
+        "资源权限策略"
+      ],
+      "authorizationRecord": true,
+      "recurrence": 1
+    },
+    "expected": {
+      "action": "suppress_with_manual_review",
+      "ticketRequired": true,
+      "autoCloseAllowed": false
+    }
+  },
+  {
+    "knowledgeId": "kb-industrial_internet-unauthorized_access",
+    "domainId": "industrial_internet",
+    "attackTypeId": "unauthorized_access",
+    "fixtureId": "kb-industrial_internet-unauthorized_access-insufficient-evidence",
+    "scenarioType": "insufficient_evidence",
+    "input": {
+      "evidence": [
+        "认证上下文、授权策略、目标对象和请求响应"
+      ],
+      "authorizationRecord": false,
+      "recurrence": 1
+    },
+    "expected": {
+      "action": "request_additional_evidence",
+      "ticketRequired": true,
+      "autoCloseAllowed": false
+    }
+  },
+  {
+    "knowledgeId": "kb-industrial_internet-unauthorized_access",
+    "domainId": "industrial_internet",
+    "attackTypeId": "unauthorized_access",
+    "fixtureId": "kb-industrial_internet-unauthorized_access-compound-or-recurrent",
+    "scenarioType": "compound_or_recurrent",
+    "input": {
+      "evidence": [
+        "认证上下文、授权策略、目标对象和请求响应",
+        "身份认证与授权日志",
+        "资源权限策略"
+      ],
+      "authorizationRecord": false,
+      "recurrence": 3,
+      "relatedAttackTypes": [
+        "unauthorized_access"
+      ]
+    },
+    "expected": {
+      "action": "escalate_with_manual_review",
+      "ticketRequired": true,
+      "autoCloseAllowed": false
+    }
+  }
+]

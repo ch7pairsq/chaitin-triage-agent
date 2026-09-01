@@ -1,0 +1,87 @@
+[
+  {
+    "knowledgeId": "kb-industrial_internet-denial_of_service",
+    "domainId": "industrial_internet",
+    "attackTypeId": "denial_of_service",
+    "fixtureId": "kb-industrial_internet-denial_of_service-confirmed-attack",
+    "scenarioType": "confirmed_attack",
+    "input": {
+      "evidence": [
+        "目标服务资源曲线、错误率与来源分布的同窗关联",
+        "时间窗口内请求与资源曲线",
+        "受影响服务错误日志"
+      ],
+      "authorizationRecord": false,
+      "recurrence": 1
+    },
+    "expected": {
+      "action": "escalate_with_manual_review",
+      "ticketRequired": true,
+      "autoCloseAllowed": false
+    }
+  },
+  {
+    "knowledgeId": "kb-industrial_internet-denial_of_service",
+    "domainId": "industrial_internet",
+    "attackTypeId": "denial_of_service",
+    "fixtureId": "kb-industrial_internet-denial_of_service-authorized-or-benign",
+    "scenarioType": "authorized_or_benign",
+    "input": {
+      "evidence": [
+        "目标服务资源曲线、错误率与来源分布的同窗关联",
+        "时间窗口内请求与资源曲线",
+        "受影响服务错误日志"
+      ],
+      "authorizationRecord": true,
+      "recurrence": 1
+    },
+    "expected": {
+      "action": "suppress_with_manual_review",
+      "ticketRequired": true,
+      "autoCloseAllowed": false
+    }
+  },
+  {
+    "knowledgeId": "kb-industrial_internet-denial_of_service",
+    "domainId": "industrial_internet",
+    "attackTypeId": "denial_of_service",
+    "fixtureId": "kb-industrial_internet-denial_of_service-insufficient-evidence",
+    "scenarioType": "insufficient_evidence",
+    "input": {
+      "evidence": [
+        "目标服务资源曲线、错误率与来源分布的同窗关联"
+      ],
+      "authorizationRecord": false,
+      "recurrence": 1
+    },
+    "expected": {
+      "action": "request_additional_evidence",
+      "ticketRequired": true,
+      "autoCloseAllowed": false
+    }
+  },
+  {
+    "knowledgeId": "kb-industrial_internet-denial_of_service",
+    "domainId": "industrial_internet",
+    "attackTypeId": "denial_of_service",
+    "fixtureId": "kb-industrial_internet-denial_of_service-compound-or-recurrent",
+    "scenarioType": "compound_or_recurrent",
+    "input": {
+      "evidence": [
+        "目标服务资源曲线、错误率与来源分布的同窗关联",
+        "时间窗口内请求与资源曲线",
+        "受影响服务错误日志"
+      ],
+      "authorizationRecord": false,
+      "recurrence": 3,
+      "relatedAttackTypes": [
+        "denial_of_service"
+      ]
+    },
+    "expected": {
+      "action": "escalate_with_manual_review",
+      "ticketRequired": true,
+      "autoCloseAllowed": false
+    }
+  }
+]

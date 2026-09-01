@@ -1,0 +1,87 @@
+[
+  {
+    "knowledgeId": "kb-vehicle_platform-brute_force",
+    "domainId": "vehicle_platform",
+    "attackTypeId": "brute_force",
+    "fixtureId": "kb-vehicle_platform-brute_force-confirmed-attack",
+    "scenarioType": "confirmed_attack",
+    "input": {
+      "evidence": [
+        "认证失败序列、成功登录、设备身份和账号状态",
+        "认证失败与成功日志",
+        "来源地址与设备身份"
+      ],
+      "authorizationRecord": false,
+      "recurrence": 1
+    },
+    "expected": {
+      "action": "escalate_with_manual_review",
+      "ticketRequired": true,
+      "autoCloseAllowed": false
+    }
+  },
+  {
+    "knowledgeId": "kb-vehicle_platform-brute_force",
+    "domainId": "vehicle_platform",
+    "attackTypeId": "brute_force",
+    "fixtureId": "kb-vehicle_platform-brute_force-authorized-or-benign",
+    "scenarioType": "authorized_or_benign",
+    "input": {
+      "evidence": [
+        "认证失败序列、成功登录、设备身份和账号状态",
+        "认证失败与成功日志",
+        "来源地址与设备身份"
+      ],
+      "authorizationRecord": true,
+      "recurrence": 1
+    },
+    "expected": {
+      "action": "suppress_with_manual_review",
+      "ticketRequired": true,
+      "autoCloseAllowed": false
+    }
+  },
+  {
+    "knowledgeId": "kb-vehicle_platform-brute_force",
+    "domainId": "vehicle_platform",
+    "attackTypeId": "brute_force",
+    "fixtureId": "kb-vehicle_platform-brute_force-insufficient-evidence",
+    "scenarioType": "insufficient_evidence",
+    "input": {
+      "evidence": [
+        "认证失败序列、成功登录、设备身份和账号状态"
+      ],
+      "authorizationRecord": false,
+      "recurrence": 1
+    },
+    "expected": {
+      "action": "request_additional_evidence",
+      "ticketRequired": true,
+      "autoCloseAllowed": false
+    }
+  },
+  {
+    "knowledgeId": "kb-vehicle_platform-brute_force",
+    "domainId": "vehicle_platform",
+    "attackTypeId": "brute_force",
+    "fixtureId": "kb-vehicle_platform-brute_force-compound-or-recurrent",
+    "scenarioType": "compound_or_recurrent",
+    "input": {
+      "evidence": [
+        "认证失败序列、成功登录、设备身份和账号状态",
+        "认证失败与成功日志",
+        "来源地址与设备身份"
+      ],
+      "authorizationRecord": false,
+      "recurrence": 3,
+      "relatedAttackTypes": [
+        "brute_force"
+      ]
+    },
+    "expected": {
+      "action": "escalate_with_manual_review",
+      "ticketRequired": true,
+      "autoCloseAllowed": false
+    }
+  }
+]

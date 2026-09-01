@@ -1,0 +1,61 @@
+{
+  "version": "2026.09.01",
+  "domains": [
+    {
+      "domainId": "vehicle_platform",
+      "name": "车联网平台安全",
+      "assets": ["T-Box", "车载网关", "OTA 服务", "车云平台", "设备管理平台"],
+      "protocols": ["GB/T 32960", "JT/T 808", "MQTT", "HTTP", "TLS"],
+      "telemetry": ["Wazuh 主机与应用日志", "车云 API 审计", "OTA 操作日志", "设备身份日志"]
+    },
+    {
+      "domainId": "iot_platform",
+      "name": "物联网平台安全",
+      "assets": ["IoT 网关", "设备管理平台", "消息代理", "OTA 服务", "设备身份服务"],
+      "protocols": ["MQTT", "CoAP", "HTTP", "TLS"],
+      "telemetry": ["Wazuh 主机与应用日志", "消息代理审计", "设备管理审计", "设备身份日志"]
+    },
+    {
+      "domainId": "industrial_internet",
+      "name": "工业互联网平台安全",
+      "assets": ["工业网关", "PLC", "工程站", "SCADA", "MES"],
+      "protocols": ["OPC UA", "Modbus/TCP", "S7", "HTTP", "TLS"],
+      "telemetry": ["Wazuh 主机与应用日志", "工程站审计", "工业网关日志", "SCADA/MES 审计"]
+    }
+  ],
+  "attackTypes": [
+    {"attackTypeId":"denial_of_service","name":"拒绝服务攻击","aliases":["DoS","DDoS","资源耗尽"],"subtypes":["单点拒绝服务","分布式拒绝服务","应用资源耗尽"],"family":"availability"},
+    {"attackTypeId":"sniffing","name":"嗅探攻击","aliases":["流量窃听","网络嗅探"],"subtypes":["明文协议窃听","中间链路捕获"],"family":"network_visibility"},
+    {"attackTypeId":"dns_hijacking","name":"DNS劫持","aliases":["DNS污染","域名解析劫持"],"subtypes":["解析响应篡改","本地解析配置篡改"],"family":"name_resolution"},
+    {"attackTypeId":"brute_force","name":"暴力破解","aliases":["口令爆破","密码猜测"],"subtypes":["单账号多口令","多账号口令喷洒"],"family":"authentication"},
+    {"attackTypeId":"sql_injection","name":"SQL注入","aliases":["SQLi"],"subtypes":["联合查询注入","布尔盲注","时间盲注"],"family":"injection"},
+    {"attackTypeId":"webshell","name":"WebShell","aliases":["网站后门","Web 后门"],"subtypes":["脚本后门","内存驻留后门"],"family":"execution"},
+    {"attackTypeId":"xss","name":"XSS攻击","aliases":["跨站脚本"],"subtypes":["反射型","存储型","DOM 型"],"family":"web"},
+    {"attackTypeId":"request_forgery","name":"请求伪造","aliases":["SSRF","CSRF"],"subtypes":["服务端请求伪造","跨站请求伪造"],"family":"web"},
+    {"attackTypeId":"xml_external_entity","name":"XML实体攻击","aliases":["XXE"],"subtypes":["外部实体读取","外部实体请求"],"family":"injection"},
+    {"attackTypeId":"command_execution","name":"命令执行","aliases":["命令注入"],"subtypes":["系统命令注入","参数拼接执行"],"family":"execution"},
+    {"attackTypeId":"code_execution","name":"代码执行","aliases":["任意代码执行"],"subtypes":["解释器代码执行","反序列化代码执行"],"family":"execution"},
+    {"attackTypeId":"business_logic_exploitation","name":"业务逻辑漏洞利用","aliases":["业务绕过","流程滥用"],"subtypes":["状态绕过","额度绕过","重放利用"],"family":"business_logic"},
+    {"attackTypeId":"unauthorized_access","name":"未授权访问","aliases":["鉴权绕过"],"subtypes":["接口未授权","设备越权","管理端越权"],"family":"access_control"},
+    {"attackTypeId":"information_disclosure","name":"信息泄露","aliases":["敏感信息暴露"],"subtypes":["配置泄露","日志泄露","接口数据泄露"],"family":"disclosure"},
+    {"attackTypeId":"file_inclusion","name":"文件包含","aliases":["LFI","RFI"],"subtypes":["本地文件包含","远程文件包含"],"family":"injection"},
+    {"attackTypeId":"other_attack","name":"其他攻击","aliases":["未分类攻击"],"subtypes":["待人工分类"],"family":"other"},
+    {"attackTypeId":"buffer_overflow","name":"缓存区溢出","aliases":["缓冲区溢出"],"subtypes":["栈溢出","堆溢出"],"family":"memory_safety"},
+    {"attackTypeId":"privilege_escalation","name":"提权","aliases":["权限提升"],"subtypes":["本地提权","服务权限提升"],"family":"privilege"},
+    {"attackTypeId":"system_code_execution","name":"系统代码执行","aliases":["系统级代码执行"],"subtypes":["内核态执行","系统服务代码执行"],"family":"execution"},
+    {"attackTypeId":"smart_device_system_attack","name":"智能设备系统攻击","aliases":["设备固件攻击","智能终端攻击"],"subtypes":["固件篡改","调试接口滥用","设备身份伪造"],"family":"device"},
+    {"attackTypeId":"network_worm","name":"网络蠕虫","aliases":["Network-Worm"],"subtypes":["服务漏洞传播","弱口令传播"],"family":"worm"},
+    {"attackTypeId":"mail_worm","name":"邮件蠕虫","aliases":["Email-Worm"],"subtypes":["恶意附件传播","恶意链接传播"],"family":"worm"},
+    {"attackTypeId":"p2p_worm","name":"P2P-Worm","aliases":["P2P蠕虫"],"subtypes":["共享目录传播","P2P 协议传播"],"family":"worm"},
+    {"attackTypeId":"im_worm","name":"IM-Worm","aliases":["即时通信蠕虫"],"subtypes":["联系人传播","群消息传播"],"family":"worm"},
+    {"attackTypeId":"web_worm","name":"WEB蠕虫","aliases":["Web Worm"],"subtypes":["站点脚本传播","Web 应用跨用户传播"],"family":"worm"},
+    {"attackTypeId":"trojan_psw","name":"盗号木马Trojan-PSW","aliases":["Trojan-PSW","凭据窃取木马"],"subtypes":["浏览器凭据窃取","应用凭据窃取"],"family":"trojan"},
+    {"attackTypeId":"trojan_downloader","name":"下载者木马Trojan-Downloader","aliases":["Trojan-Downloader"],"subtypes":["二阶段载荷下载","脚本下载器"],"family":"trojan"},
+    {"attackTypeId":"trojan_clicker","name":"广告木马Trojan-Clicker","aliases":["Trojan-Clicker"],"subtypes":["广告点击劫持","流量欺诈"],"family":"trojan"},
+    {"attackTypeId":"trojan_spy","name":"间谍木马Trojan-Spy","aliases":["Trojan-Spy"],"subtypes":["键盘记录","屏幕与数据窃取"],"family":"trojan"},
+    {"attackTypeId":"trojan_proxy","name":"代理木马Trojan-Proxy","aliases":["Trojan-Proxy"],"subtypes":["网络代理","隧道转发"],"family":"trojan"},
+    {"attackTypeId":"trojan","name":"木马程序Trojan","aliases":["Trojan"],"subtypes":["持久化木马","加载器木马"],"family":"trojan"},
+    {"attackTypeId":"trojan_dropper","name":"种植者木马Trojan-Dropper","aliases":["Trojan-Dropper"],"subtypes":["文件释放","内存释放"],"family":"trojan"},
+    {"attackTypeId":"remote_access_trojan","name":"远控木马","aliases":["RAT","Remote Access Trojan"],"subtypes":["命令控制","远程桌面控制"],"family":"trojan"}
+  ]
+}

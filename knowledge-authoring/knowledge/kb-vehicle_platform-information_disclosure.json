@@ -1,0 +1,124 @@
+{
+  "knowledgeId": "kb-vehicle_platform-information_disclosure",
+  "domainId": "vehicle_platform",
+  "domainName": "车联网平台安全",
+  "attackTypeId": "information_disclosure",
+  "attackTypeName": "信息泄露",
+  "aliases": [
+    "敏感信息暴露"
+  ],
+  "subtypes": [
+    "配置泄露",
+    "日志泄露",
+    "接口数据泄露"
+  ],
+  "applicability": "direct",
+  "description": "用于车联网平台安全中信息泄露的证据化研判，适用于 车云平台、设备管理平台、OTA 服务 等资产。",
+  "assets": [
+    "车云平台",
+    "设备管理平台",
+    "OTA 服务"
+  ],
+  "protocols": [
+    "HTTP",
+    "TLS",
+    "MQTT"
+  ],
+  "domainFocus": "车云 API、OTA 操作与设备身份审计的一致性",
+  "wazuhMapping": {
+    "ruleGroups": [
+      "disclosure",
+      "information_disclosure"
+    ],
+    "requiredFields": [
+      "rule.id",
+      "rule.level",
+      "agent.id",
+      "timestamp"
+    ],
+    "wazuhObservability": "partial",
+    "additionalTelemetryRequired": [
+      "数据访问审计、DLP 或响应内容记录"
+    ]
+  },
+  "observableSignals": [
+    "凭据、密钥、个人或设备敏感标识暴露给非授权主体",
+    "响应或日志出现凭据、密钥或敏感标识",
+    "非授权主体批量读取数据"
+  ],
+  "requiredTelemetry": [
+    "Wazuh 主机与应用日志",
+    "车云 API 审计",
+    "OTA 操作日志",
+    "设备身份日志",
+    "数据访问审计、DLP 或响应内容记录"
+  ],
+  "evidenceRequired": [
+    "数据分类、访问主体、响应或文件内容和脱敏策略",
+    "数据分类与访问主体",
+    "响应或文件访问审计"
+  ],
+  "evidencePolicy": {
+    "kind": "minimum_independent_evidence",
+    "minimumIndependentEvidence": 2,
+    "basis": "内部安全运营经验与边界验证记录共同确认",
+    "statisticalThreshold": false,
+    "calibrationRule": "任何频率、比例或风险分数阈值必须引用已完成人工复核的 Wazuh 告警与工单记录"
+  },
+  "supportingEvidence": [
+    "至少两类相互独立证据支持信息泄露判断",
+    "事件时间、主体、资产和动作可形成一致时间线"
+  ],
+  "counterexamples": [
+    "经审批且已脱敏的数据导出",
+    "已脱敏的运营报表",
+    "经审批的数据导出"
+  ],
+  "falsePositiveConditions": [
+    "授权活动未与审批记录正确关联",
+    "资产或协议标签配置错误"
+  ],
+  "falseNegativeConditions": [
+    "关键遥测未接入或采集间断",
+    "攻击行为变形且未触发现有规则"
+  ],
+  "bypassPoints": [
+    "攻击者使用可信账号或合法工具隐藏行为",
+    "跨资产分阶段执行导致单点证据不足"
+  ],
+  "unusableFields": [
+    {
+      "field": "rule.level",
+      "reason": "单一规则等级不能完成攻击定性"
+    },
+    {
+      "field": "source.ip",
+      "reason": "单一来源地址不能证明主体或攻击意图"
+    }
+  ],
+  "judgment": {
+    "confirmed": "escalate_with_manual_review",
+    "authorizedOrBenign": "suppress_with_manual_review",
+    "insufficientEvidence": "request_additional_evidence",
+    "unmatched": "manual_classification"
+  },
+  "recommendedAction": "记录研判结果，创建人工工单并发送飞书通知，等待人工确认后处置。",
+  "policyStatus": "operational_knowledge",
+  "autoCloseAllowed": false,
+  "ticketRequired": true,
+  "knowledgeStatement": "在车联网平台安全中，信息泄露必须由告警、资产、身份或网络等多源证据共同支持；证据不足时不得自动定性或关闭。",
+  "reviewFocus": "确认暴露数据等级、接收主体和可利用性",
+  "provenance": {
+    "sourceClass": "internal_security_operations_experience",
+    "sourceDescription": "内部安全运营经验整理"
+  },
+  "consumedBy": [
+    "security.ops.v1.SecurityOpsService/MatchKnowledge",
+    "security.ops.v1.SecurityOpsService/EvaluatePolicy"
+  ],
+  "version": "2026.09.01",
+  "reviewStatus": "approved",
+  "reviewedBy": "zhangyuqiao",
+  "reviewedAt": "2026-09-01T22:49:09.998Z",
+  "reviewMarker": "Reviewed_Approved"
+}

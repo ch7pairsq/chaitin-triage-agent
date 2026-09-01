@@ -1,0 +1,87 @@
+[
+  {
+    "knowledgeId": "kb-iot_platform-trojan_downloader",
+    "domainId": "iot_platform",
+    "attackTypeId": "trojan_downloader",
+    "fixtureId": "kb-iot_platform-trojan_downloader-confirmed-attack",
+    "scenarioType": "confirmed_attack",
+    "input": {
+      "evidence": [
+        "初始文件、下载地址、落地哈希和执行链",
+        "文件哈希与签名",
+        "进程树、持久化和网络证据"
+      ],
+      "authorizationRecord": false,
+      "recurrence": 1
+    },
+    "expected": {
+      "action": "escalate_with_manual_review",
+      "ticketRequired": true,
+      "autoCloseAllowed": false
+    }
+  },
+  {
+    "knowledgeId": "kb-iot_platform-trojan_downloader",
+    "domainId": "iot_platform",
+    "attackTypeId": "trojan_downloader",
+    "fixtureId": "kb-iot_platform-trojan_downloader-authorized-or-benign",
+    "scenarioType": "authorized_or_benign",
+    "input": {
+      "evidence": [
+        "初始文件、下载地址、落地哈希和执行链",
+        "文件哈希与签名",
+        "进程树、持久化和网络证据"
+      ],
+      "authorizationRecord": true,
+      "recurrence": 1
+    },
+    "expected": {
+      "action": "suppress_with_manual_review",
+      "ticketRequired": true,
+      "autoCloseAllowed": false
+    }
+  },
+  {
+    "knowledgeId": "kb-iot_platform-trojan_downloader",
+    "domainId": "iot_platform",
+    "attackTypeId": "trojan_downloader",
+    "fixtureId": "kb-iot_platform-trojan_downloader-insufficient-evidence",
+    "scenarioType": "insufficient_evidence",
+    "input": {
+      "evidence": [
+        "初始文件、下载地址、落地哈希和执行链"
+      ],
+      "authorizationRecord": false,
+      "recurrence": 1
+    },
+    "expected": {
+      "action": "request_additional_evidence",
+      "ticketRequired": true,
+      "autoCloseAllowed": false
+    }
+  },
+  {
+    "knowledgeId": "kb-iot_platform-trojan_downloader",
+    "domainId": "iot_platform",
+    "attackTypeId": "trojan_downloader",
+    "fixtureId": "kb-iot_platform-trojan_downloader-compound-or-recurrent",
+    "scenarioType": "compound_or_recurrent",
+    "input": {
+      "evidence": [
+        "初始文件、下载地址、落地哈希和执行链",
+        "文件哈希与签名",
+        "进程树、持久化和网络证据"
+      ],
+      "authorizationRecord": false,
+      "recurrence": 3,
+      "relatedAttackTypes": [
+        "trojan_downloader"
+      ]
+    },
+    "expected": {
+      "action": "escalate_with_manual_review",
+      "ticketRequired": true,
+      "autoCloseAllowed": false
+    }
+  }
+]

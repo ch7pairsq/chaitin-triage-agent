@@ -1,0 +1,151 @@
+# Derived from wazuh/wazuh-docker v4.14.7 single-node deployment (GPLv2).
+name: chaitin-wazuh
+
+services:
+  wazuh.manager:
+    image: wazuh/wazuh-manager:4.14.7
+    container_name: wazuh.manager
+    hostname: wazuh.manager
+    restart: always
+    ulimits:
+      memlock: { soft: -1, hard: -1 }
+      nofile: { soft: 655360, hard: 655360 }
+    ports:
+      - "127.0.0.1:1514:1514"
+      - "127.0.0.1:1515:1515"
+      - "127.0.0.1:55000:55000"
+    expose:
+      - "514/udp"
+    environment:
+      INDEXER_URL: https://wazuh.indexer:9200
+      INDEXER_USERNAME: admin
+      INDEXER_PASSWORD: ${WAZUH_INDEXER_ADMIN_PASSWORD:?WAZUH_INDEXER_ADMIN_PASSWORD is required}
+      FILEBEAT_SSL_VERIFICATION_MODE: full
+      SSL_CERTIFICATE_AUTHORITIES: /etc/ssl/root-ca.pem
+      SSL_CERTIFICATE: /etc/ssl/filebeat.pem
+      SSL_KEY: /etc/ssl/filebeat.key
+      API_USERNAME: wazuh-wui
+      API_PASSWORD: ${WAZUH_API_PASSWORD:?WAZUH_API_PASSWORD is required}
+    volumes:
+      - wazuh_api_configuration:/var/ossec/api/configuration
+      - wazuh_etc:/var/ossec/etc
+      - wazuh_logs:/var/ossec/logs
+      - wazuh_queue:/var/ossec/queue
+      - wazuh_var_multigroups:/var/ossec/var/multigroups
+      - wazuh_integrations:/var/ossec/integrations
+      - wazuh_active_response:/var/ossec/active-response/bin
+      - wazuh_agentless:/var/ossec/agentless
+      - wazuh_wodles:/var/ossec/wodles
+      - filebeat_etc:/etc/filebeat
+      - filebeat_var:/var/lib/filebeat
+      - ${REPO_ROOT:?REPO_ROOT is required}/deploy/stacks/wazuh/config/wazuh_indexer_ssl_certs/root-ca-manager.pem:/etc/ssl/root-ca.pem:ro
+      - ${REPO_ROOT}/deploy/stacks/wazuh/config/wazuh_indexer_ssl_certs/wazuh.manager.pem:/etc/ssl/filebeat.pem:ro
+      - ${REPO_ROOT}/deploy/stacks/wazuh/config/wazuh_indexer_ssl_certs/wazuh.manager-key.pem:/etc/ssl/filebeat.key:ro
+      - ${REPO_ROOT}/deploy/stacks/wazuh/config/wazuh_cluster/wazuh_manager.conf:/wazuh-config-mount/etc/ossec.conf:ro
+      - ${REPO_ROOT}/deploy/stacks/wazuh/config/wazuh_rules/triage_rules.xml:/var/ossec/etc/rules/triage_rules.xml:ro
+    networks: [chaitin-net]
+
+  wazuh.indexer:
+    image: wazuh/wazuh-indexer:4.14.7
+    container_name: wazuh.indexer
+    hostname: wazuh.indexer
+    restart: always
+    ports:
+      - "127.0.0.1:9200:9200"
+    environment:
+      OPENSEARCH_JAVA_OPTS: -Xms1g -Xmx1g
+    ulimits:
+      memlock: { soft: -1, hard: -1 }
+      nofile: { soft: 65536, hard: 65536 }
+    volumes:
+      - wazuh-indexer-data:/var/lib/wazuh-indexer
+      - ${REPO_ROOT}/deploy/stacks/wazuh/config/wazuh_indexer_ssl_certs/root-ca.pem:/usr/share/wazuh-indexer/config/certs/root-ca.pem:ro
+      - ${REPO_ROOT}/deploy/stacks/wazuh/config/wazuh_indexer_ssl_certs/wazuh.indexer-key.pem:/usr/share/wazuh-indexer/config/certs/wazuh.indexer.key:ro
+      - ${REPO_ROOT}/deploy/stacks/wazuh/config/wazuh_indexer_ssl_certs/wazuh.indexer.pem:/usr/share/wazuh-indexer/config/certs/wazuh.indexer.pem:ro
+      - ${REPO_ROOT}/deploy/stacks/wazuh/config/wazuh_indexer_ssl_certs/admin.pem:/usr/share/wazuh-indexer/config/certs/admin.pem:ro
+      - ${REPO_ROOT}/deploy/stacks/wazuh/config/wazuh_indexer_ssl_certs/admin-key.pem:/usr/share/wazuh-indexer/config/certs/admin-key.pem:ro
+      - ${REPO_ROOT}/deploy/stacks/wazuh/config/wazuh_indexer/wazuh.indexer.yml:/usr/share/wazuh-indexer/config/opensearch.yml:ro
+      - ${REPO_ROOT}/deploy/stacks/wazuh/generated/internal_users.yml:/usr/share/wazuh-indexer/config/opensearch-security/internal_users.yml:ro
+    networks: [chaitin-net]
+
+  wazuh.dashboard:
+    image: wazuh/wazuh-dashboard:4.14.7
+    container_name: wazuh.dashboard
+    hostname: wazuh.dashboard
+    restart: always
+    ports:
+      - "127.0.0.1:${WAZUH_DASHBOARD_PORT:-8443}:5601"
+    environment:
+      INDEXER_USERNAME: admin
+      INDEXER_PASSWORD: ${WAZUH_INDEXER_ADMIN_PASSWORD:?WAZUH_INDEXER_ADMIN_PASSWORD is required}
+      WAZUH_API_URL: https://wazuh.manager
+      DASHBOARD_USERNAME: kibanaserver
+      DASHBOARD_PASSWORD: ${WAZUH_KIBANASERVER_PASSWORD:?WAZUH_KIBANASERVER_PASSWORD is required}
+      API_USERNAME: wazuh-wui
+      API_PASSWORD: ${WAZUH_API_PASSWORD:?WAZUH_API_PASSWORD is required}
+    volumes:
+      - ${REPO_ROOT}/deploy/stacks/wazuh/config/wazuh_indexer_ssl_certs/wazuh.dashboard.pem:/usr/share/wazuh-dashboard/certs/wazuh-dashboard.pem:ro
+      - ${REPO_ROOT}/deploy/stacks/wazuh/config/wazuh_indexer_ssl_certs/wazuh.dashboard-key.pem:/usr/share/wazuh-dashboard/certs/wazuh-dashboard-key.pem:ro
+      - ${REPO_ROOT}/deploy/stacks/wazuh/config/wazuh_indexer_ssl_certs/root-ca.pem:/usr/share/wazuh-dashboard/certs/root-ca.pem:ro
+      - ${REPO_ROOT}/deploy/stacks/wazuh/config/wazuh_dashboard/opensearch_dashboards.yml:/usr/share/wazuh-dashboard/config/opensearch_dashboards.yml:ro
+      - ${REPO_ROOT}/deploy/stacks/wazuh/generated/wazuh.yml:/usr/share/wazuh-dashboard/data/wazuh/config/wazuh.yml:ro
+      - wazuh-dashboard-config:/usr/share/wazuh-dashboard/data/wazuh/config
+      - wazuh-dashboard-custom:/usr/share/wazuh-dashboard/plugins/wazuh/public/assets/custom
+    depends_on: [wazuh.indexer]
+    networks: [chaitin-net]
+
+  wazuh-role-bootstrap:
+    image: node:22.23.2-alpine3.24
+    container_name: wazuh-role-bootstrap
+    restart: "no"
+    depends_on: [wazuh.indexer]
+    environment:
+      NODE_EXTRA_CA_CERTS: /run/certs/root-ca.pem
+      WAZUH_INDEXER_URL: https://wazuh.indexer:9200
+      WAZUH_INDEXER_ADMIN_PASSWORD: ${WAZUH_INDEXER_ADMIN_PASSWORD:?WAZUH_INDEXER_ADMIN_PASSWORD is required}
+    command: [node, /app/configure-triage-role.mjs]
+    volumes:
+      - ${REPO_ROOT}/deploy/stacks/wazuh/tools/configure-triage-role.mjs:/app/configure-triage-role.mjs:ro
+      - ${REPO_ROOT}/deploy/stacks/wazuh/config/wazuh_indexer_ssl_certs/root-ca.pem:/run/certs/root-ca.pem:ro
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+    networks: [chaitin-net]
+
+  wazuh-event-injector:
+    build:
+      context: ${REPO_ROOT}/tools/wazuh-event-injector
+    image: chaitin/wazuh-event-injector:0.1.0
+    container_name: wazuh-event-injector
+    restart: always
+    depends_on: [wazuh.manager]
+    environment:
+      WAZUH_SYSLOG_HOST: wazuh.manager
+      WAZUH_SYSLOG_PORT: "514"
+      INJECT_ENABLED: ${WAZUH_TEST_EVENT_ENABLED:-false}
+      INJECT_INTERVAL_MS: ${WAZUH_TEST_EVENT_INTERVAL_MS:-300000}
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+    networks: [chaitin-net]
+
+volumes:
+  wazuh_api_configuration:
+  wazuh_etc:
+  wazuh_logs:
+  wazuh_queue:
+  wazuh_var_multigroups:
+  wazuh_integrations:
+  wazuh_active_response:
+  wazuh_agentless:
+  wazuh_wodles:
+  filebeat_etc:
+  filebeat_var:
+  wazuh-indexer-data:
+  wazuh-dashboard-config:
+  wazuh-dashboard-custom:
+
+networks:
+  chaitin-net:
+    name: chaitin-net
+    ipam:
+      config:
+        - subnet: 172.30.0.0/24

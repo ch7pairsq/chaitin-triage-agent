@@ -1,0 +1,167 @@
+syntax = "proto3";
+
+package security.ops.v1;
+
+service SecurityOpsService {
+  rpc IngestAlertEvent(IngestAlertEventRequest) returns (IngestAlertEventResponse);
+  rpc ListPendingAlerts(ListPendingAlertsRequest) returns (ListPendingAlertsResponse);
+  rpc ClaimAlert(ClaimAlertRequest) returns (ClaimAlertResponse);
+  rpc GetAlertContext(GetAlertContextRequest) returns (GetAlertContextResponse);
+  rpc EnrichAlert(EnrichAlertRequest) returns (EnrichAlertResponse);
+  rpc MatchKnowledge(MatchKnowledgeRequest) returns (MatchKnowledgeResponse);
+  rpc EvaluatePolicy(EvaluatePolicyRequest) returns (EvaluatePolicyResponse);
+  rpc RecordTriageResult(RecordTriageResultRequest) returns (RecordTriageResultResponse);
+  rpc CreateManualTicket(CreateManualTicketRequest) returns (CreateManualTicketResponse);
+  rpc QueueFeishuNotification(QueueFeishuNotificationRequest) returns (QueueFeishuNotificationResponse);
+  rpc FinalizeTriage(FinalizeTriageRequest) returns (FinalizeTriageResponse);
+  rpc GetTriageTrace(GetTriageTraceRequest) returns (GetTriageTraceResponse);
+  rpc RecoverDelivery(RecoverDeliveryRequest) returns (RecoverDeliveryResponse);
+}
+
+message IngestAlertEventRequest {
+  string event_id = 1;
+  string wazuh_alert_id = 2;
+  string correlation_id = 3;
+  string occurred_at = 4;
+  string alert_json = 5;
+}
+
+message IngestAlertEventResponse {
+  string event_id = 1;
+  string correlation_id = 2;
+  string status = 3;
+  bool duplicate = 4;
+}
+
+message AlertRef {
+  string event_id = 1;
+  string correlation_id = 2;
+  string wazuh_alert_id = 3;
+  string status = 4;
+}
+
+message ListPendingAlertsRequest { uint32 limit = 1; }
+message ListPendingAlertsResponse { repeated AlertRef alerts = 1; }
+
+message ClaimAlertRequest {
+  string event_id = 1;
+  string scheduler_run_id = 2;
+  string sandbox_id = 3;
+}
+
+message ClaimAlertResponse {
+  string trace_id = 1;
+  string event_id = 2;
+  string status = 3;
+  bool duplicate = 4;
+}
+
+message GetAlertContextRequest { string event_id = 1; }
+message GetAlertContextResponse {
+  string event_id = 1;
+  string correlation_id = 2;
+  string wazuh_alert_id = 3;
+  string alert_json = 4;
+}
+
+message EnrichAlertRequest { string trace_id = 1; }
+message EnrichAlertResponse {
+  string trace_id = 1;
+  string context_json = 2;
+  repeated string evidence_refs = 3;
+  string domain_id = 4;
+  string attack_type_id = 5;
+}
+
+message MatchKnowledgeRequest {
+  string trace_id = 1;
+  string domain_id = 2;
+  string attack_type_id = 3;
+  string context_json = 4;
+}
+
+message KnowledgeMatch {
+  string knowledge_id = 1;
+  string applicability = 2;
+  repeated string evidence_refs = 3;
+  repeated string missing_evidence = 4;
+}
+
+message MatchKnowledgeResponse {
+  string trace_id = 1;
+  repeated KnowledgeMatch matches = 2;
+}
+
+message EvaluatePolicyRequest {
+  string trace_id = 1;
+  string context_json = 2;
+  repeated string knowledge_ids = 3;
+}
+
+message EvaluatePolicyResponse {
+  string trace_id = 1;
+  string decision = 2;
+  string action = 3;
+  repeated string evidence_refs = 4;
+  repeated string knowledge_refs = 5;
+  bool ticket_required = 6;
+  string policy_status = 7;
+  bool auto_close_allowed = 8;
+  string decision_token = 9;
+}
+
+message RecordTriageResultRequest {
+  string trace_id = 1;
+  string decision_token = 2;
+  string narrative = 3;
+}
+
+message RecordTriageResultResponse {
+  string result_id = 1;
+  string trace_id = 2;
+  bool duplicate = 3;
+}
+
+message CreateManualTicketRequest {
+  string trace_id = 1;
+  string result_id = 2;
+}
+
+message CreateManualTicketResponse {
+  string ticket_id = 1;
+  bool duplicate = 2;
+}
+
+message QueueFeishuNotificationRequest {
+  string trace_id = 1;
+  string ticket_id = 2;
+}
+
+message QueueFeishuNotificationResponse {
+  string delivery_id = 1;
+  string status = 2;
+  bool duplicate = 3;
+}
+
+message FinalizeTriageRequest { string trace_id = 1; }
+message FinalizeTriageResponse {
+  string trace_id = 1;
+  string state = 2;
+}
+
+message GetTriageTraceRequest { string trace_id = 1; }
+message GetTriageTraceResponse {
+  string trace_id = 1;
+  string trace_json = 2;
+}
+
+message RecoverDeliveryRequest {
+  uint32 limit = 1;
+  bool include_manual = 2;
+}
+
+message RecoverDeliveryResponse {
+  uint32 recovered = 1;
+  uint32 pending = 2;
+  uint32 manual = 3;
+}

@@ -1,0 +1,34 @@
+{
+  "name": "@chaitin-triage/wazuh-connector",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "wazuh-connector-service": "src/runtime.js"
+  },
+  "files": [
+    "src/",
+    "proto/",
+    "service.json",
+    "config.schema.json",
+    "secret.schema.json",
+    "tools/validate-package.mjs",
+    "README.md"
+  ],
+  "scripts": {
+    "check": "node --check src/client.js && node --check src/runtime.js",
+    "build:descriptor": "protoc --descriptor_set_out=proto/descriptor.pb --include_imports -I proto proto/wazuh_connector.proto",
+    "validate:package": "npm run build:descriptor && node tools/validate-package.mjs",
+    "test": "npm run build:descriptor && node --test",
+    "pack:check": "npm pack --dry-run"
+  },
+  "dependencies": {
+    "@chaitin-ai/octobus-sdk": "0.6.0"
+  },
+  "devDependencies": {
+    "protoc": "36.0.0"
+  },
+  "engines": {
+    "node": ">=22.12"
+  }
+}

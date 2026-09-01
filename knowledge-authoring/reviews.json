@@ -1,0 +1,1490 @@
+{
+  "version": "2026.09.01",
+  "reviews": [
+    {
+      "knowledgeId": "kb-industrial_internet-brute_force",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：确认来源聚合、账号范围及成功登录归属；领域范围：SCADA/MES 业务操作、工程身份与控制指令审计的一致性。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-industrial_internet-buffer_overflow",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：确认内存安全影响而非普通可用性故障；领域范围：工程站进程、控制程序、固件与变更审批基线。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-industrial_internet-business_logic_exploitation",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：确认安全影响来自流程约束绕过而非实现故障；领域范围：SCADA/MES 业务操作、工程身份与控制指令审计的一致性。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-industrial_internet-code_execution",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：确认执行发生在应用运行时且非单纯命令调用；领域范围：工程站进程、控制程序、固件与变更审批基线。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-industrial_internet-command_execution",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：确认用户输入到系统命令之间的数据流；领域范围：工程站进程、控制程序、固件与变更审批基线。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-industrial_internet-denial_of_service",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：确认资源耗尽是否由攻击流量直接造成；领域范围：工业协议会话、控制区边界与工程操作窗口的对应关系。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-industrial_internet-dns_hijacking",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：确认异常解析的控制点及受影响终端范围；领域范围：工业协议会话、控制区边界与工程操作窗口的对应关系。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-industrial_internet-file_inclusion",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：区分目录遍历、文件读取和实际包含执行；领域范围：SCADA/MES 业务操作、工程身份与控制指令审计的一致性。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-industrial_internet-im_worm",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：确认自动转发链及客户端执行结果；领域范围：工程站进程、控制程序、固件与变更审批基线。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-industrial_internet-information_disclosure",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：确认暴露数据等级、接收主体和可利用性；领域范围：SCADA/MES 业务操作、工程身份与控制指令审计的一致性。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-industrial_internet-mail_worm",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：确认邮件是传播媒介且存在自动扩散；领域范围：工程站进程、控制程序、固件与变更审批基线。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-industrial_internet-network_worm",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：确认无需人工参与的网络传播机制；领域范围：工程站进程、控制程序、固件与变更审批基线。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-industrial_internet-other_attack",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：确认不能归入已有类别并记录待补充字段；领域范围：SCADA/MES 业务操作、工程身份与控制指令审计的一致性。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-industrial_internet-p2p_worm",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：确认传播由 P2P 共享机制驱动；领域范围：工程站进程、控制程序、固件与变更审批基线。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-industrial_internet-privilege_escalation",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：确认权限提升路径和提升后的实际能力；领域范围：工程站进程、控制程序、固件与变更审批基线。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-industrial_internet-remote_access_trojan",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：确认交互式远控能力及操作者授权；领域范围：工程站进程、控制程序、固件与变更审批基线。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-industrial_internet-request_forgery",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：区分服务端请求伪造和跨站请求伪造的主体边界；领域范围：SCADA/MES 业务操作、工程身份与控制指令审计的一致性。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-industrial_internet-smart_device_system_attack",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：确认设备侧变化与平台授权记录不一致；领域范围：工程站进程、控制程序、固件与变更审批基线。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-industrial_internet-sniffing",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：确认抓包主体、授权范围与敏感数据暴露情况；领域范围：工业协议会话、控制区边界与工程操作窗口的对应关系。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-industrial_internet-sql_injection",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：确认输入确实改变查询语义而非普通特殊字符；领域范围：SCADA/MES 业务操作、工程身份与控制指令审计的一致性。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-industrial_internet-system_code_execution",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：确认执行上下文达到系统级而非普通应用进程；领域范围：工程站进程、控制程序、固件与变更审批基线。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-industrial_internet-trojan",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：确认至少具备执行、持久化或控制能力之一；领域范围：工程站进程、控制程序、固件与变更审批基线。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-industrial_internet-trojan_clicker",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：确认请求缺少真实用户交互并具有流量欺诈目的；领域范围：工程站进程、控制程序、固件与变更审批基线。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-industrial_internet-trojan_downloader",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：确认下载行为与后续恶意载荷执行关联；领域范围：工程站进程、控制程序、固件与变更审批基线。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-industrial_internet-trojan_dropper",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：确认释放关系和被释放载荷的行为；领域范围：工程站进程、控制程序、固件与变更审批基线。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-industrial_internet-trojan_proxy",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：确认主机承担代理转发而非普通客户端通信；领域范围：工程站进程、控制程序、固件与变更审批基线。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-industrial_internet-trojan_psw",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：确认目标为凭据材料且存在收集或外传；领域范围：工程站进程、控制程序、固件与变更审批基线。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-industrial_internet-trojan_spy",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：确认采集对象、用户授权和数据外传路径；领域范围：工程站进程、控制程序、固件与变更审批基线。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-industrial_internet-unauthorized_access",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：确认对象级和功能级权限边界；领域范围：SCADA/MES 业务操作、工程身份与控制指令审计的一致性。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-industrial_internet-web_worm",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：确认脚本具备跨用户自传播能力；领域范围：工程站进程、控制程序、固件与变更审批基线。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-industrial_internet-webshell",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：确认文件入口、执行结果和持久化行为；领域范围：工程站进程、控制程序、固件与变更审批基线。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-industrial_internet-xml_external_entity",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：确认解析器实际解析外部实体而非仅出现字符串；领域范围：SCADA/MES 业务操作、工程身份与控制指令审计的一致性。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-industrial_internet-xss",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：确认输出上下文和客户端执行链；领域范围：SCADA/MES 业务操作、工程身份与控制指令审计的一致性。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-iot_platform-brute_force",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：确认来源聚合、账号范围及成功登录归属；领域范围：设备管理 API、消息授权与设备身份审计的一致性。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-iot_platform-buffer_overflow",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：确认内存安全影响而非普通可用性故障；领域范围：网关进程、设备固件、凭据与 OTA 发布基线。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-iot_platform-business_logic_exploitation",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：确认安全影响来自流程约束绕过而非实现故障；领域范围：设备管理 API、消息授权与设备身份审计的一致性。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-iot_platform-code_execution",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：确认执行发生在应用运行时且非单纯命令调用；领域范围：网关进程、设备固件、凭据与 OTA 发布基线。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-iot_platform-command_execution",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：确认用户输入到系统命令之间的数据流；领域范围：网关进程、设备固件、凭据与 OTA 发布基线。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-iot_platform-denial_of_service",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：确认资源耗尽是否由攻击流量直接造成；领域范围：设备连接、消息主题、网关会话与设备身份的对应关系。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-iot_platform-dns_hijacking",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：确认异常解析的控制点及受影响终端范围；领域范围：设备连接、消息主题、网关会话与设备身份的对应关系。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-iot_platform-file_inclusion",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：区分目录遍历、文件读取和实际包含执行；领域范围：设备管理 API、消息授权与设备身份审计的一致性。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-iot_platform-im_worm",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：确认自动转发链及客户端执行结果；领域范围：网关进程、设备固件、凭据与 OTA 发布基线。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-iot_platform-information_disclosure",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：确认暴露数据等级、接收主体和可利用性；领域范围：设备管理 API、消息授权与设备身份审计的一致性。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-iot_platform-mail_worm",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：确认邮件是传播媒介且存在自动扩散；领域范围：网关进程、设备固件、凭据与 OTA 发布基线。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-iot_platform-network_worm",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：确认无需人工参与的网络传播机制；领域范围：网关进程、设备固件、凭据与 OTA 发布基线。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-iot_platform-other_attack",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：确认不能归入已有类别并记录待补充字段；领域范围：设备管理 API、消息授权与设备身份审计的一致性。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-iot_platform-p2p_worm",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：确认传播由 P2P 共享机制驱动；领域范围：网关进程、设备固件、凭据与 OTA 发布基线。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-iot_platform-privilege_escalation",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：确认权限提升路径和提升后的实际能力；领域范围：网关进程、设备固件、凭据与 OTA 发布基线。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-iot_platform-remote_access_trojan",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：确认交互式远控能力及操作者授权；领域范围：网关进程、设备固件、凭据与 OTA 发布基线。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-iot_platform-request_forgery",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：区分服务端请求伪造和跨站请求伪造的主体边界；领域范围：设备管理 API、消息授权与设备身份审计的一致性。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-iot_platform-smart_device_system_attack",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：确认设备侧变化与平台授权记录不一致；领域范围：网关进程、设备固件、凭据与 OTA 发布基线。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-iot_platform-sniffing",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：确认抓包主体、授权范围与敏感数据暴露情况；领域范围：设备连接、消息主题、网关会话与设备身份的对应关系。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-iot_platform-sql_injection",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：确认输入确实改变查询语义而非普通特殊字符；领域范围：设备管理 API、消息授权与设备身份审计的一致性。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-iot_platform-system_code_execution",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：确认执行上下文达到系统级而非普通应用进程；领域范围：网关进程、设备固件、凭据与 OTA 发布基线。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-iot_platform-trojan",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：确认至少具备执行、持久化或控制能力之一；领域范围：网关进程、设备固件、凭据与 OTA 发布基线。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-iot_platform-trojan_clicker",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：确认请求缺少真实用户交互并具有流量欺诈目的；领域范围：网关进程、设备固件、凭据与 OTA 发布基线。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-iot_platform-trojan_downloader",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：确认下载行为与后续恶意载荷执行关联；领域范围：网关进程、设备固件、凭据与 OTA 发布基线。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-iot_platform-trojan_dropper",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：确认释放关系和被释放载荷的行为；领域范围：网关进程、设备固件、凭据与 OTA 发布基线。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-iot_platform-trojan_proxy",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：确认主机承担代理转发而非普通客户端通信；领域范围：网关进程、设备固件、凭据与 OTA 发布基线。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-iot_platform-trojan_psw",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：确认目标为凭据材料且存在收集或外传；领域范围：网关进程、设备固件、凭据与 OTA 发布基线。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-iot_platform-trojan_spy",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：确认采集对象、用户授权和数据外传路径；领域范围：网关进程、设备固件、凭据与 OTA 发布基线。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-iot_platform-unauthorized_access",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：确认对象级和功能级权限边界；领域范围：设备管理 API、消息授权与设备身份审计的一致性。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-iot_platform-web_worm",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：确认脚本具备跨用户自传播能力；领域范围：网关进程、设备固件、凭据与 OTA 发布基线。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-iot_platform-webshell",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：确认文件入口、执行结果和持久化行为；领域范围：网关进程、设备固件、凭据与 OTA 发布基线。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-iot_platform-xml_external_entity",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：确认解析器实际解析外部实体而非仅出现字符串；领域范围：设备管理 API、消息授权与设备身份审计的一致性。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-iot_platform-xss",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：确认输出上下文和客户端执行链；领域范围：设备管理 API、消息授权与设备身份审计的一致性。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-vehicle_platform-brute_force",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：确认来源聚合、账号范围及成功登录归属；领域范围：车云 API、OTA 操作与设备身份审计的一致性。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-vehicle_platform-buffer_overflow",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：确认内存安全影响而非普通可用性故障；领域范围：车端进程、固件、指令来源与 OTA 发布基线。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-vehicle_platform-business_logic_exploitation",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：确认安全影响来自流程约束绕过而非实现故障；领域范围：车云 API、OTA 操作与设备身份审计的一致性。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-vehicle_platform-code_execution",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：确认执行发生在应用运行时且非单纯命令调用；领域范围：车端进程、固件、指令来源与 OTA 发布基线。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-vehicle_platform-command_execution",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：确认用户输入到系统命令之间的数据流；领域范围：车端进程、固件、指令来源与 OTA 发布基线。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-vehicle_platform-denial_of_service",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：确认资源耗尽是否由攻击流量直接造成；领域范围：车端通信链路、设备身份与车云会话的对应关系。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-vehicle_platform-dns_hijacking",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：确认异常解析的控制点及受影响终端范围；领域范围：车端通信链路、设备身份与车云会话的对应关系。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-vehicle_platform-file_inclusion",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：区分目录遍历、文件读取和实际包含执行；领域范围：车云 API、OTA 操作与设备身份审计的一致性。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-vehicle_platform-im_worm",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：确认自动转发链及客户端执行结果；领域范围：车端进程、固件、指令来源与 OTA 发布基线。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-vehicle_platform-information_disclosure",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：确认暴露数据等级、接收主体和可利用性；领域范围：车云 API、OTA 操作与设备身份审计的一致性。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-vehicle_platform-mail_worm",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：确认邮件是传播媒介且存在自动扩散；领域范围：车端进程、固件、指令来源与 OTA 发布基线。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-vehicle_platform-network_worm",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：确认无需人工参与的网络传播机制；领域范围：车端进程、固件、指令来源与 OTA 发布基线。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-vehicle_platform-other_attack",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：确认不能归入已有类别并记录待补充字段；领域范围：车云 API、OTA 操作与设备身份审计的一致性。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-vehicle_platform-p2p_worm",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：确认传播由 P2P 共享机制驱动；领域范围：车端进程、固件、指令来源与 OTA 发布基线。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-vehicle_platform-privilege_escalation",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：确认权限提升路径和提升后的实际能力；领域范围：车端进程、固件、指令来源与 OTA 发布基线。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-vehicle_platform-remote_access_trojan",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：确认交互式远控能力及操作者授权；领域范围：车端进程、固件、指令来源与 OTA 发布基线。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-vehicle_platform-request_forgery",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：区分服务端请求伪造和跨站请求伪造的主体边界；领域范围：车云 API、OTA 操作与设备身份审计的一致性。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-vehicle_platform-smart_device_system_attack",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：确认设备侧变化与平台授权记录不一致；领域范围：车端进程、固件、指令来源与 OTA 发布基线。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-vehicle_platform-sniffing",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：确认抓包主体、授权范围与敏感数据暴露情况；领域范围：车端通信链路、设备身份与车云会话的对应关系。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-vehicle_platform-sql_injection",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：确认输入确实改变查询语义而非普通特殊字符；领域范围：车云 API、OTA 操作与设备身份审计的一致性。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-vehicle_platform-system_code_execution",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：确认执行上下文达到系统级而非普通应用进程；领域范围：车端进程、固件、指令来源与 OTA 发布基线。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-vehicle_platform-trojan",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：确认至少具备执行、持久化或控制能力之一；领域范围：车端进程、固件、指令来源与 OTA 发布基线。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-vehicle_platform-trojan_clicker",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：确认请求缺少真实用户交互并具有流量欺诈目的；领域范围：车端进程、固件、指令来源与 OTA 发布基线。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-vehicle_platform-trojan_downloader",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：确认下载行为与后续恶意载荷执行关联；领域范围：车端进程、固件、指令来源与 OTA 发布基线。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-vehicle_platform-trojan_dropper",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：确认释放关系和被释放载荷的行为；领域范围：车端进程、固件、指令来源与 OTA 发布基线。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-vehicle_platform-trojan_proxy",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：确认主机承担代理转发而非普通客户端通信；领域范围：车端进程、固件、指令来源与 OTA 发布基线。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-vehicle_platform-trojan_psw",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：确认目标为凭据材料且存在收集或外传；领域范围：车端进程、固件、指令来源与 OTA 发布基线。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-vehicle_platform-trojan_spy",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：确认采集对象、用户授权和数据外传路径；领域范围：车端进程、固件、指令来源与 OTA 发布基线。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-vehicle_platform-unauthorized_access",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：确认对象级和功能级权限边界；领域范围：车云 API、OTA 操作与设备身份审计的一致性。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-vehicle_platform-web_worm",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：确认脚本具备跨用户自传播能力；领域范围：车端进程、固件、指令来源与 OTA 发布基线。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-vehicle_platform-webshell",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：确认文件入口、执行结果和持久化行为；领域范围：车端进程、固件、指令来源与 OTA 发布基线。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-vehicle_platform-xml_external_entity",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：确认解析器实际解析外部实体而非仅出现字符串；领域范围：车云 API、OTA 操作与设备身份审计的一致性。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    },
+    {
+      "knowledgeId": "kb-vehicle_platform-xss",
+      "reviewStatus": "approved",
+      "reviewedBy": "zhangyuqiao",
+      "reviewedAt": "2026-09-01T22:49:09.998Z",
+      "reviewComment": "结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：确认输出上下文和客户端执行链；领域范围：车云 API、OTA 操作与设备身份审计的一致性。",
+      "checkedFields": [
+        "domain_and_attack_mapping",
+        "asset_protocol_scope",
+        "wazuh_observability",
+        "independent_evidence_gate",
+        "counterexample_and_failure_boundaries"
+      ],
+      "reviewMarker": "Reviewed_Approved"
+    }
+  ]
+}

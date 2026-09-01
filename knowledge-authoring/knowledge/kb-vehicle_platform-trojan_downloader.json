@@ -1,0 +1,123 @@
+{
+  "knowledgeId": "kb-vehicle_platform-trojan_downloader",
+  "domainId": "vehicle_platform",
+  "domainName": "车联网平台安全",
+  "attackTypeId": "trojan_downloader",
+  "attackTypeName": "下载者木马Trojan-Downloader",
+  "aliases": [
+    "Trojan-Downloader"
+  ],
+  "subtypes": [
+    "二阶段载荷下载",
+    "脚本下载器"
+  ],
+  "applicability": "direct",
+  "description": "用于车联网平台安全中下载者木马Trojan-Downloader的证据化研判，适用于 T-Box、车载网关、OTA 服务 等资产。",
+  "assets": [
+    "T-Box",
+    "车载网关",
+    "OTA 服务"
+  ],
+  "protocols": [
+    "GB/T 32960",
+    "JT/T 808",
+    "TLS"
+  ],
+  "domainFocus": "车端进程、固件、指令来源与 OTA 发布基线",
+  "wazuhMapping": {
+    "ruleGroups": [
+      "trojan",
+      "trojan_downloader"
+    ],
+    "requiredFields": [
+      "rule.id",
+      "rule.level",
+      "agent.id",
+      "timestamp"
+    ],
+    "wazuhObservability": "partial",
+    "additionalTelemetryRequired": [
+      "DNS、代理、文件与进程审计"
+    ]
+  },
+  "observableSignals": [
+    "小型载荷从外部获取二阶段文件并启动或持久化",
+    "非授权持久化或隐蔽进程",
+    "异常命令控制或数据外传"
+  ],
+  "requiredTelemetry": [
+    "Wazuh 主机与应用日志",
+    "车云 API 审计",
+    "OTA 操作日志",
+    "设备身份日志",
+    "DNS、代理、文件与进程审计"
+  ],
+  "evidenceRequired": [
+    "初始文件、下载地址、落地哈希和执行链",
+    "文件哈希与签名",
+    "进程树、持久化和网络证据"
+  ],
+  "evidencePolicy": {
+    "kind": "minimum_independent_evidence",
+    "minimumIndependentEvidence": 2,
+    "basis": "内部安全运营经验与边界验证记录共同确认",
+    "statisticalThreshold": false,
+    "calibrationRule": "任何频率、比例或风险分数阈值必须引用已完成人工复核的 Wazuh 告警与工单记录"
+  },
+  "supportingEvidence": [
+    "至少两类相互独立证据支持下载者木马Trojan-Downloader判断",
+    "事件时间、主体、资产和动作可形成一致时间线"
+  ],
+  "counterexamples": [
+    "软件更新器从登记域名下载签名包",
+    "经审批的远程运维工具",
+    "合法代理或监控组件"
+  ],
+  "falsePositiveConditions": [
+    "授权活动未与审批记录正确关联",
+    "资产或协议标签配置错误"
+  ],
+  "falseNegativeConditions": [
+    "关键遥测未接入或采集间断",
+    "攻击行为变形且未触发现有规则"
+  ],
+  "bypassPoints": [
+    "攻击者使用可信账号或合法工具隐藏行为",
+    "跨资产分阶段执行导致单点证据不足"
+  ],
+  "unusableFields": [
+    {
+      "field": "rule.level",
+      "reason": "单一规则等级不能完成攻击定性"
+    },
+    {
+      "field": "source.ip",
+      "reason": "单一来源地址不能证明主体或攻击意图"
+    }
+  ],
+  "judgment": {
+    "confirmed": "escalate_with_manual_review",
+    "authorizedOrBenign": "suppress_with_manual_review",
+    "insufficientEvidence": "request_additional_evidence",
+    "unmatched": "manual_classification"
+  },
+  "recommendedAction": "记录研判结果，创建人工工单并发送飞书通知，等待人工确认后处置。",
+  "policyStatus": "operational_knowledge",
+  "autoCloseAllowed": false,
+  "ticketRequired": true,
+  "knowledgeStatement": "在车联网平台安全中，下载者木马Trojan-Downloader必须由告警、资产、身份或网络等多源证据共同支持；证据不足时不得自动定性或关闭。",
+  "reviewFocus": "确认下载行为与后续恶意载荷执行关联",
+  "provenance": {
+    "sourceClass": "internal_security_operations_experience",
+    "sourceDescription": "内部安全运营经验整理"
+  },
+  "consumedBy": [
+    "security.ops.v1.SecurityOpsService/MatchKnowledge",
+    "security.ops.v1.SecurityOpsService/EvaluatePolicy"
+  ],
+  "version": "2026.09.01",
+  "reviewStatus": "approved",
+  "reviewedBy": "zhangyuqiao",
+  "reviewedAt": "2026-09-01T22:49:09.998Z",
+  "reviewMarker": "Reviewed_Approved"
+}

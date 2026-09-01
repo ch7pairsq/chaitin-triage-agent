@@ -1,0 +1,68 @@
+name: chaitin-release-webhook
+
+services:
+  release-queue-init:
+    build:
+      context: ${REPO_ROOT:?REPO_ROOT is required}/tools/release-webhook
+    image: chaitin/release-webhook:0.1.0
+    user: root
+    restart: "no"
+    command: [sh, -ec, "install -d -o 1000 -g 1000 -m 0700 /queue/inbox /queue/processing /queue/completed /queue/failed"]
+    volumes:
+      - release-queue:/queue
+
+  release-webhook:
+    build:
+      context: ${REPO_ROOT}/tools/release-webhook
+    image: chaitin/release-webhook:0.1.0
+    restart: always
+    depends_on:
+      release-queue-init:
+        condition: service_completed_successfully
+    environment:
+      PORT: "8080"
+      RELEASE_QUEUE_ROOT: /queue
+      GITHUB_WEBHOOK_SECRET_FILE: /run/secrets/github-webhook-secret
+      GITHUB_REPOSITORY: ${GITHUB_REPOSITORY:?GITHUB_REPOSITORY is required}
+      RELEASE_DEPLOY_BRANCH: ${RELEASE_DEPLOY_BRANCH:-develop}
+    command: [node, src/server.js]
+    volumes:
+      - release-queue:/queue
+      - ${REPO_ROOT:?REPO_ROOT is required}/deploy/stacks/release-webhook/generated/github-webhook-secret:/run/secrets/github-webhook-secret:ro
+    ports:
+      - ${RELEASE_WEBHOOK_BIND_ADDRESS:-127.0.0.1}:${RELEASE_WEBHOOK_PORT:-9080}:8080
+    healthcheck:
+      test: [CMD, wget, -q, --spider, http://127.0.0.1:8080/healthz]
+      interval: 30s
+      timeout: 3s
+      start_period: 10s
+      retries: 3
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+
+  release-worker:
+    build:
+      context: ${REPO_ROOT}/tools/release-webhook
+    image: chaitin/release-webhook:0.1.0
+    restart: always
+    depends_on:
+      release-queue-init:
+        condition: service_completed_successfully
+    user: root
+    environment:
+      RELEASE_QUEUE_ROOT: /queue
+      RELEASE_WORKSPACE: /workspace
+      RELEASE_ENV_FILE: /run/secrets/deploy.env
+      TRIAGE_HOST_REPO_ROOT: ${REPO_ROOT:?REPO_ROOT is required}
+      GITHUB_REPOSITORY: ${GITHUB_REPOSITORY:?GITHUB_REPOSITORY is required}
+      RELEASE_DEPLOY_BRANCH: ${RELEASE_DEPLOY_BRANCH:-develop}
+    command: [node, src/worker.js]
+    volumes:
+      - release-queue:/queue
+      - ${REPO_ROOT:?REPO_ROOT is required}:/workspace
+      - ${REPO_ROOT}/.env:/run/secrets/deploy.env:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+    security_opt: [no-new-privileges:true]
+
+volumes:
+  release-queue:

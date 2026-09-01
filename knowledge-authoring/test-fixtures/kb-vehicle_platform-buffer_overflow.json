@@ -1,0 +1,87 @@
+[
+  {
+    "knowledgeId": "kb-vehicle_platform-buffer_overflow",
+    "domainId": "vehicle_platform",
+    "attackTypeId": "buffer_overflow",
+    "fixtureId": "kb-vehicle_platform-buffer_overflow-confirmed-attack",
+    "scenarioType": "confirmed_attack",
+    "input": {
+      "evidence": [
+        "触发输入、崩溃转储、组件版本和修复状态",
+        "崩溃转储或终端检测证据",
+        "触发请求与进程日志"
+      ],
+      "authorizationRecord": false,
+      "recurrence": 1
+    },
+    "expected": {
+      "action": "escalate_with_manual_review",
+      "ticketRequired": true,
+      "autoCloseAllowed": false
+    }
+  },
+  {
+    "knowledgeId": "kb-vehicle_platform-buffer_overflow",
+    "domainId": "vehicle_platform",
+    "attackTypeId": "buffer_overflow",
+    "fixtureId": "kb-vehicle_platform-buffer_overflow-authorized-or-benign",
+    "scenarioType": "authorized_or_benign",
+    "input": {
+      "evidence": [
+        "触发输入、崩溃转储、组件版本和修复状态",
+        "崩溃转储或终端检测证据",
+        "触发请求与进程日志"
+      ],
+      "authorizationRecord": true,
+      "recurrence": 1
+    },
+    "expected": {
+      "action": "suppress_with_manual_review",
+      "ticketRequired": true,
+      "autoCloseAllowed": false
+    }
+  },
+  {
+    "knowledgeId": "kb-vehicle_platform-buffer_overflow",
+    "domainId": "vehicle_platform",
+    "attackTypeId": "buffer_overflow",
+    "fixtureId": "kb-vehicle_platform-buffer_overflow-insufficient-evidence",
+    "scenarioType": "insufficient_evidence",
+    "input": {
+      "evidence": [
+        "触发输入、崩溃转储、组件版本和修复状态"
+      ],
+      "authorizationRecord": false,
+      "recurrence": 1
+    },
+    "expected": {
+      "action": "request_additional_evidence",
+      "ticketRequired": true,
+      "autoCloseAllowed": false
+    }
+  },
+  {
+    "knowledgeId": "kb-vehicle_platform-buffer_overflow",
+    "domainId": "vehicle_platform",
+    "attackTypeId": "buffer_overflow",
+    "fixtureId": "kb-vehicle_platform-buffer_overflow-compound-or-recurrent",
+    "scenarioType": "compound_or_recurrent",
+    "input": {
+      "evidence": [
+        "触发输入、崩溃转储、组件版本和修复状态",
+        "崩溃转储或终端检测证据",
+        "触发请求与进程日志"
+      ],
+      "authorizationRecord": false,
+      "recurrence": 3,
+      "relatedAttackTypes": [
+        "buffer_overflow"
+      ]
+    },
+    "expected": {
+      "action": "escalate_with_manual_review",
+      "ticketRequired": true,
+      "autoCloseAllowed": false
+    }
+  }
+]

@@ -1,0 +1,87 @@
+[
+  {
+    "knowledgeId": "kb-industrial_internet-xml_external_entity",
+    "domainId": "industrial_internet",
+    "attackTypeId": "xml_external_entity",
+    "fixtureId": "kb-industrial_internet-xml_external_entity-confirmed-attack",
+    "scenarioType": "confirmed_attack",
+    "input": {
+      "evidence": [
+        "原始 XML、解析器配置、文件或出站访问记录",
+        "规范化请求字段",
+        "应用与数据层错误日志"
+      ],
+      "authorizationRecord": false,
+      "recurrence": 1
+    },
+    "expected": {
+      "action": "escalate_with_manual_review",
+      "ticketRequired": true,
+      "autoCloseAllowed": false
+    }
+  },
+  {
+    "knowledgeId": "kb-industrial_internet-xml_external_entity",
+    "domainId": "industrial_internet",
+    "attackTypeId": "xml_external_entity",
+    "fixtureId": "kb-industrial_internet-xml_external_entity-authorized-or-benign",
+    "scenarioType": "authorized_or_benign",
+    "input": {
+      "evidence": [
+        "原始 XML、解析器配置、文件或出站访问记录",
+        "规范化请求字段",
+        "应用与数据层错误日志"
+      ],
+      "authorizationRecord": true,
+      "recurrence": 1
+    },
+    "expected": {
+      "action": "suppress_with_manual_review",
+      "ticketRequired": true,
+      "autoCloseAllowed": false
+    }
+  },
+  {
+    "knowledgeId": "kb-industrial_internet-xml_external_entity",
+    "domainId": "industrial_internet",
+    "attackTypeId": "xml_external_entity",
+    "fixtureId": "kb-industrial_internet-xml_external_entity-insufficient-evidence",
+    "scenarioType": "insufficient_evidence",
+    "input": {
+      "evidence": [
+        "原始 XML、解析器配置、文件或出站访问记录"
+      ],
+      "authorizationRecord": false,
+      "recurrence": 1
+    },
+    "expected": {
+      "action": "request_additional_evidence",
+      "ticketRequired": true,
+      "autoCloseAllowed": false
+    }
+  },
+  {
+    "knowledgeId": "kb-industrial_internet-xml_external_entity",
+    "domainId": "industrial_internet",
+    "attackTypeId": "xml_external_entity",
+    "fixtureId": "kb-industrial_internet-xml_external_entity-compound-or-recurrent",
+    "scenarioType": "compound_or_recurrent",
+    "input": {
+      "evidence": [
+        "原始 XML、解析器配置、文件或出站访问记录",
+        "规范化请求字段",
+        "应用与数据层错误日志"
+      ],
+      "authorizationRecord": false,
+      "recurrence": 3,
+      "relatedAttackTypes": [
+        "xml_external_entity"
+      ]
+    },
+    "expected": {
+      "action": "escalate_with_manual_review",
+      "ticketRequired": true,
+      "autoCloseAllowed": false
+    }
+  }
+]

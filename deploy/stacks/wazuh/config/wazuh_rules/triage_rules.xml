@@ -1,0 +1,8 @@
+<group name="security_platform_events,">
+  <rule id="100100" level="10">
+    <decoded_as>json</decoded_as>
+    <field name="security_program">^triage_event_injector$</field>
+    <description>Security platform event: $(domain_id) / $(attack_type_id)</description>
+    <group>security_platform,triage_input,</group>
+  </rule>
+</group>

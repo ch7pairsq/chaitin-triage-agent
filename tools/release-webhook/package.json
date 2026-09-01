@@ -1,0 +1,11 @@
+{
+  "name": "@chaitin-triage/release-webhook",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22.23.2" },
+  "scripts": {
+    "check": "node --check src/github.js && node --check src/server.js && node --check src/worker.js",
+    "test": "node --test"
+  }
+}

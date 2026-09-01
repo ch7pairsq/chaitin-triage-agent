@@ -1,0 +1,94 @@
+name: chaitin-triage-platform
+
+services:
+  octobus:
+    image: ghcr.io/chaitin/octobus@sha256:c0f7593eab7cff7e16a2b6c7521c45f6da453c40e364f89086bfe4a9e2a9b78f
+    platform: linux/amd64
+    container_name: octobus
+    restart: always
+    environment:
+      TZ: Asia/Shanghai
+    volumes:
+      - /data/chaitin/octobus/data:/var/lib/octobus
+      - ${REPO_ROOT:?REPO_ROOT is required}/services/security-ops:/repo/services/security-ops:ro
+      - ${REPO_ROOT}/services/wazuh-connector:/repo/services/wazuh-connector:ro
+      - ${REPO_ROOT}/deploy/stacks/wazuh/config/wazuh_indexer_ssl_certs/root-ca.pem:/repo/deploy/stacks/wazuh/config/wazuh_indexer_ssl_certs/root-ca.pem:ro
+      - ${REPO_ROOT}/deploy/stacks/triage-platform/generated:/repo/deploy/stacks/triage-platform/generated:ro
+    networks: [chaitin-net]
+
+  agent-compose:
+    image: chaitin/agent-compose@sha256:95b04f06f707f029a39f427fbaa0099a9e44eefc2ad9b2aa52a33d1785ad8a74
+    platform: linux/amd64
+    container_name: agent-compose
+    restart: always
+    depends_on: [octobus]
+    environment:
+      HTTP_LISTEN: 0.0.0.0:7410
+      DATA_ROOT: /data
+      RUNTIME_DRIVER: docker
+      DEFAULT_IMAGE: ${AGENT_COMPOSE_GUEST_IMAGE:?AGENT_COMPOSE_GUEST_IMAGE is required}
+      AGENT_COMPOSE_RUNTIME_BASE_URL: http://agent-compose:7410
+      PROJECT_ENV_FILE: /run/secrets/agent-compose.env
+      AGENT_COMPOSE_PROJECT_ENV_FILE: /run/secrets/agent-compose.env
+      TZ: Asia/Shanghai
+    entrypoint: [/bin/sh, -ec]
+    command:
+      - exec /bin/sh /repo/deploy/_daemon_entry.sh
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /etc/localtime:/etc/localtime:ro
+      - /data/chaitin/agent-compose/data:/data
+      - ${REPO_ROOT}/agent-compose.yml:/repo/agent-compose.yml:ro
+      - ${REPO_ROOT}/scheduler:/repo/scheduler:ro
+      - ${REPO_ROOT}/deploy/_daemon_entry.sh:/repo/deploy/_daemon_entry.sh:ro
+      - ${REPO_ROOT}/deploy/stacks/triage-platform/generated/agent-compose.env:/run/secrets/agent-compose.env:ro
+    working_dir: /data/work
+    ports:
+      - 127.0.0.1:7410:7410
+    networks: [chaitin-net]
+
+  agent-compose-ui:
+    image: chaitin/agent-compose-ui@sha256:8659165352961d719eacd635730871220d508d84486fa3919cc2b8294acb7f53
+    platform: linux/amd64
+    container_name: agent-compose-ui
+    restart: always
+    depends_on: [agent-compose]
+    environment:
+      AGENT_COMPOSE_BACKEND: http://agent-compose:7410
+      AUTH_ENABLED: "true"
+      AUTH_USERNAME: ${AUTH_USERNAME:-admin}
+      AUTH_PASSWORD: ${AUTH_PASSWORD:?AUTH_PASSWORD is required}
+      AUTH_SECRET: ${AUTH_SECRET:?AUTH_SECRET is required}
+      UI_DATABASE_PATH: /data/agent-compose-ui.db
+      JUPYTER_PROXY_BASE: /jupyter
+      NGINX_JUPYTER_PROXY_BASE: /jupyter
+    entrypoint: [/bin/sh, -ec]
+    command:
+      - |
+        token_file=/run/secrets/script-service-token
+        test -r "$$token_file"
+        SCRIPT_SERVICE_TOKEN="$$(tr -d '\r\n' < "$$token_file")"
+        test -n "$$SCRIPT_SERVICE_TOKEN"
+        export SCRIPT_SERVICE_TOKEN
+        exec /agent-compose-entrypoint.sh nginx -g 'daemon off;'
+    volumes:
+      - /data/chaitin/agent-compose/ui:/data
+      - /data/chaitin/agent-compose/data/sandboxes:/data/sandboxes:ro
+      - ${REPO_ROOT}/deploy/stacks/triage-platform/generated/script-service-token:/run/secrets/script-service-token:ro
+    ports:
+      - 127.0.0.1:${AGENT_COMPOSE_UI_HTTP_PORT:-7412}:8000
+    healthcheck:
+      test: [CMD-SHELL, "wget -q --spider http://127.0.0.1:8000/ || exit 1"]
+      interval: 30s
+      timeout: 3s
+      start_period: 30s
+      retries: 3
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+    cap_add: [CHOWN, SETUID, SETGID]
+    networks: [chaitin-net]
+
+networks:
+  chaitin-net:
+    name: chaitin-net
+    external: true

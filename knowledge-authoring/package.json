@@ -1,0 +1,17 @@
+{
+  "name": "@chaitin-triage/security-operations-knowledge",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "generate": "node tools/generate.mjs",
+    "review:annotate": "node tools/review-audit.mjs --write",
+    "review:check": "node tools/review-audit.mjs",
+    "check": "node tools/validate.mjs && npm run review:check",
+    "build:runtime": "node tools/build-runtime.mjs --output ../services/security-ops/resources/knowledge.jsonl",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=22.5"
+  }
+}

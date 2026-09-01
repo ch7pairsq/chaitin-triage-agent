@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "security-ops 公开配置",
+  "type": "object",
+  "required": ["agent_webhook_url"],
+  "properties": {
+    "database_path": {
+      "type": "string",
+      "minLength": 1,
+      "default": "triage.db",
+      "description": "相对于 SecurityOps instance workdir 的 triage.db 路径"
+    },
+    "knowledge_path": {
+      "type": "string",
+      "minLength": 1,
+      "default": "resources/knowledge.jsonl",
+      "description": "相对于 service package 的已批准运行知识路径"
+    },
+    "agent_webhook_url": {
+      "type": "string",
+      "format": "uri",
+      "description": "agent-compose 内网 webhook 地址"
+    },
+    "trigger_poll_interval_ms": {
+      "type": "integer",
+      "minimum": 250,
+      "maximum": 60000,
+      "default": 1000
+    },
+    "delivery_poll_interval_ms": {
+      "type": "integer",
+      "minimum": 1000,
+      "maximum": 60000,
+      "default": 3000
+    }
+  },
+  "additionalProperties": false
+}

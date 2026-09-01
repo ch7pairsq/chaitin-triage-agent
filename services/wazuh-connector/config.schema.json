@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["indexer_url"],
+  "properties": {
+    "indexer_url": {
+      "type": "string",
+      "pattern": "^https?://[^/]+(?::[0-9]+)?$"
+    },
+    "index_pattern": {
+      "type": "string",
+      "default": "wazuh-alerts-*",
+      "pattern": "^[A-Za-z0-9._*-]{1,128}$"
+    },
+    "minimum_rule_level": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 16,
+      "default": 3
+    },
+    "request_timeout_ms": {
+      "type": "integer",
+      "minimum": 1000,
+      "maximum": 30000,
+      "default": 10000
+    },
+    "ca_path": {
+      "type": "string",
+      "default": ""
+    },
+    "max_alert_bytes": {
+      "type": "integer",
+      "minimum": 1024,
+      "maximum": 524288,
+      "default": 262144
+    }
+  }
+}

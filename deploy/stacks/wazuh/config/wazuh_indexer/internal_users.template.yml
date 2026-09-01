@@ -1,0 +1,21 @@
+---
+_meta:
+  type: "internalusers"
+  config_version: 2
+
+admin:
+  hash: "__ADMIN_HASH__"
+  reserved: true
+  backend_roles:
+    - "admin"
+  description: "Wazuh indexer administrator"
+
+kibanaserver:
+  hash: "__KIBANASERVER_HASH__"
+  reserved: true
+  description: "Wazuh dashboard service account"
+
+triage_reader:
+  hash: "__TRIAGE_READER_HASH__"
+  reserved: false
+  description: "Alert-index-only connector account; mapped by wazuh-role-bootstrap"

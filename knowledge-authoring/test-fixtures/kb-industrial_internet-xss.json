@@ -1,0 +1,87 @@
+[
+  {
+    "knowledgeId": "kb-industrial_internet-xss",
+    "domainId": "industrial_internet",
+    "attackTypeId": "xss",
+    "fixtureId": "kb-industrial_internet-xss-confirmed-attack",
+    "scenarioType": "confirmed_attack",
+    "input": {
+      "evidence": [
+        "原始请求、输出编码结果、响应内容和客户端执行证据",
+        "原始与规范化请求",
+        "响应安全上下文"
+      ],
+      "authorizationRecord": false,
+      "recurrence": 1
+    },
+    "expected": {
+      "action": "escalate_with_manual_review",
+      "ticketRequired": true,
+      "autoCloseAllowed": false
+    }
+  },
+  {
+    "knowledgeId": "kb-industrial_internet-xss",
+    "domainId": "industrial_internet",
+    "attackTypeId": "xss",
+    "fixtureId": "kb-industrial_internet-xss-authorized-or-benign",
+    "scenarioType": "authorized_or_benign",
+    "input": {
+      "evidence": [
+        "原始请求、输出编码结果、响应内容和客户端执行证据",
+        "原始与规范化请求",
+        "响应安全上下文"
+      ],
+      "authorizationRecord": true,
+      "recurrence": 1
+    },
+    "expected": {
+      "action": "suppress_with_manual_review",
+      "ticketRequired": true,
+      "autoCloseAllowed": false
+    }
+  },
+  {
+    "knowledgeId": "kb-industrial_internet-xss",
+    "domainId": "industrial_internet",
+    "attackTypeId": "xss",
+    "fixtureId": "kb-industrial_internet-xss-insufficient-evidence",
+    "scenarioType": "insufficient_evidence",
+    "input": {
+      "evidence": [
+        "原始请求、输出编码结果、响应内容和客户端执行证据"
+      ],
+      "authorizationRecord": false,
+      "recurrence": 1
+    },
+    "expected": {
+      "action": "request_additional_evidence",
+      "ticketRequired": true,
+      "autoCloseAllowed": false
+    }
+  },
+  {
+    "knowledgeId": "kb-industrial_internet-xss",
+    "domainId": "industrial_internet",
+    "attackTypeId": "xss",
+    "fixtureId": "kb-industrial_internet-xss-compound-or-recurrent",
+    "scenarioType": "compound_or_recurrent",
+    "input": {
+      "evidence": [
+        "原始请求、输出编码结果、响应内容和客户端执行证据",
+        "原始与规范化请求",
+        "响应安全上下文"
+      ],
+      "authorizationRecord": false,
+      "recurrence": 3,
+      "relatedAttackTypes": [
+        "xss"
+      ]
+    },
+    "expected": {
+      "action": "escalate_with_manual_review",
+      "ticketRequired": true,
+      "autoCloseAllowed": false
+    }
+  }
+]

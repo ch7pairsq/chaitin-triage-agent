@@ -1,0 +1,123 @@
+{
+  "knowledgeId": "kb-iot_platform-command_execution",
+  "domainId": "iot_platform",
+  "domainName": "物联网平台安全",
+  "attackTypeId": "command_execution",
+  "attackTypeName": "命令执行",
+  "aliases": [
+    "命令注入"
+  ],
+  "subtypes": [
+    "系统命令注入",
+    "参数拼接执行"
+  ],
+  "applicability": "direct",
+  "description": "用于物联网平台安全中命令执行的证据化研判，适用于 IoT 网关、OTA 服务、设备身份服务 等资产。",
+  "assets": [
+    "IoT 网关",
+    "OTA 服务",
+    "设备身份服务"
+  ],
+  "protocols": [
+    "MQTT",
+    "CoAP",
+    "TLS"
+  ],
+  "domainFocus": "网关进程、设备固件、凭据与 OTA 发布基线",
+  "wazuhMapping": {
+    "ruleGroups": [
+      "execution",
+      "command_execution"
+    ],
+    "requiredFields": [
+      "rule.id",
+      "rule.level",
+      "agent.id",
+      "timestamp"
+    ],
+    "wazuhObservability": "partial",
+    "additionalTelemetryRequired": [
+      "进程审计、应用参数日志与命令执行日志"
+    ]
+  },
+  "observableSignals": [
+    "业务输入被拼接为系统命令并产生子进程或命令副作用",
+    "服务进程派生异常解释器或系统工具",
+    "非发布窗口出现可执行内容"
+  ],
+  "requiredTelemetry": [
+    "Wazuh 主机与应用日志",
+    "消息代理审计",
+    "设备管理审计",
+    "设备身份日志",
+    "进程审计、应用参数日志与命令执行日志"
+  ],
+  "evidenceRequired": [
+    "输入参数、应用调用链、子进程命令行和执行结果",
+    "进程树与命令行",
+    "文件哈希及创建来源"
+  ],
+  "evidencePolicy": {
+    "kind": "minimum_independent_evidence",
+    "minimumIndependentEvidence": 2,
+    "basis": "内部安全运营经验与边界验证记录共同确认",
+    "statisticalThreshold": false,
+    "calibrationRule": "任何频率、比例或风险分数阈值必须引用已完成人工复核的 Wazuh 告警与工单记录"
+  },
+  "supportingEvidence": [
+    "至少两类相互独立证据支持命令执行判断",
+    "事件时间、主体、资产和动作可形成一致时间线"
+  ],
+  "counterexamples": [
+    "批准的运维接口执行固定命令模板",
+    "经审批的运维脚本",
+    "发布系统执行的受控命令"
+  ],
+  "falsePositiveConditions": [
+    "授权活动未与审批记录正确关联",
+    "资产或协议标签配置错误"
+  ],
+  "falseNegativeConditions": [
+    "关键遥测未接入或采集间断",
+    "攻击行为变形且未触发现有规则"
+  ],
+  "bypassPoints": [
+    "攻击者使用可信账号或合法工具隐藏行为",
+    "跨资产分阶段执行导致单点证据不足"
+  ],
+  "unusableFields": [
+    {
+      "field": "rule.level",
+      "reason": "单一规则等级不能完成攻击定性"
+    },
+    {
+      "field": "source.ip",
+      "reason": "单一来源地址不能证明主体或攻击意图"
+    }
+  ],
+  "judgment": {
+    "confirmed": "escalate_with_manual_review",
+    "authorizedOrBenign": "suppress_with_manual_review",
+    "insufficientEvidence": "request_additional_evidence",
+    "unmatched": "manual_classification"
+  },
+  "recommendedAction": "记录研判结果，创建人工工单并发送飞书通知，等待人工确认后处置。",
+  "policyStatus": "operational_knowledge",
+  "autoCloseAllowed": false,
+  "ticketRequired": true,
+  "knowledgeStatement": "在物联网平台安全中，命令执行必须由告警、资产、身份或网络等多源证据共同支持；证据不足时不得自动定性或关闭。",
+  "reviewFocus": "确认用户输入到系统命令之间的数据流",
+  "provenance": {
+    "sourceClass": "internal_security_operations_experience",
+    "sourceDescription": "内部安全运营经验整理"
+  },
+  "consumedBy": [
+    "security.ops.v1.SecurityOpsService/MatchKnowledge",
+    "security.ops.v1.SecurityOpsService/EvaluatePolicy"
+  ],
+  "version": "2026.09.01",
+  "reviewStatus": "approved",
+  "reviewedBy": "zhangyuqiao",
+  "reviewedAt": "2026-09-01T22:49:09.998Z",
+  "reviewMarker": "Reviewed_Approved"
+}

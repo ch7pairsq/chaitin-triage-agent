@@ -1,0 +1,124 @@
+{
+  "knowledgeId": "kb-vehicle_platform-other_attack",
+  "domainId": "vehicle_platform",
+  "domainName": "车联网平台安全",
+  "attackTypeId": "other_attack",
+  "attackTypeName": "其他攻击",
+  "aliases": [
+    "未分类攻击"
+  ],
+  "subtypes": [
+    "待人工分类"
+  ],
+  "applicability": "direct",
+  "description": "用于车联网平台安全中其他攻击的证据化研判，适用于 车云平台、设备管理平台、OTA 服务 等资产。",
+  "assets": [
+    "车云平台",
+    "设备管理平台",
+    "OTA 服务"
+  ],
+  "protocols": [
+    "HTTP",
+    "TLS",
+    "MQTT"
+  ],
+  "domainFocus": "车云 API、OTA 操作与设备身份审计的一致性",
+  "wazuhMapping": {
+    "ruleGroups": [
+      "other",
+      "other_attack"
+    ],
+    "requiredFields": [
+      "rule.id",
+      "rule.level",
+      "agent.id",
+      "timestamp"
+    ],
+    "wazuhObservability": "false",
+    "additionalTelemetryRequired": [
+      "资产侧专项遥测与人工补充证据",
+      "人工补充证据"
+    ]
+  },
+  "observableSignals": [
+    "现有分类无法覆盖且原始证据语义不足以安全归类",
+    "现有分类无法覆盖的异常行为",
+    "证据来源或语义仍不完整"
+  ],
+  "requiredTelemetry": [
+    "Wazuh 主机与应用日志",
+    "车云 API 审计",
+    "OTA 操作日志",
+    "设备身份日志",
+    "资产侧专项遥测与人工补充证据",
+    "人工补充证据"
+  ],
+  "evidenceRequired": [
+    "原始告警、资产上下文、负责人说明和补充遥测",
+    "原始告警与上下文",
+    "资产负责人说明"
+  ],
+  "evidencePolicy": {
+    "kind": "minimum_independent_evidence",
+    "minimumIndependentEvidence": 2,
+    "basis": "内部安全运营经验与边界验证记录共同确认",
+    "statisticalThreshold": false,
+    "calibrationRule": "任何频率、比例或风险分数阈值必须引用已完成人工复核的 Wazuh 告警与工单记录"
+  },
+  "supportingEvidence": [
+    "至少两类相互独立证据支持其他攻击判断",
+    "事件时间、主体、资产和动作可形成一致时间线"
+  ],
+  "counterexamples": [
+    "字段映射错误或规则升级导致的分类漂移",
+    "告警字段映射错误",
+    "规则升级引入的分类漂移"
+  ],
+  "falsePositiveConditions": [
+    "授权活动未与审批记录正确关联",
+    "资产或协议标签配置错误"
+  ],
+  "falseNegativeConditions": [
+    "关键遥测未接入或采集间断",
+    "攻击行为变形且未触发现有规则"
+  ],
+  "bypassPoints": [
+    "攻击者使用可信账号或合法工具隐藏行为",
+    "跨资产分阶段执行导致单点证据不足"
+  ],
+  "unusableFields": [
+    {
+      "field": "rule.level",
+      "reason": "单一规则等级不能完成攻击定性"
+    },
+    {
+      "field": "source.ip",
+      "reason": "单一来源地址不能证明主体或攻击意图"
+    }
+  ],
+  "judgment": {
+    "confirmed": "escalate_with_manual_review",
+    "authorizedOrBenign": "suppress_with_manual_review",
+    "insufficientEvidence": "request_additional_evidence",
+    "unmatched": "manual_classification"
+  },
+  "recommendedAction": "记录研判结果，创建人工工单并发送飞书通知，等待人工确认后处置。",
+  "policyStatus": "operational_knowledge",
+  "autoCloseAllowed": false,
+  "ticketRequired": true,
+  "knowledgeStatement": "在车联网平台安全中，其他攻击必须由告警、资产、身份或网络等多源证据共同支持；证据不足时不得自动定性或关闭。",
+  "reviewFocus": "确认不能归入已有类别并记录待补充字段",
+  "provenance": {
+    "sourceClass": "internal_security_operations_experience",
+    "sourceDescription": "内部安全运营经验整理"
+  },
+  "consumedBy": [
+    "security.ops.v1.SecurityOpsService/MatchKnowledge",
+    "security.ops.v1.SecurityOpsService/EvaluatePolicy"
+  ],
+  "version": "2026.09.01",
+  "reviewStatus": "approved",
+  "reviewedBy": "zhangyuqiao",
+  "reviewedAt": "2026-09-01T22:49:09.998Z",
+  "reviewMarker": "Reviewed_Approved"
+}

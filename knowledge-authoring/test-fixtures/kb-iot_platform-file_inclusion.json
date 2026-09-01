@@ -1,0 +1,87 @@
+[
+  {
+    "knowledgeId": "kb-iot_platform-file_inclusion",
+    "domainId": "iot_platform",
+    "attackTypeId": "file_inclusion",
+    "fixtureId": "kb-iot_platform-file_inclusion-confirmed-attack",
+    "scenarioType": "confirmed_attack",
+    "input": {
+      "evidence": [
+        "规范化路径、应用加载记录、文件访问和返回内容",
+        "规范化请求字段",
+        "应用与数据层错误日志"
+      ],
+      "authorizationRecord": false,
+      "recurrence": 1
+    },
+    "expected": {
+      "action": "escalate_with_manual_review",
+      "ticketRequired": true,
+      "autoCloseAllowed": false
+    }
+  },
+  {
+    "knowledgeId": "kb-iot_platform-file_inclusion",
+    "domainId": "iot_platform",
+    "attackTypeId": "file_inclusion",
+    "fixtureId": "kb-iot_platform-file_inclusion-authorized-or-benign",
+    "scenarioType": "authorized_or_benign",
+    "input": {
+      "evidence": [
+        "规范化路径、应用加载记录、文件访问和返回内容",
+        "规范化请求字段",
+        "应用与数据层错误日志"
+      ],
+      "authorizationRecord": true,
+      "recurrence": 1
+    },
+    "expected": {
+      "action": "suppress_with_manual_review",
+      "ticketRequired": true,
+      "autoCloseAllowed": false
+    }
+  },
+  {
+    "knowledgeId": "kb-iot_platform-file_inclusion",
+    "domainId": "iot_platform",
+    "attackTypeId": "file_inclusion",
+    "fixtureId": "kb-iot_platform-file_inclusion-insufficient-evidence",
+    "scenarioType": "insufficient_evidence",
+    "input": {
+      "evidence": [
+        "规范化路径、应用加载记录、文件访问和返回内容"
+      ],
+      "authorizationRecord": false,
+      "recurrence": 1
+    },
+    "expected": {
+      "action": "request_additional_evidence",
+      "ticketRequired": true,
+      "autoCloseAllowed": false
+    }
+  },
+  {
+    "knowledgeId": "kb-iot_platform-file_inclusion",
+    "domainId": "iot_platform",
+    "attackTypeId": "file_inclusion",
+    "fixtureId": "kb-iot_platform-file_inclusion-compound-or-recurrent",
+    "scenarioType": "compound_or_recurrent",
+    "input": {
+      "evidence": [
+        "规范化路径、应用加载记录、文件访问和返回内容",
+        "规范化请求字段",
+        "应用与数据层错误日志"
+      ],
+      "authorizationRecord": false,
+      "recurrence": 3,
+      "relatedAttackTypes": [
+        "file_inclusion"
+      ]
+    },
+    "expected": {
+      "action": "escalate_with_manual_review",
+      "ticketRequired": true,
+      "autoCloseAllowed": false
+    }
+  }
+]

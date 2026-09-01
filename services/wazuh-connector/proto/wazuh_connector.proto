@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package wazuh.connector.v1;
+
+service WazuhConnectorService {
+  rpc ListAlerts(ListAlertsRequest) returns (ListAlertsResponse);
+}
+
+message ListAlertsRequest {
+  uint32 lookback_seconds = 1;
+  uint32 limit = 2;
+}
+
+message WazuhAlert {
+  string alert_id = 1;
+  string occurred_at = 2;
+  string correlation_id = 3;
+  string alert_json = 4;
+}
+
+message ListAlertsResponse {
+  repeated WazuhAlert alerts = 1;
+  string queried_at = 2;
+}

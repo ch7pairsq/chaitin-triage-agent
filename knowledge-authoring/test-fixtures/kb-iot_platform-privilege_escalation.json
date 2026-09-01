@@ -1,0 +1,87 @@
+[
+  {
+    "knowledgeId": "kb-iot_platform-privilege_escalation",
+    "domainId": "iot_platform",
+    "attackTypeId": "privilege_escalation",
+    "fixtureId": "kb-iot_platform-privilege_escalation-confirmed-attack",
+    "scenarioType": "confirmed_attack",
+    "input": {
+      "evidence": [
+        "权限变更、身份上下文、父子进程和敏感动作记录",
+        "权限变更审计",
+        "父子进程和身份上下文"
+      ],
+      "authorizationRecord": false,
+      "recurrence": 1
+    },
+    "expected": {
+      "action": "escalate_with_manual_review",
+      "ticketRequired": true,
+      "autoCloseAllowed": false
+    }
+  },
+  {
+    "knowledgeId": "kb-iot_platform-privilege_escalation",
+    "domainId": "iot_platform",
+    "attackTypeId": "privilege_escalation",
+    "fixtureId": "kb-iot_platform-privilege_escalation-authorized-or-benign",
+    "scenarioType": "authorized_or_benign",
+    "input": {
+      "evidence": [
+        "权限变更、身份上下文、父子进程和敏感动作记录",
+        "权限变更审计",
+        "父子进程和身份上下文"
+      ],
+      "authorizationRecord": true,
+      "recurrence": 1
+    },
+    "expected": {
+      "action": "suppress_with_manual_review",
+      "ticketRequired": true,
+      "autoCloseAllowed": false
+    }
+  },
+  {
+    "knowledgeId": "kb-iot_platform-privilege_escalation",
+    "domainId": "iot_platform",
+    "attackTypeId": "privilege_escalation",
+    "fixtureId": "kb-iot_platform-privilege_escalation-insufficient-evidence",
+    "scenarioType": "insufficient_evidence",
+    "input": {
+      "evidence": [
+        "权限变更、身份上下文、父子进程和敏感动作记录"
+      ],
+      "authorizationRecord": false,
+      "recurrence": 1
+    },
+    "expected": {
+      "action": "request_additional_evidence",
+      "ticketRequired": true,
+      "autoCloseAllowed": false
+    }
+  },
+  {
+    "knowledgeId": "kb-iot_platform-privilege_escalation",
+    "domainId": "iot_platform",
+    "attackTypeId": "privilege_escalation",
+    "fixtureId": "kb-iot_platform-privilege_escalation-compound-or-recurrent",
+    "scenarioType": "compound_or_recurrent",
+    "input": {
+      "evidence": [
+        "权限变更、身份上下文、父子进程和敏感动作记录",
+        "权限变更审计",
+        "父子进程和身份上下文"
+      ],
+      "authorizationRecord": false,
+      "recurrence": 3,
+      "relatedAttackTypes": [
+        "privilege_escalation"
+      ]
+    },
+    "expected": {
+      "action": "escalate_with_manual_review",
+      "ticketRequired": true,
+      "autoCloseAllowed": false
+    }
+  }
+]

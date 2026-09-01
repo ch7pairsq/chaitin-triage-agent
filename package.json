@@ -1,0 +1,12 @@
+{
+  "name": "chaitin-triage-agent",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22.23.2" },
+  "scripts": {
+    "check": "node tools/verify-repository.mjs --check",
+    "test": "node tools/verify-repository.mjs --test",
+    "verify": "node tools/verify-repository.mjs --all"
+  }
+}

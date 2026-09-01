@@ -1,0 +1,87 @@
+[
+  {
+    "knowledgeId": "kb-industrial_internet-webshell",
+    "domainId": "industrial_internet",
+    "attackTypeId": "webshell",
+    "fixtureId": "kb-industrial_internet-webshell-confirmed-attack",
+    "scenarioType": "confirmed_attack",
+    "input": {
+      "evidence": [
+        "Web 访问日志、文件哈希、进程树和发布基线",
+        "进程树与命令行",
+        "文件哈希及创建来源"
+      ],
+      "authorizationRecord": false,
+      "recurrence": 1
+    },
+    "expected": {
+      "action": "escalate_with_manual_review",
+      "ticketRequired": true,
+      "autoCloseAllowed": false
+    }
+  },
+  {
+    "knowledgeId": "kb-industrial_internet-webshell",
+    "domainId": "industrial_internet",
+    "attackTypeId": "webshell",
+    "fixtureId": "kb-industrial_internet-webshell-authorized-or-benign",
+    "scenarioType": "authorized_or_benign",
+    "input": {
+      "evidence": [
+        "Web 访问日志、文件哈希、进程树和发布基线",
+        "进程树与命令行",
+        "文件哈希及创建来源"
+      ],
+      "authorizationRecord": true,
+      "recurrence": 1
+    },
+    "expected": {
+      "action": "suppress_with_manual_review",
+      "ticketRequired": true,
+      "autoCloseAllowed": false
+    }
+  },
+  {
+    "knowledgeId": "kb-industrial_internet-webshell",
+    "domainId": "industrial_internet",
+    "attackTypeId": "webshell",
+    "fixtureId": "kb-industrial_internet-webshell-insufficient-evidence",
+    "scenarioType": "insufficient_evidence",
+    "input": {
+      "evidence": [
+        "Web 访问日志、文件哈希、进程树和发布基线"
+      ],
+      "authorizationRecord": false,
+      "recurrence": 1
+    },
+    "expected": {
+      "action": "request_additional_evidence",
+      "ticketRequired": true,
+      "autoCloseAllowed": false
+    }
+  },
+  {
+    "knowledgeId": "kb-industrial_internet-webshell",
+    "domainId": "industrial_internet",
+    "attackTypeId": "webshell",
+    "fixtureId": "kb-industrial_internet-webshell-compound-or-recurrent",
+    "scenarioType": "compound_or_recurrent",
+    "input": {
+      "evidence": [
+        "Web 访问日志、文件哈希、进程树和发布基线",
+        "进程树与命令行",
+        "文件哈希及创建来源"
+      ],
+      "authorizationRecord": false,
+      "recurrence": 3,
+      "relatedAttackTypes": [
+        "webshell"
+      ]
+    },
+    "expected": {
+      "action": "escalate_with_manual_review",
+      "ticketRequired": true,
+      "autoCloseAllowed": false
+    }
+  }
+]

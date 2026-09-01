@@ -1,7 +1,7 @@
 #!/bin/sh
 # Secret-safe daemon entrypoint. Values are loaded from the root-only project
-# .env and are never printed. The business workflow receives only variables
-# explicitly declared as secret in agent-compose.yml.
+# .env and are never printed. OctoBus project tokens remain in the daemon and
+# are not injected into the Agent guest.
 set -eu
 
 PROJECT_ENV="${PROJECT_ENV_FILE:-/deploy/chaitin-triage-agent/.env}"
@@ -20,9 +20,22 @@ if [ -z "${OCTOBUS_BASE_URL:-}" ]; then
   echo "agent-compose: required variable is empty: OCTOBUS_BASE_URL" >&2
   exit 78
 fi
-if [ -z "${OCTOBUS_TOKEN:-}" ]; then
-  echo "agent-compose: required variable is empty: OCTOBUS_TOKEN" >&2
-  exit 78
-fi
+require_non_empty() {
+  name="$1"
+  case "$name" in
+    WAZUH_INGRESS_TOKEN) value="${WAZUH_INGRESS_TOKEN:-}" ;;
+    TRIAGE_RUNNER_TOKEN) value="${TRIAGE_RUNNER_TOKEN:-}" ;;
+    AGENT_COMPOSE_GUEST_IMAGE) value="${AGENT_COMPOSE_GUEST_IMAGE:-}" ;;
+    *) echo "agent-compose: unsupported required variable: ${name}" >&2; exit 78 ;;
+  esac
+  if [ -z "$value" ]; then
+    echo "agent-compose: required variable is empty: ${name}" >&2
+    exit 78
+  fi
+}
+
+for name in WAZUH_INGRESS_TOKEN TRIAGE_RUNNER_TOKEN AGENT_COMPOSE_GUEST_IMAGE; do
+  require_non_empty "$name"
+done
 
 exec /usr/bin/tini -- /app/agent-compose daemon

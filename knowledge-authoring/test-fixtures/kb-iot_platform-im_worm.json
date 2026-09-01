@@ -1,0 +1,87 @@
+[
+  {
+    "knowledgeId": "kb-iot_platform-im_worm",
+    "domainId": "iot_platform",
+    "attackTypeId": "im_worm",
+    "fixtureId": "kb-iot_platform-im_worm-confirmed-attack",
+    "scenarioType": "confirmed_attack",
+    "input": {
+      "evidence": [
+        "消息元数据、附件哈希、客户端进程和转发链",
+        "跨资产时间线",
+        "文件、进程和网络关联"
+      ],
+      "authorizationRecord": false,
+      "recurrence": 1
+    },
+    "expected": {
+      "action": "escalate_with_manual_review",
+      "ticketRequired": true,
+      "autoCloseAllowed": false
+    }
+  },
+  {
+    "knowledgeId": "kb-iot_platform-im_worm",
+    "domainId": "iot_platform",
+    "attackTypeId": "im_worm",
+    "fixtureId": "kb-iot_platform-im_worm-authorized-or-benign",
+    "scenarioType": "authorized_or_benign",
+    "input": {
+      "evidence": [
+        "消息元数据、附件哈希、客户端进程和转发链",
+        "跨资产时间线",
+        "文件、进程和网络关联"
+      ],
+      "authorizationRecord": true,
+      "recurrence": 1
+    },
+    "expected": {
+      "action": "suppress_with_manual_review",
+      "ticketRequired": true,
+      "autoCloseAllowed": false
+    }
+  },
+  {
+    "knowledgeId": "kb-iot_platform-im_worm",
+    "domainId": "iot_platform",
+    "attackTypeId": "im_worm",
+    "fixtureId": "kb-iot_platform-im_worm-insufficient-evidence",
+    "scenarioType": "insufficient_evidence",
+    "input": {
+      "evidence": [
+        "消息元数据、附件哈希、客户端进程和转发链"
+      ],
+      "authorizationRecord": false,
+      "recurrence": 1
+    },
+    "expected": {
+      "action": "request_additional_evidence",
+      "ticketRequired": true,
+      "autoCloseAllowed": false
+    }
+  },
+  {
+    "knowledgeId": "kb-iot_platform-im_worm",
+    "domainId": "iot_platform",
+    "attackTypeId": "im_worm",
+    "fixtureId": "kb-iot_platform-im_worm-compound-or-recurrent",
+    "scenarioType": "compound_or_recurrent",
+    "input": {
+      "evidence": [
+        "消息元数据、附件哈希、客户端进程和转发链",
+        "跨资产时间线",
+        "文件、进程和网络关联"
+      ],
+      "authorizationRecord": false,
+      "recurrence": 3,
+      "relatedAttackTypes": [
+        "im_worm"
+      ]
+    },
+    "expected": {
+      "action": "escalate_with_manual_review",
+      "ticketRequired": true,
+      "autoCloseAllowed": false
+    }
+  }
+]
