@@ -170,7 +170,10 @@ test("runtime validation rejects malformed Wazuh requests", () => {
 test("runtime exposes all OctoBus unary methods through the SDK CLI", () => {
   const testDirectory = path.dirname(fileURLToPath(import.meta.url));
   const runtimePath = path.resolve(testDirectory, "../src/runtime.js");
-  const result = spawnSync(process.execPath, [runtimePath, "--help"], { encoding: "utf8" });
+  const result = spawnSync(process.execPath, [runtimePath, "--help"], {
+    encoding: "utf8",
+    env: { ...process.env, NODE_NO_WARNINGS: "1" }
+  });
   assert.equal(result.status, 0);
   assert.match(result.stdout, /ingest-alert-event/);
   assert.match(result.stdout, /get-triage-trace/);
