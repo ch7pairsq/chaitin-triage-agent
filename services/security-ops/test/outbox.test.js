@@ -4,7 +4,7 @@ import { mkdtempSync, rmSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-import { AgentWebhookClient, DeliveryError, FeishuWebhookClient, OutboxWorker } from "../src/outbox.js";
+import { AgentWebhookClient, createOutboxLoop, DeliveryError, FeishuWebhookClient, OutboxWorker } from "../src/outbox.js";
 import { SecurityOpsService } from "../src/service.js";
 import { SecurityOpsStore } from "../src/store.js";
 
@@ -174,4 +174,88 @@ test("trigger dispatch reserves only the two available triage slots", () => {
     store.close();
     rmSync(directory, { recursive: true, force: true });
   }
+});
+
+test("outbox readiness reports retry backlog, manual attention and oldest pending age", () => {
+  const directory = mkdtempSync(path.join(os.tmpdir(), "security-ops-readiness-"));
+  let sequence = 0;
+  let currentTime = new Date("2026-09-01T00:00:00.000Z");
+  const store = new SecurityOpsStore({
+    databasePath: path.join(directory, "triage.db"),
+    now: () => currentTime,
+    idFactory: () => `id-${++sequence}`
+  });
+  try {
+    const service = new SecurityOpsService({ store, eventIdFactory: () => "event-1" });
+    service.ingestAlertEvent({
+      eventId: "event-1",
+      wazuhAlertId: "wazuh-1",
+      occurredAt: "2026-09-01T00:00:00.000Z",
+      alertJson: { rule: { id: "5710" } }
+    });
+    currentTime = new Date("2026-09-01T00:00:12.500Z");
+    assert.deepEqual(store.getOutboxReadiness(), {
+      backlog: 1,
+      manual: 0,
+      oldestPendingAgeMs: 12_500
+    });
+    const [trigger] = store.claimTriggerDeliveries({ limit: 1 });
+    store.markTriggerFailed(trigger, { error: "permanent failure", retryable: false });
+    assert.deepEqual(store.getOutboxReadiness(), {
+      backlog: 0,
+      manual: 1,
+      oldestPendingAgeMs: 0
+    });
+  } finally {
+    store.close();
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("outbox loop exposes active work, records unexpected errors and drains on close", async () => {
+  let release;
+  let runs = 0;
+  const logs = [];
+  const worker = {
+    acceptingWork: true,
+    stopAccepting() { this.acceptingWork = false; },
+    async runOnce() {
+      runs += 1;
+      await new Promise((resolve) => { release = resolve; });
+      throw new Error("database temporarily unavailable");
+    },
+    getHealth() {
+      return { backlog: 2, manual: 1, oldestPendingAgeMs: 9000, activeBatch: runs > 0, lastError: null, acceptingWork: this.acceptingWork };
+    }
+  };
+  const loop = createOutboxLoop(worker, {
+    intervalMs: 60_000,
+    logger: { error: (entry) => logs.push(entry) }
+  });
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(loop.getReadiness().activeBatch, true);
+  const closing = loop.close({ graceMs: 1000 });
+  assert.equal(worker.acceptingWork, false);
+  assert.equal(runs, 1);
+  release();
+  assert.deepEqual(await closing, { drained: true });
+  assert.equal(runs, 1);
+  assert.equal(logs.length, 1);
+  assert.deepEqual(
+    { message: logs[0].message, worker: logs[0].worker, errorCode: logs[0].errorCode },
+    { message: "outbox worker batch failed", worker: "outbox_loop", errorCode: "Error" }
+  );
+  assert.equal(loop.getReadiness().lastError.message, "database temporarily unavailable");
+});
+
+test("outbox loop bounded close reports an unfinished batch", async () => {
+  let release;
+  const loop = createOutboxLoop({
+    stopAccepting() {},
+    runOnce: () => new Promise((resolve) => { release = resolve; }),
+    getHealth: () => ({ backlog: 0, manual: 0, oldestPendingAgeMs: 0, activeBatch: true, lastError: null, acceptingWork: false })
+  }, { intervalMs: 60_000 });
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.deepEqual(await loop.close({ graceMs: 5 }), { drained: false });
+  release();
 });

@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { realpathSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -6,7 +7,7 @@ import { defineService, runServiceMain, serviceError } from "@chaitin-ai/octobus
 
 import { SecurityOpsError } from "./errors.js";
 import { KnowledgeRepository } from "./knowledge-repository.js";
-import { AgentWebhookClient, FeishuWebhookClient, OutboxWorker } from "./outbox.js";
+import { AgentWebhookClient, createOutboxLoop, FeishuWebhookClient, OutboxWorker } from "./outbox.js";
 import { SecurityOpsService } from "./service.js";
 import { SecurityOpsStore } from "./store.js";
 
@@ -51,7 +52,7 @@ function backendFor(context) {
         Number(config.delivery_poll_interval_ms ?? 3000)
       )
     });
-    const backend = { store, service, kick: loop.kick, close: loop.close };
+    const backend = { store, service, worker, loop, kick: loop.kick };
     backends.set(workdir, backend);
     return backend;
   } catch (error) {
@@ -129,37 +130,89 @@ export const octobusService = defineService({
       return { traceId: trace.traceId, traceJson: JSON.stringify(trace) };
     }),
     [`${FULL_SERVICE}/RecoverDelivery`]: unary((service, request) => service.recoverDelivery(request)),
-    [`${FULL_SERVICE}/PutAuthorizationRecord`]: unary((service, request) => service.putAuthorizationRecord(request))
+    [`${FULL_SERVICE}/PutAuthorizationRecord`]: unary((service, request) => service.putAuthorizationRecord(request)),
+    [`${FULL_SERVICE}/GetWorkerReadiness`]: unary((_service, _request, _context, backend) => {
+      const readiness = backend.loop.getReadiness();
+      return {
+        ready: readiness.acceptingWork === true,
+        backlog: readiness.backlog,
+        manual: readiness.manual,
+        oldestPendingAgeMs: readiness.oldestPendingAgeMs,
+        activeBatch: readiness.activeBatch,
+        acceptingWork: readiness.acceptingWork,
+        lastErrorJson: readiness.lastError ? JSON.stringify(readiness.lastError) : ""
+      };
+    })
   }
 });
 
-export function closeBackends() {
-  for (const backend of backends.values()) {
-    backend.close();
-    backend.store.close();
+export async function closeBackends({ graceMs = 10_000, logger = console } = {}) {
+  const entries = [...backends.values()];
+  const outcomes = await Promise.all(entries.map((backend) => backend.loop.close({ graceMs })));
+  for (let index = 0; index < entries.length; index += 1) {
+    if (outcomes[index].drained) {
+      entries[index].store.close();
+    } else {
+      logger.error({
+        message: "security operations shutdown grace expired",
+        worker: "outbox_loop",
+        graceMs
+      });
+    }
   }
   backends.clear();
+  return { drained: outcomes.every((outcome) => outcome.drained) };
 }
 
-export function createOutboxLoop(worker, { intervalMs = 1000 } = {}) {
-  let running = null;
-  let closed = false;
-  const kick = () => {
-    if (closed || running) return running;
-    running = Promise.resolve().then(() => worker.runOnce()).catch(() => null).finally(() => { running = null; });
-    return running;
-  };
-  const timer = setInterval(kick, Math.max(250, Math.min(intervalMs, 60_000)));
-  timer.unref();
-  kick();
-  return {
-    kick,
-    close() {
-      closed = true;
-      clearInterval(timer);
-    }
-  };
+function shutdownGrpcServer(server, graceMs) {
+  return new Promise((resolve) => {
+    let settled = false;
+    const finish = (graceful) => {
+      if (settled) return;
+      settled = true;
+      resolve({ graceful });
+    };
+    const timeout = setTimeout(() => {
+      server.forceShutdown();
+      finish(false);
+    }, graceMs);
+    server.tryShutdown(() => {
+      clearTimeout(timeout);
+      finish(true);
+    });
+  });
 }
 
-process.once("exit", closeBackends);
-runServiceMain(octobusService);
+export async function startRuntime() {
+  const result = await runServiceMain(octobusService);
+  if (result.command !== "serve") return result;
+  let shutdown = null;
+  const handleSignal = (signal) => {
+    if (shutdown) return shutdown;
+    const graceMs = 10_000;
+    console.error({ message: "security operations shutdown requested", signal, graceMs });
+    shutdown = Promise.all([
+      closeBackends({ graceMs }),
+      shutdownGrpcServer(result.server, graceMs)
+    ]).then(([workers, grpc]) => {
+      if (!workers.drained || !grpc.graceful) process.exitCode = 1;
+      return { workers, grpc };
+    });
+    return shutdown;
+  };
+  process.once("SIGTERM", () => { void handleSignal("SIGTERM"); });
+  process.once("SIGINT", () => { void handleSignal("SIGINT"); });
+  return result;
+}
+
+function sameExecutablePath(left, right) {
+  try {
+    return realpathSync(left) === realpathSync(right);
+  } catch {
+    return path.resolve(left) === path.resolve(right);
+  }
+}
+
+const isDirectRun = process.argv[1] !== undefined
+  && sameExecutablePath(process.argv[1], fileURLToPath(import.meta.url));
+if (isDirectRun) void startRuntime();

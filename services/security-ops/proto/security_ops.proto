@@ -18,6 +18,7 @@ service SecurityOpsService {
   rpc GetTriageTrace(GetTriageTraceRequest) returns (GetTriageTraceResponse);
   rpc RecoverDelivery(RecoverDeliveryRequest) returns (RecoverDeliveryResponse);
   rpc PutAuthorizationRecord(PutAuthorizationRecordRequest) returns (PutAuthorizationRecordResponse);
+  rpc GetWorkerReadiness(GetWorkerReadinessRequest) returns (GetWorkerReadinessResponse);
 }
 
 message IngestAlertEventRequest {
@@ -207,4 +208,15 @@ message PutAuthorizationRecordResponse {
   string authorization_id = 1;
   string status = 2;
   string updated_at = 3;
+}
+
+message GetWorkerReadinessRequest {}
+message GetWorkerReadinessResponse {
+  bool ready = 1;
+  uint32 backlog = 2;
+  uint32 manual = 3;
+  uint64 oldest_pending_age_ms = 4;
+  bool active_batch = 5;
+  bool accepting_work = 6;
+  string last_error_json = 7;
 }

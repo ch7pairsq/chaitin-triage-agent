@@ -17,9 +17,11 @@ const PROTO = readFileSync(path.resolve(TEST_DIR, "../proto/security_ops.proto")
 test("Proto exposes lease, recovery and authorization contracts", () => {
   assert.match(PROTO, /rpc RequeueStalledAlerts\(/);
   assert.match(PROTO, /rpc PutAuthorizationRecord\(/);
+  assert.match(PROTO, /rpc GetWorkerReadiness\(/);
   assert.match(PROTO, /message ClaimAlertResponse \{[\s\S]*string claim_token = 5;[\s\S]*uint32 attempt = 6;[\s\S]*string lease_until = 7;/);
   assert.match(PROTO, /message EnrichAlertRequest \{[\s\S]*string claim_token = 2;/);
   assert.doesNotMatch(PROTO, /message RequeueStalledAlertsRequest \{[\s\S]*\b(limit|stale_after|max_attempts)\b/);
+  assert.match(PROTO, /message GetWorkerReadinessResponse \{[\s\S]*uint32 backlog = 2;[\s\S]*uint64 oldest_pending_age_ms = 4;[\s\S]*bool active_batch = 5;[\s\S]*string last_error_json = 7;/);
 });
 
 test("claim tokens are required and strictly bounded", () => {

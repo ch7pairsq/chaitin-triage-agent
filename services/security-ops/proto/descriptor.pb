@@ -1,5 +1,5 @@
 
-‰.
+¡1
 security_ops.protosecurity.ops.v1"Á
 IngestAlertEventRequest
 event_id (	ReventId$
@@ -161,7 +161,16 @@ validUntil#
 authorization_id (	RauthorizationId
 status (	Rstatus
 
-updated_at (	R	updatedAt2¾
+updated_at (	R	updatedAt"
+GetWorkerReadinessRequest"‰
+GetWorkerReadinessResponse
+ready (Rready
+backlog (Rbacklog
+manual (Rmanual1
+oldest_pending_age_ms (RoldestPendingAgeMs!
+active_batch (RactiveBatch%
+accepting_work (RacceptingWork&
+last_error_json (	RlastErrorJson2­
 SecurityOpsServiceg
 IngestAlertEvent(.security.ops.v1.IngestAlertEventRequest).security.ops.v1.IngestAlertEventResponsej
 ListPendingAlerts).security.ops.v1.ListPendingAlertsRequest*.security.ops.v1.ListPendingAlertsResponses
@@ -178,4 +187,5 @@ ClaimAlert".security.ops.v1.ClaimAlertRequest#.security.ops.v1.ClaimAlertRespo
 FinalizeTriage&.security.ops.v1.FinalizeTriageRequest'.security.ops.v1.FinalizeTriageResponsea
 GetTriageTrace&.security.ops.v1.GetTriageTraceRequest'.security.ops.v1.GetTriageTraceResponsed
 RecoverDelivery'.security.ops.v1.RecoverDeliveryRequest(.security.ops.v1.RecoverDeliveryResponsey
-PutAuthorizationRecord..security.ops.v1.PutAuthorizationRecordRequest/.security.ops.v1.PutAuthorizationRecordResponsebproto3
+PutAuthorizationRecord..security.ops.v1.PutAuthorizationRecordRequest/.security.ops.v1.PutAuthorizationRecordResponsem
+GetWorkerReadiness*.security.ops.v1.GetWorkerReadinessRequest+.security.ops.v1.GetWorkerReadinessResponsebproto3

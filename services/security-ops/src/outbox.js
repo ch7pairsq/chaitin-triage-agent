@@ -96,10 +96,13 @@ export class OutboxWorker {
     this.feishuWebhookClient = feishuWebhookClient;
     this.limit = limit;
     this.logger = logger;
+    this.acceptingWork = true;
+    this.lastError = null;
   }
 
   async runOnce() {
     const summary = { triggerDelivered: 0, triggerFailed: 0, feishuDelivered: 0, feishuFailed: 0 };
+    if (!this.acceptingWork) return summary;
     for (const delivery of this.store.claimTriggerDeliveries({ limit: this.limit })) {
       try {
         await this.agentWebhookClient.send(delivery);
@@ -111,6 +114,7 @@ export class OutboxWorker {
         summary.triggerFailed += 1;
       }
     }
+    if (!this.acceptingWork) return summary;
     for (const delivery of this.store.claimFeishuDeliveries({ limit: this.limit })) {
       try {
         await this.feishuWebhookClient.send(delivery);
@@ -125,8 +129,21 @@ export class OutboxWorker {
     return summary;
   }
 
+  stopAccepting() {
+    this.acceptingWork = false;
+  }
+
+  getHealth() {
+    return {
+      ...this.store.getOutboxReadiness(),
+      activeBatch: false,
+      acceptingWork: this.acceptingWork,
+      lastError: this.lastError
+    };
+  }
+
   #logFailure(worker, delivery, error, outcome) {
-    this.logger.error({
+    const entry = {
       message: "outbox delivery failed",
       worker,
       deliveryId: delivery.deliveryId,
@@ -137,8 +154,70 @@ export class OutboxWorker {
       retryable: error?.retryable === true,
       nextStatus: outcome?.status ?? "unknown",
       nextAttemptAt: outcome?.nextAttemptAt ?? null
-    });
+    };
+    this.lastError = entry;
+    this.logger.error(entry);
   }
+}
+
+export function createOutboxLoop(worker, { intervalMs = 1000, logger = console } = {}) {
+  let running = null;
+  let closed = false;
+  let closePromise = null;
+  let lastError = null;
+
+  const kick = () => {
+    if (closed || running) return running;
+    running = Promise.resolve()
+      .then(() => worker.runOnce())
+      .catch((error) => {
+        lastError = {
+          message: String(error?.message ?? "outbox worker batch failed").slice(0, 512),
+          worker: "outbox_loop",
+          errorCode: error?.code ?? error?.name ?? "Error",
+          occurredAt: new Date().toISOString()
+        };
+        logger.error({ ...lastError, message: "outbox worker batch failed", error: lastError.message });
+        return null;
+      })
+      .finally(() => { running = null; });
+    return running;
+  };
+
+  const timer = setInterval(kick, Math.max(250, Math.min(intervalMs, 60_000)));
+  timer.unref();
+  kick();
+
+  return {
+    kick,
+    getReadiness() {
+      const health = worker.getHealth();
+      return {
+        ...health,
+        activeBatch: running !== null,
+        acceptingWork: !closed && health.acceptingWork !== false,
+        lastError: lastError ?? health.lastError ?? null
+      };
+    },
+    close({ graceMs = 10_000 } = {}) {
+      if (closePromise) return closePromise;
+      closed = true;
+      clearInterval(timer);
+      worker.stopAccepting();
+      closePromise = (async () => {
+        if (!running) return { drained: true };
+        const boundedGraceMs = Math.max(1, Math.min(Number(graceMs) || 10_000, 60_000));
+        let timeout;
+        const drained = await Promise.race([
+          running.then(() => true),
+          new Promise((resolve) => { timeout = setTimeout(() => resolve(false), boundedGraceMs); })
+        ]);
+        clearTimeout(timeout);
+        return { drained };
+      })();
+      return closePromise;
+    }
+  };
 }
 
 function validateAgentWebhookUrl(value) {

@@ -663,6 +663,17 @@ export class SecurityOpsStore {
     };
   }
 
+  getOutboxReadiness() {
+    const row = this.statements.outboxReadiness.get();
+    const oldest = row.oldest_pending_at ? Date.parse(row.oldest_pending_at) : Number.NaN;
+    const ageMs = Number.isFinite(oldest) ? Math.max(0, this.now().getTime() - oldest) : 0;
+    return {
+      backlog: Number(row.backlog ?? 0),
+      manual: Number(row.manual ?? 0),
+      oldestPendingAgeMs: ageMs
+    };
+  }
+
   close() {
     this.database.close();
   }
@@ -830,6 +841,17 @@ function prepareStatements(database) {
         SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) AS pending,
         SUM(CASE WHEN status = 'manual' THEN 1 ELSE 0 END) AS manual
       FROM delivery_outbox
+    `),
+    outboxReadiness: database.prepare(`
+      SELECT
+        SUM(CASE WHEN status IN ('pending', 'processing') THEN 1 ELSE 0 END) AS backlog,
+        SUM(CASE WHEN status = 'manual' THEN 1 ELSE 0 END) AS manual,
+        MIN(CASE WHEN status IN ('pending', 'processing') THEN created_at END) AS oldest_pending_at
+      FROM (
+        SELECT status, created_at FROM trigger_outbox
+        UNION ALL
+        SELECT status, created_at FROM delivery_outbox
+      )
     `),
     selectDueTriggers: database.prepare(`
       SELECT * FROM trigger_outbox

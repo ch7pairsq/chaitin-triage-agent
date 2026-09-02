@@ -140,6 +140,7 @@ for (const file of [
   "deploy/stacks/wazuh/tools/render-config.mjs",
   "deploy/stacks/triage-platform/tools/configure-agent-webhook.mjs",
   "deploy/stacks/triage-platform/tools/render-config.mjs",
+  "deploy/stacks/triage-platform/tools/verify-readiness.mjs",
   "deploy/stacks/triage-platform/tools/verify-trace.mjs",
   "deploy/stacks/release-webhook/tools/render-secret.mjs"
 ]) runNodeCheck(file);
@@ -207,7 +208,8 @@ assertEqualArrays(selectedMethods("triage-runner"), [
 assertEqualArrays(selectedMethods("triage-ops"), [
   "/security.ops.v1.SecurityOpsService/GetTriageTrace",
   "/security.ops.v1.SecurityOpsService/RecoverDelivery",
-  "/security.ops.v1.SecurityOpsService/PutAuthorizationRecord"
+  "/security.ops.v1.SecurityOpsService/PutAuthorizationRecord",
+  "/security.ops.v1.SecurityOpsService/GetWorkerReadiness"
 ], "triage-ops methods must be exact");
 
 const intakeScheduler = read("scheduler/wazuh-intake.js");

@@ -101,6 +101,7 @@ reset_instance triage-ops security-ops-main
 select_method triage-ops security-ops-main /security.ops.v1.SecurityOpsService/GetTriageTrace security_ops__get_triage_trace
 select_method triage-ops security-ops-main /security.ops.v1.SecurityOpsService/RecoverDelivery security_ops__recover_delivery
 select_method triage-ops security-ops-main /security.ops.v1.SecurityOpsService/PutAuthorizationRecord security_ops__put_authorization_record
+select_method triage-ops security-ops-main /security.ops.v1.SecurityOpsService/GetWorkerReadiness security_ops__get_worker_readiness
 
 replace_token() {
   capset_id="$1"

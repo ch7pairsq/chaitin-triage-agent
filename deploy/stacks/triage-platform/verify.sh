@@ -20,8 +20,14 @@ printf '%s\n' "$wazuh_status" | grep -F 'wazuh-remoted is running' >/dev/null ||
 docker exec agent-compose agent-compose version
 docker exec agent-compose agent-compose project ls --json
 schedulers=$(docker exec agent-compose agent-compose -p chaitin-triage-agent scheduler ls --json)
-for scheduler in wazuh-alert-poll wazuh-alert hourly-security-triage; do
+for scheduler in wazuh-intake wazuh-alert; do
   printf '%s' "$schedulers" | grep -F "$scheduler" >/dev/null || { echo "scheduler is missing: $scheduler" >&2; exit 1; }
+done
+for removed_scheduler in wazuh-alert-poll hourly-security-triage; do
+  if printf '%s' "$schedulers" | grep -F "$removed_scheduler" >/dev/null; then
+    echo "obsolete scheduler is still registered: $removed_scheduler" >&2
+    exit 1
+  fi
 done
 
 octobus() {
@@ -37,5 +43,13 @@ octobus admin-token get agent-triage
 octobus catalog wazuh-ingress --mcp --json
 octobus catalog triage-runner --mcp --json
 octobus catalog triage-ops --mcp --json
+
+repo_root=$(CDPATH= cd -- "$script_dir/../../.." && pwd)
+host_repo_root=${TRIAGE_HOST_REPO_ROOT:-$repo_root}
+docker run --rm --network chaitin-net \
+  --volume "$host_repo_root/deploy/stacks/triage-platform/tools/verify-readiness.mjs:/app/verify-readiness.mjs:ro" \
+  --volume "$host_repo_root/deploy/stacks/triage-platform/generated/triage-ops-token:/run/secrets/triage-ops-token:ro" \
+  node:22.23.2-alpine3.24 \
+  node /app/verify-readiness.mjs
 
 echo "triage platform verification passed"
