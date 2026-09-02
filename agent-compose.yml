@@ -12,7 +12,7 @@ octobus_servers:
 agents:
   triage-operator:
     provider: codex
-    image: ${AGENT_COMPOSE_GUEST_IMAGE}
+    image: chaitin/agent-compose-guest@sha256:1c18be6907ad7d0ad4f13d95aa89530615412c0a016a01a0f9548503112b2ee0
     driver:
       docker: {}
     capset_ids:

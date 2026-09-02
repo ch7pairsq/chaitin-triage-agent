@@ -82,6 +82,10 @@ assert(
   ]),
   "triage-operator must use only the two declared OctoBus capsets"
 );
+assert(
+  agentCompose?.agents?.["triage-operator"]?.image === "chaitin/agent-compose-guest@sha256:1c18be6907ad7d0ad4f13d95aa89530615412c0a016a01a0f9548503112b2ee0",
+  "triage-operator image must be pinned explicitly because the deployed agent-compose version does not interpolate this field"
+);
 
 const wazuhStack = documents.get("deploy/stacks/wazuh/docker-compose.yml");
 assert(wazuhStack?.services?.["wazuh.manager"], "Wazuh manager service is missing");
