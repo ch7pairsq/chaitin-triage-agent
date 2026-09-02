@@ -123,6 +123,7 @@ services:
       WAZUH_SYSLOG_PORT: "514"
       INJECT_ENABLED: ${WAZUH_TEST_EVENT_ENABLED:-false}
       INJECT_INTERVAL_MS: ${WAZUH_TEST_EVENT_INTERVAL_MS:-300000}
+      INJECT_STAY_ALIVE: "true"
     security_opt: [no-new-privileges:true]
     cap_drop: [ALL]
     networks: [chaitin-net]

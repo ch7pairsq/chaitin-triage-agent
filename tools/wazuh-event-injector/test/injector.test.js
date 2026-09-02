@@ -44,3 +44,13 @@ test("one-shot mode exits after one event instead of creating a timer", async ()
   }
   assert.equal(sent, 1);
 });
+
+test("disabled Stack process stays available for later one-shot exec", async () => {
+  let waited = false;
+  await run({
+    enabled: false,
+    stayAlive: true,
+    waitForShutdown: async () => { waited = true; }
+  });
+  assert.equal(waited, true);
+});

@@ -64,10 +64,23 @@ export async function run({
   intervalMs = Number(process.env.INJECT_INTERVAL_MS ?? 300_000),
   enabled = String(process.env.INJECT_ENABLED ?? "false").toLowerCase() === "true",
   once = String(process.env.INJECT_ONCE ?? "false").toLowerCase() === "true",
-  socketFactory
+  stayAlive = String(process.env.INJECT_STAY_ALIVE ?? "false").toLowerCase() === "true",
+  socketFactory,
+  waitForShutdown = () => new Promise((resolve) => {
+    const timer = setInterval(() => {}, 3_600_000);
+    const stop = () => {
+      clearInterval(timer);
+      process.off("SIGINT", stop);
+      process.off("SIGTERM", stop);
+      resolve();
+    };
+    process.once("SIGINT", stop);
+    process.once("SIGTERM", stop);
+  })
 } = {}) {
   if (!enabled) {
     console.log(JSON.stringify({ status: "disabled" }));
+    if (stayAlive) await waitForShutdown();
     return;
   }
   if (!Number.isInteger(intervalMs) || intervalMs < 60_000 || intervalMs > 86_400_000) {

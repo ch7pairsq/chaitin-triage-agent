@@ -7,6 +7,12 @@ host_repo_root=${TRIAGE_HOST_REPO_ROOT:-$repo_root}
 env_file=${1:-"$repo_root/.env"}
 test -r "$env_file" || { echo "missing root configuration: $env_file" >&2; exit 78; }
 
+wazuh_ca_file="$stack_dir/config/wazuh_indexer_ssl_certs/root-ca.pem"
+test -s "$wazuh_ca_file" || { echo "missing Wazuh root CA: $wazuh_ca_file" >&2; exit 78; }
+# The CA is public certificate material. The bootstrap container drops every
+# Linux capability, so it must be world-readable without relaxing any key.
+chmod 0444 "$wazuh_ca_file"
+
 env_value() {
   key="$1"
   awk -v wanted="$key" 'index($0, wanted "=") == 1 { value=substr($0, length(wanted) + 2) } END { print value }' "$env_file"

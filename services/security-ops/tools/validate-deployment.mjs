@@ -85,6 +85,10 @@ const wazuhStack = documents.get("deploy/stacks/wazuh/docker-compose.yml");
 assert(wazuhStack?.services?.["wazuh.manager"], "Wazuh manager service is missing");
 assert(wazuhStack?.services?.["wazuh.indexer"], "Wazuh indexer service is missing");
 assert(wazuhStack?.services?.["wazuh-role-bootstrap"], "Wazuh read-only role bootstrap is missing");
+assert(
+  wazuhStack?.services?.["wazuh-event-injector"]?.environment?.INJECT_STAY_ALIVE === "true",
+  "disabled Wazuh event injector must stay available for one-shot execution"
+);
 
 const platformStack = documents.get("deploy/stacks/triage-platform/docker-compose.yml");
 assert(platformStack?.services?.octobus, "OctoBus service is missing from triage-platform");
@@ -122,6 +126,8 @@ const wazuhPrepare = fs.readFileSync(path.join(root, "deploy/stacks/wazuh/prepar
 assert(/hash\.sh[\s\\]*\n[\s-]*-env WAZUH_HASH_PASSWORD/.test(wazuhPrepare), "Wazuh password hashing must use the official environment-variable input");
 assert(/--env-file "\$password_env"/.test(wazuhPrepare), "Wazuh password hashing must read a private environment file");
 assert(!/hash\.sh[\s\\]*\n[\s|]*\|/.test(wazuhPrepare), "Wazuh password hashing must not rely on console stdin");
+assert(/chmod 0444 "\$wazuh_ca_file"/.test(wazuhPrepare), "Wazuh public CA must remain readable after all bootstrap capabilities are dropped");
+assert(!/chmod 0444[^\n]*(?:key|admin\.pem)/.test(wazuhPrepare), "Wazuh private keys and admin certificate must not be made world-readable");
 
 const temporaryRoot = fs.mkdtempSync(path.join(os.tmpdir(), "triage-deployment-validation-"));
 try {
