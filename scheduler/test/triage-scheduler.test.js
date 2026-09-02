@@ -5,7 +5,7 @@ import test from "node:test";
 
 const script = readFileSync(new URL("../triage-scheduler.js", import.meta.url), "utf8");
 
-function loadScheduler({ resultSuccess = true, structuredResult = null } = {}) {
+function loadScheduler({ resultSuccess = true, structuredResult = null, finalTextOnly = false, finalText = null } = {}) {
   const registrations = { events: new Map(), crons: new Map() };
   const calls = [];
   const scheduler = {
@@ -27,7 +27,11 @@ function loadScheduler({ resultSuccess = true, structuredResult = null } = {}) {
         traceIds: ["trace-1"],
         terminalStates: ["COMPLETED"],
       };
-      return { success: true, json, finalText: JSON.stringify(json) };
+      return {
+        success: true,
+        ...(finalTextOnly ? {} : { json }),
+        finalText: finalText ?? JSON.stringify(json),
+      };
     },
     log() {},
   };
@@ -44,7 +48,7 @@ test("registers only the Wazuh webhook event trigger", () => {
   assert.doesNotMatch(script, /hourly-security-triage|wazuh-alert-poll|Mode: poll/);
 });
 
-test("event trigger uses a new sandbox, three-minute timeout, and strict output schema", () => {
+test("event trigger uses a new sandbox, three-minute timeout, and a scheduler-enforced output schema", () => {
   const { registrations, calls } = loadScheduler();
   const result = registrations.events.get("wazuh-alert").callback({
     payload: {
@@ -57,10 +61,9 @@ test("event trigger uses a new sandbox, three-minute timeout, and strict output 
   assert.doesNotMatch(calls[0].prompt, /agent-compose-envelope-id/);
   assert.equal(calls[0].options.sandboxPolicy, "new");
   assert.equal(calls[0].options.timeout, "3m");
-  assert.deepEqual(Array.from(calls[0].options.outputSchema.required), [
-    "success", "mode", "polled", "ingested", "processed", "traceIds", "terminalStates",
-  ]);
-  assert.equal(calls[0].options.outputSchema.additionalProperties, false);
+  assert.equal(calls[0].options.outputSchema, undefined);
+  assert.match(calls[0].prompt, /"additionalProperties":false/);
+  assert.match(calls[0].prompt, /"required":\["success","mode","polled","ingested","processed","traceIds","terminalStates"\]/);
 });
 
 test("triage prompt passes the acquired claim token to all eight leased methods", () => {
@@ -94,7 +97,7 @@ test("manual entry requires a real event id and uses the same event workflow", (
   assert.match(calls[0].prompt, /business-event-3/);
 });
 
-test("uses runtime-validated structured JSON and rejects an incomplete result", () => {
+test("uses scheduler-validated structured JSON and rejects an incomplete result", () => {
   const success = loadScheduler();
   assert.equal(success.registrations.events.get("wazuh-alert").callback({
     payload: { body: { eventId: "business-event-4" } },
@@ -106,6 +109,27 @@ test("uses runtime-validated structured JSON and rejects an incomplete result", 
       payload: { body: { eventId: "business-event-4" } },
     }),
     /incomplete business run/
+  );
+});
+
+test("accepts one fenced JSON result from chat-completions providers but rejects ambiguity", () => {
+  const fenced = loadScheduler({
+    finalTextOnly: true,
+    finalText: "Done.\n```json\n{\"success\":true,\"mode\":\"event\",\"polled\":0,\"ingested\":0,\"processed\":1,\"traceIds\":[\"trace-1\"],\"terminalStates\":[\"completed\"]}\n```\nSummary.",
+  });
+  assert.equal(fenced.registrations.events.get("wazuh-alert").callback({
+    payload: { body: { eventId: "business-event-6" } },
+  }).success, true);
+
+  const ambiguous = loadScheduler({
+    finalTextOnly: true,
+    finalText: "```json\n{}\n```\n```json\n{}\n```",
+  });
+  assert.throws(
+    () => ambiguous.registrations.events.get("wazuh-alert").callback({
+      payload: { body: { eventId: "business-event-7" } },
+    }),
+    /not valid structured JSON/
   );
 });
 

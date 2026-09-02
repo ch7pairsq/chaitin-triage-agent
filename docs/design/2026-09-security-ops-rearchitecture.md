@@ -61,7 +61,7 @@ agent-compose scheduler: wazuh-intake（每分钟、确定性程序）
 }
 ```
 
-`triage-operator` 是唯一执行开放式研判的 Agent，必须声明结构化输出 schema。它不能直接访问数据库、HTTP 接口或宿主机文件，只能使用 `triage-runner` capset 暴露的方法。
+`triage-operator` 是唯一执行开放式研判的 Agent。提示词必须携带结构化输出 schema，scheduler 对纯 JSON 或唯一 JSON 代码块执行相同的严格字段、类型、计数和模式校验，以兼容不原生支持结构化输出的 `chat_completions` 服务；多份 JSON、缺字段或额外字段都必须失败。它不能直接访问数据库、HTTP 接口或宿主机文件，只能使用 `triage-runner` capset 暴露的方法。
 
 不再保留小时级完整 Agent 调度。分钟级任务负责实时采集，停滞任务由每分钟周期中的确定性恢复步骤处理，避免整点并发碰撞、重复成本和双重状态机。
 

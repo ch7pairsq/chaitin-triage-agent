@@ -29,20 +29,30 @@ function optionalOpaqueId(value, field) {
     : requireOpaqueId(value, field);
 }
 
+function decodeStructuredResult(reply) {
+  if (reply?.json && !Array.isArray(reply.json) && typeof reply.json === "object") return reply.json;
+  const raw = [reply?.finalText, reply?.output, reply?.text]
+    .find((value) => typeof value === "string" && value.trim() !== "");
+  if (!raw) throw new Error("triage Agent result is not valid structured JSON");
+  const candidates = [raw.trim()];
+  const fenced = [...raw.matchAll(/```(?:json)?\s*([\s\S]*?)\s*```/gi)].map((match) => match[1].trim());
+  candidates.push(...fenced);
+  const decoded = [];
+  for (const candidate of candidates) {
+    try {
+      const value = JSON.parse(candidate);
+      if (value && !Array.isArray(value) && typeof value === "object") decoded.push(value);
+    } catch {}
+  }
+  if (decoded.length !== 1) throw new Error("triage Agent result is not valid structured JSON");
+  return decoded[0];
+}
+
 function parseTriageResult(reply, expectedMode) {
   if (!reply || reply.success !== true) {
     throw new Error("triage Agent did not return a successful runtime result");
   }
-  let result = reply.json;
-  if (!result || Array.isArray(result) || typeof result !== "object") {
-    const raw = [reply.finalText, reply.output, reply.text]
-      .find((value) => typeof value === "string" && value.trim() !== "");
-    try {
-      result = JSON.parse(String(raw ?? ""));
-    } catch {
-      throw new Error("triage Agent result is not valid structured JSON");
-    }
-  }
+  const result = decodeStructuredResult(reply);
   const keys = Object.keys(result).sort();
   if (keys.length !== triageResultKeys.length || keys.some((key, index) => key !== triageResultKeys[index])) {
     throw new Error("triage Agent result fields do not match the contract");
@@ -87,7 +97,7 @@ function buildPrompt(context) {
     "Use only identifiers and values returned by methods. Do not invent decisions, actions, tickets, delivery IDs, or terminal states.",
     "Every path requires CreateManualTicket and must not auto-close. The terminal state comes only from FinalizeTriage.state.",
     "If a required method fails, stop that event and report success=false without claiming an unreturned terminal state.",
-    "After the final RPC, immediately return only the structured JSON required by the provided schema. The first character must be { and the last character must be }. Do not use Markdown fences, headings, explanations, summaries, or any text outside that single JSON object. polled and ingested must both be 0. processed must equal the length of traceIds and terminalStates, which use matching order.",
+    "After the final RPC, immediately return only the structured JSON required by this schema: " + JSON.stringify(triageOutputSchema) + ". The first character must be { and the last character must be }. Do not use Markdown fences, headings, explanations, summaries, or any text outside that single JSON object. polled and ingested must both be 0. processed must equal the length of traceIds and terminalStates, which use matching order.",
     "Mode: " + context.mode,
   ].filter(Boolean).join("\n");
 }
@@ -96,7 +106,6 @@ function runTriage(context) {
   const reply = scheduler.agent(buildPrompt(context), {
     sandboxPolicy: "new",
     timeout: "3m",
-    outputSchema: triageOutputSchema,
   });
   const result = parseTriageResult(reply, context.mode);
   if (result.success !== true) {
