@@ -65,9 +65,9 @@ fs.chmodSync(outputDir, 0o700);
 writePrivate("wazuh-connector.config.json", `${JSON.stringify({
   indexer_url: "https://wazuh.indexer:9200",
   index_pattern: "wazuh-alerts-*",
-  minimum_rule_level: 3,
+  minimum_rule_level: 0,
   required_rule_group: "triage_input",
-  request_timeout_ms: 10000,
+  request_timeout_ms: 8000,
   ca_path: "/repo/deploy/stacks/wazuh/config/wazuh_indexer_ssl_certs/root-ca.pem",
   max_alert_bytes: 262144
 }, null, 2)}\n`);

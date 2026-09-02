@@ -17,19 +17,19 @@
       "type": "integer",
       "minimum": 0,
       "maximum": 16,
-      "default": 3
+      "default": 0
     },
     "required_rule_group": {
       "type": "string",
       "maxLength": 128,
       "pattern": "^[A-Za-z0-9_.-]*$",
-      "default": ""
+      "default": "triage_input"
     },
     "request_timeout_ms": {
       "type": "integer",
       "minimum": 1000,
-      "maximum": 30000,
-      "default": 10000
+      "maximum": 8000,
+      "default": 8000
     },
     "ca_path": {
       "type": "string",

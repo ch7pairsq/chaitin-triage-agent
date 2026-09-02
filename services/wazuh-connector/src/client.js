@@ -19,12 +19,15 @@ export class WazuhIndexerClient {
     username,
     password,
     indexPattern = "wazuh-alerts-*",
-    minimumRuleLevel = 3,
-    requiredRuleGroup = "",
-    requestTimeoutMs = 10_000,
+    minimumRuleLevel = 0,
+    requiredRuleGroup = "triage_input",
+    requestTimeoutMs = 8_000,
     caPath = "",
     maxAlertBytes = 262_144,
-    now = () => new Date()
+    now = () => new Date(),
+    requestImpl = nodeRequestJson,
+    sleepImpl = (delayMs) => new Promise((resolve) => setTimeout(resolve, delayMs)),
+    random = Math.random
   }) {
     this.baseUrl = normalizeBaseUrl(indexerUrl);
     this.username = requiredSecret(username, "indexer_username");
@@ -32,10 +35,14 @@ export class WazuhIndexerClient {
     this.indexPattern = normalizeIndexPattern(indexPattern);
     this.minimumRuleLevel = boundedInteger(minimumRuleLevel, 0, 16, "minimum_rule_level");
     this.requiredRuleGroup = normalizeRuleGroup(requiredRuleGroup);
-    this.requestTimeoutMs = boundedInteger(requestTimeoutMs, 1000, 30_000, "request_timeout_ms");
+    this.requestTimeoutMs = boundedInteger(requestTimeoutMs, 1000, 8_000, "request_timeout_ms");
     this.maxAlertBytes = boundedInteger(maxAlertBytes, 1024, 524_288, "max_alert_bytes");
     this.ca = caPath ? readFileSync(caPath) : undefined;
     this.now = now;
+    this.requestImpl = requestImpl;
+    this.sleepImpl = sleepImpl;
+    this.random = random;
+    this.lastSuccessfulQueryAt = null;
   }
 
   async listAlerts(request = {}) {
@@ -63,8 +70,10 @@ export class WazuhIndexerClient {
     if (!Array.isArray(hits)) {
       throw new WazuhConnectorError("UNAVAILABLE", "Wazuh Indexer returned an invalid search response");
     }
+    const alerts = hits.map((hit) => this.#normalizeHit(hit));
+    this.lastSuccessfulQueryAt = queriedAt.toISOString();
     return {
-      alerts: hits.map((hit) => this.#normalizeHit(hit)),
+      alerts,
       queriedAt: queriedAt.toISOString()
     };
   }
@@ -97,57 +106,88 @@ export class WazuhIndexerClient {
   async #requestJson(pathname, body) {
     const url = new URL(pathname, this.baseUrl);
     const payload = JSON.stringify(body);
-    const transport = url.protocol === "https:" ? https : http;
-    const options = {
-      method: "POST",
-      hostname: url.hostname,
-      port: url.port || undefined,
-      path: url.pathname + url.search,
-      timeout: this.requestTimeoutMs,
-      headers: {
-        accept: "application/json",
-        authorization: `Basic ${Buffer.from(`${this.username}:${this.password}`).toString("base64")}`,
-        "content-type": "application/json",
-        "content-length": Buffer.byteLength(payload)
-      },
-      ca: this.ca,
-      rejectUnauthorized: true
-    };
-    return new Promise((resolve, reject) => {
-      const req = transport.request(options, (res) => {
-        const chunks = [];
-        let bytes = 0;
-        res.on("data", (chunk) => {
-          bytes += chunk.length;
-          if (bytes > 2_097_152) {
-            req.destroy(new WazuhConnectorError("RESOURCE_EXHAUSTED", "Wazuh response exceeds 2 MiB"));
-            return;
-          }
-          chunks.push(chunk);
+    for (let attempt = 1; attempt <= 2; attempt += 1) {
+      try {
+        return await this.requestImpl({
+          url,
+          body: payload,
+          timeoutMs: this.requestTimeoutMs,
+          username: this.username,
+          password: this.password,
+          ca: this.ca
         });
-        res.on("end", () => {
-          const text = Buffer.concat(chunks).toString("utf8");
-          if ((res.statusCode ?? 500) < 200 || (res.statusCode ?? 500) >= 300) {
-            reject(new WazuhConnectorError(
-              res.statusCode === 401 || res.statusCode === 403 ? "UNAUTHENTICATED" : "UNAVAILABLE",
-              `Wazuh Indexer request failed with HTTP ${res.statusCode}`
-            ));
-            return;
-          }
-          try {
-            resolve(JSON.parse(text));
-          } catch {
-            reject(new WazuhConnectorError("UNAVAILABLE", "Wazuh Indexer returned invalid JSON"));
-          }
-        });
-      });
-      req.on("timeout", () => req.destroy(new WazuhConnectorError("DEADLINE_EXCEEDED", "Wazuh Indexer request timed out")));
-      req.on("error", (error) => reject(error instanceof WazuhConnectorError
-        ? error
-        : new WazuhConnectorError("UNAVAILABLE", "Wazuh Indexer request failed", { cause: error.message })));
-      req.end(payload);
-    });
+      } catch (error) {
+        const normalized = error instanceof WazuhConnectorError
+          ? error
+          : new WazuhConnectorError("UNAVAILABLE", "Wazuh Indexer request failed", { cause: error?.message ?? "unknown error" });
+        if (attempt === 2 || !isRetryable(normalized)) throw normalized;
+        const delayMs = 100 + Math.floor(Math.max(0, Math.min(1, this.random())) * 150);
+        await this.sleepImpl(delayMs);
+      }
+    }
+    throw new WazuhConnectorError("UNAVAILABLE", "Wazuh Indexer request exhausted retries");
   }
+}
+
+function nodeRequestJson({ url, body, timeoutMs, username, password, ca }) {
+  const transport = url.protocol === "https:" ? https : http;
+  const options = {
+    method: "POST",
+    hostname: url.hostname,
+    port: url.port || undefined,
+    path: url.pathname + url.search,
+    timeout: timeoutMs,
+    headers: {
+      accept: "application/json",
+      authorization: `Basic ${Buffer.from(`${username}:${password}`).toString("base64")}`,
+      "content-type": "application/json",
+      "content-length": Buffer.byteLength(body)
+    },
+    ca,
+    rejectUnauthorized: true
+  };
+  return new Promise((resolve, reject) => {
+    const req = transport.request(options, (res) => {
+      const chunks = [];
+      let bytes = 0;
+      res.on("data", (chunk) => {
+        bytes += chunk.length;
+        if (bytes > 2_097_152) {
+          req.destroy(new WazuhConnectorError("RESOURCE_EXHAUSTED", "Wazuh response exceeds 2 MiB"));
+          return;
+        }
+        chunks.push(chunk);
+      });
+      res.on("end", () => {
+        const text = Buffer.concat(chunks).toString("utf8");
+        const status = res.statusCode ?? 500;
+        if (status < 200 || status >= 300) {
+          const code = status === 401 || status === 403
+            ? "UNAUTHENTICATED"
+            : status >= 400 && status < 500 && status !== 429
+              ? "INVALID_ARGUMENT"
+              : "UNAVAILABLE";
+          reject(new WazuhConnectorError(code, `Wazuh Indexer request failed with HTTP ${status}`, { httpStatus: status }));
+          return;
+        }
+        try {
+          resolve(JSON.parse(text));
+        } catch {
+          reject(new WazuhConnectorError("UNAVAILABLE", "Wazuh Indexer returned invalid JSON"));
+        }
+      });
+    });
+    req.on("timeout", () => req.destroy(new WazuhConnectorError("DEADLINE_EXCEEDED", "Wazuh Indexer request timed out")));
+    req.on("error", (error) => reject(error instanceof WazuhConnectorError
+      ? error
+      : new WazuhConnectorError("UNAVAILABLE", "Wazuh Indexer request failed", { cause: error.message })));
+    req.end(body);
+  });
+}
+
+function isRetryable(error) {
+  const status = Number(error.details?.httpStatus ?? 0);
+  return error.code === "DEADLINE_EXCEEDED" || status === 429 || status >= 500;
 }
 
 function normalizeBaseUrl(value) {

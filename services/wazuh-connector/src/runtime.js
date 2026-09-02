@@ -26,9 +26,9 @@ function clientFor(context) {
     username: secret.indexer_username,
     password: secret.indexer_password,
     indexPattern: config.index_pattern ?? "wazuh-alerts-*",
-    minimumRuleLevel: config.minimum_rule_level ?? 3,
-    requiredRuleGroup: config.required_rule_group ?? "",
-    requestTimeoutMs: config.request_timeout_ms ?? 10_000,
+    minimumRuleLevel: config.minimum_rule_level ?? 0,
+    requiredRuleGroup: config.required_rule_group ?? "triage_input",
+    requestTimeoutMs: config.request_timeout_ms ?? 8_000,
     caPath,
     maxAlertBytes: config.max_alert_bytes ?? 262_144
   });
