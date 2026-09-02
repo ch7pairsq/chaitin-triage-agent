@@ -127,7 +127,12 @@ assert(!receiverVolumes.some((item) => String(item).includes("/var/run/docker.so
 assert(!receiverVolumes.some((item) => String(item).includes(":/workspace")), "release receiver must not mount the repository");
 assert(workerVolumes.some((item) => String(item).includes("/var/run/docker.sock")), "release worker must mount the Docker socket");
 assert(workerVolumes.some((item) => String(item).includes(":/workspace")), "release worker must mount the repository");
-assert(workerVolumes.some((item) => String(item).includes("/data/chaitin:/host-data/chaitin")), "release worker must mount the state root for backups");
+assert(workerVolumes.some((item) => String(item).includes("/data/chaitin:/host-data/chaitin")), "release worker must mount the business state root");
+assert(workerVolumes.some((item) => String(item).includes("/data/chaitin_backup:/host-backup")), "release worker must mount the dedicated backup root");
+assert(
+  releaseStack?.services?.["release-worker"]?.environment?.UPDATE_STACKS_BACKUP_ROOT === "/host-backup/chaitin-triage-agent",
+  "release worker backups must stay outside the business state root"
+);
 const releaseWorker = read("tools/release-webhook/src/worker.js");
 assert(
   releaseWorker.includes('path.join(config.workspace, "deploy/update-stacks.sh")'),

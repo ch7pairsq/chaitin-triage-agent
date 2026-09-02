@@ -7,7 +7,7 @@ repo_root=${UPDATE_STACKS_REPO_ROOT:-$default_repo_root}
 mode=interactive
 phase=all
 env_file="$repo_root/.env"
-backup_root=${UPDATE_STACKS_BACKUP_ROOT:-/data/chaitin/backups/chaitin-triage-agent}
+backup_root=${UPDATE_STACKS_BACKUP_ROOT:-/data/chaitin_backup/chaitin-triage-agent}
 state_root=${UPDATE_STACKS_STATE_ROOT:-/data/chaitin}
 command_runner=${UPDATE_STACKS_COMMAND_RUNNER:-}
 

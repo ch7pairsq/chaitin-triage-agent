@@ -6,11 +6,21 @@ import test from "node:test";
 
 const root = path.resolve(import.meta.dirname, "../..");
 const sourceScript = path.join(root, "deploy/update-stacks.sh");
+const updateScript = readFileSync(sourceScript, "utf8");
+const releaseCompose = readFileSync(path.join(root, "deploy/stacks/release-webhook/docker-compose.yml"), "utf8");
 const readinessVerifier = readFileSync(path.join(root, "deploy/stacks/triage-platform/tools/verify-readiness.mjs"), "utf8");
 
 test("readiness verification normalizes omitted Proto JSON defaults", () => {
   assert.match(readinessVerifier, /readiness\.activeBatch \?\? false/);
   assert.match(readinessVerifier, /readiness\[field\] \?\? 0/);
+});
+
+test("all update paths use the dedicated backup root outside business data", () => {
+  assert.match(updateScript, /UPDATE_STACKS_BACKUP_ROOT:-\/data\/chaitin_backup\/chaitin-triage-agent/);
+  assert.doesNotMatch(updateScript, /\/data\/chaitin\/backups/);
+  assert.match(releaseCompose, /UPDATE_STACKS_BACKUP_ROOT: \/host-backup\/chaitin-triage-agent/);
+  assert.match(releaseCompose, /- \/data\/chaitin_backup:\/host-backup/);
+  assert.doesNotMatch(releaseCompose, /host-data\/chaitin\/backups/);
 });
 
 function shellExecutable() {

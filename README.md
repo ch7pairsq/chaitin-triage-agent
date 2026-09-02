@@ -66,6 +66,64 @@ flowchart LR
 
 长期运行的 receiver 没有代码目录和 Docker Socket；只有不监听端口的 release-worker 持有部署权限。Wazuh 测试事件注入器仅向 Wazuh syslog 入口发送结构化测试事件，Agent 仍然从真实 `wazuh-alerts-*` 索引读取告警。
 
+### 2.1 代码架构（洋葱架构）
+
+代码采用“领域规则在内、编排用例居中、协议与基础设施适配在外”的洋葱架构，并叠加事件驱动入口。这里的分层按依赖职责划分，不要求每一层都成为单独进程：`SecurityOpsService` 负责用例编排，SQLite、Wazuh、飞书、OctoBus SDK 和 agent-compose 都是外层适配器。
+
+```mermaid
+flowchart TB
+  D[领域核心<br/>证据约束 / 决策令牌 / 知识匹配 / 状态规则]
+  A[应用用例<br/>SecurityOpsService 十六个业务方法]
+  C[端口与契约<br/>Proto / service.json / 配置与密钥 Schema]
+  I[基础设施适配<br/>SQLite Store / Outbox / Wazuh TLS Client / OctoBus Runtime]
+  R[运行与入口<br/>agent-compose Scheduler / Webhook / Docker Stack / 发布脚本]
+
+  R --> I
+  I --> C
+  C --> A
+  A --> D
+```
+
+依赖与数据访问规则：
+
+- 内层规则不读取 Docker、Wazuh 或页面状态；确定性决策和证据门控由 SecurityOps 掌握，Agent 不能改写；
+- `runtime.js` 是组合根，装配 Store、KnowledgeRepository、OutboxWorker 和 OctoBus SDK，不把基础设施对象暴露给 Agent；
+- Wazuh Connector 只实现“TLS 只读查询并最小化返回字段”，不写业务库；
+- scheduler 只拿到对应 capset 的 MCP 工具，不能直连 Wazuh、SQLite、飞书或任意业务 HTTP 接口；
+- `trigger_outbox` 与 `delivery_outbox` 把事务写入和外部投递解耦，外部故障不会回滚已经确认的业务结果；
+- `deploy/` 只负责装配、密钥渲染、能力注册和运行检查，不包含第二套业务实现。
+
+### 2.2 代码目录与职责
+
+```text
+chaitin-triage-agent/
+├── agent-compose.yml                 # Agent、模型、OctoBus catalog 与两个 trigger
+├── scheduler/
+│   ├── wazuh-intake.js               # 每分钟固定采集、幂等接入和租约恢复检查
+│   └── triage-scheduler.js            # 事件 Agent 编排与结构化终态校验
+├── services/
+│   ├── wazuh-connector/              # 独立 OctoBus service：Wazuh TLS 只读适配器
+│   └── security-ops/                 # 独立 OctoBus service：业务核心与持久化
+│       ├── proto/                    # 入站能力契约
+│       ├── src/service.js            # 应用用例与状态推进
+│       ├── src/decision-token.js     # 决策完整性与防篡改
+│       ├── src/knowledge-repository.js
+│       ├── src/store.js              # SQLite 适配器与迁移
+│       ├── src/outbox.js             # Agent/飞书可靠投递适配器
+│       └── src/runtime.js            # OctoBus SDK 入口与依赖装配
+├── knowledge-authoring/              # 99 条知识、复核登记和 396 条边界测试记录
+├── tools/
+│   ├── wazuh-event-injector/         # 从 Wazuh syslog 入口写入验证事件
+│   ├── release-webhook/              # GitHub HMAC 接收器与受限发布 worker
+│   └── verify-repository.mjs         # 仓库统一验证入口
+├── deploy/
+│   ├── update-stacks.sh              # 备份、更新、注册和检查的统一入口
+│   └── stacks/                       # 三个唯一 Stack 定义与配套脚本
+└── docs/                             # 设计、ADR 和实施计划
+```
+
+测试跟随各模块存放在 `*/test/` 下，仓库根目录不保留空的占位目录。能力代码只存在于 `services/`，不再保留旧的重复能力目录。
+
 ## 3. 分钟采集、事件研判与租约恢复
 
 ### 3.1 分钟级确定性采集与事件驱动
@@ -191,6 +249,27 @@ SecurityOps 的 `triage.db` 位于其 OctoBus instance workdir。主要表包括
 
 ## 7. 新服务器独立初始化
 
+### 7.0 宿主机目录规划
+
+业务运行数据和备份必须分开：
+
+| 宿主机路径 | 用途 | 建议权限 |
+| --- | --- | --- |
+| `/data/chaitin/chaitin-triage-agent` | `develop` 分支 Git 工作区与三套 Stack 源文件 | 工作用户可读写，`.env` 单独 `0600` |
+| `/data/chaitin/agent-compose` | agent-compose 控制面、沙箱和 UI 状态 | 仅 Docker 管理员维护 |
+| `/data/chaitin/octobus` | OctoBus 状态和访问日志 | OctoBus uid 999 可写 |
+| `/data/chaitin_backup/chaitin-triage-agent` | commit、私有配置和 SQLite 回滚材料 | `0700` 目录、`0600` 文件 |
+
+初始化目录：
+
+```sh
+sudo install -d -o "$(id -u)" -g "$(id -g)" -m 0755 /data/chaitin
+sudo install -d -o "$(id -u)" -g "$(id -g)" -m 0700 \
+  /data/chaitin_backup /data/chaitin_backup/chaitin-triage-agent
+```
+
+不要把备份放回 `/data/chaitin`，也不要把 `/data/chaitin_backup` 挂载给 Wazuh、agent-compose、UI 或 OctoBus。只有无监听端口的 release-worker 具有该目录的写权限。
+
 ### 7.1 前提
 
 - Linux `amd64`；
@@ -213,8 +292,6 @@ test "$(sysctl -n vm.max_map_count)" -ge 262144
 ### 7.2 clone `develop`
 
 ```sh
-sudo mkdir -p /data/chaitin
-sudo chown "$(id -u):$(id -g)" /data/chaitin
 cd /data/chaitin
 git clone --branch develop --single-branch https://github.com/ch7pairsq/chaitin-triage-agent.git
 cd chaitin-triage-agent
@@ -243,6 +320,36 @@ chmod 0600 .env
 - 正确的 `GITHUB_REPOSITORY` 和 `RELEASE_DEPLOY_BRANCH=develop`。
 
 `.env` 值使用单行文本，不提交、不粘贴到运行日志。生成后的私有文件位于各 Stack 的 `generated/`，均被 Git 忽略。
+
+#### 凭据、账号和页面对应关系
+
+| 配置项 | 账号或用途 | 明文/派生文件位置 | 页面或调用方 |
+| --- | --- | --- | --- |
+| `WAZUH_INDEXER_ADMIN_PASSWORD` | Indexer `admin`，只用于 Wazuh 内部连接、初始化只读角色和管理员登录 | 明文仅在根目录 `.env`；bcrypt 派生值在 `deploy/stacks/wazuh/generated/internal_users.yml` | Wazuh Dashboard 的管理员登录；业务 Agent 不使用 |
+| `WAZUH_KIBANASERVER_PASSWORD` | `kibanaserver` 后端服务账号 | `.env`；bcrypt 派生值在 `internal_users.yml`；运行时进入 Dashboard 容器环境 | 不是人工登录账号 |
+| `WAZUH_API_PASSWORD` | `wazuh-wui`，Dashboard 查询 Wazuh Manager API | `.env`；私有配置 `deploy/stacks/wazuh/generated/wazuh.yml` | 仅 Dashboard 后端使用 |
+| `WAZUH_TRIAGE_READER_PASSWORD` | `triage_reader`，仅可读取 `wazuh-alerts-*` | `.env`；bcrypt 派生值在 `internal_users.yml`；明文运行副本在 `deploy/stacks/triage-platform/generated/wazuh-connector.secret.json` | 无页面；Wazuh Connector 通过 TLS 调用 Indexer |
+| `AUTH_USERNAME`、`AUTH_PASSWORD` | agent-compose UI 登录 | `.env`，运行时进入 `agent-compose-ui` 容器环境 | `http://127.0.0.1:7412` |
+| `AUTH_SECRET` | agent-compose UI 会话签名 | `.env`，运行时进入 `agent-compose-ui` 容器环境 | 不作为登录密码，不应输入页面 |
+| `SCRIPT_SERVICE_TOKEN` | UI 到本地脚本服务的内部认证 | `.env`；`deploy/stacks/triage-platform/generated/script-service-token` | UI 内部使用，不作为人工登录凭据 |
+| `LLM_API_KEY` | Agent 模型调用 | `.env`；`deploy/stacks/triage-platform/generated/agent-compose.env` | 仅 daemon 私有配置，不进入 Wazuh 或 Portainer 页面 |
+| OctoBus、Agent webhook、decision token | 分能力集授权、事件认证和决策防篡改 | `.env`；`deploy/stacks/triage-platform/generated/` 下各 `0600` token/JSON 文件 | 无人工登录页面 |
+| 飞书和 GitHub webhook secret | 通知签名与发布请求 HMAC | `.env`；分别进入 `security-ops.secret.json` 和 `release-webhook/generated/github-webhook-secret` | 无人工登录页面 |
+
+Wazuh Connector 的 TLS 配置位于 `wazuh-connector.config.json`，固定使用 `https://wazuh.indexer:9200` 和 `root-ca.pem`，用户名固定为 `triage_reader`。`root-ca.pem` 是公开证书链验证材料，可为 `0444`；账号密码、私钥和所有 token 必须保持私密。
+
+Portainer 的账号密码不属于本项目，不写入 `.env`。它由 Portainer 自身数据卷保存；当前标准宿主位置为 `/data/docker/volumes/portainer_data/_data/portainer.db`。Docker 管理员可以读取容器环境和 bind mount，因此仍应视为最高权限角色。
+
+三个页面都只绑定服务器回环地址。通过本地 SSH 隧道访问时，把 `<私钥路径>` 和 `<服务器地址>` 替换为实际值：
+
+```text
+ssh -i "<私钥路径>" -N -L 7412:127.0.0.1:7412 -L 8443:127.0.0.1:8443 -L 9443:127.0.0.1:9443 root@<服务器地址>
+```
+
+- agent-compose UI：`http://127.0.0.1:7412`，使用 `AUTH_USERNAME/AUTH_PASSWORD`；
+- Wazuh Dashboard：`https://127.0.0.1:8443`，使用 Wazuh `admin`；自签名证书首次访问会提示确认；
+- Portainer：`https://127.0.0.1:9443`，使用 Portainer 自身账号；
+- Wazuh Indexer `9200`、Manager API `55000` 和 release webhook `9080` 是接口端口，不作为日常人工页面。
 
 ### 7.4 源码与包验证
 
@@ -303,7 +410,7 @@ docker compose --env-file .env -f deploy/stacks/triage-platform/docker-compose.y
 /bin/sh deploy/update-stacks.sh
 ```
 
-脚本先验证分支、干净工作树、配置文件和三套 Compose，再依次创建带 `backup` 与时间戳的提交、配置和 SQLite 备份，生成缺失证书，更新 Wazuh、triage-platform、能力注册与 release-webhook，最后执行状态验证。首次部署时允许各 `generated/` 目录尚不存在；已运行环境备份 SQLite 前会先停止 OctoBus 与 agent-compose，失败输出包含当前阶段和明确回滚点。
+脚本先验证分支、干净工作树、配置文件和三套 Compose，再依次在 `/data/chaitin_backup/chaitin-triage-agent` 创建带 `backup` 与时间戳的提交、配置和 SQLite 备份，生成缺失证书，更新 Wazuh、triage-platform、能力注册与 release-webhook，最后执行状态验证。首次部署时允许各 `generated/` 目录尚不存在；已运行环境备份 SQLite 前会先停止 OctoBus 与 agent-compose，失败输出包含当前阶段和明确回滚点。
 
 如采用 Portainer，可继续按 7.8～7.10 分别创建或更新 Stack；两条人工路径和签名 GitHub webhook 最终都使用仓库内同一组 Compose 文件及 `bootstrap.sh`，不维护第二份 Stack 定义。
 
@@ -347,6 +454,16 @@ docker compose --env-file .env -f deploy/stacks/release-webhook/docker-compose.y
 
 Portainer 使用 `deploy/stacks/release-webhook/docker-compose.yml` 新建 `chaitin-release-webhook`。默认只监听 `127.0.0.1:9080`；由现有 HTTPS 反向代理发布 `/webhooks/github`。GitHub 端只选择 `push`，Content type 为 `application/json`，Secret 与 `.env` 保持一致。
 
+三个 Stack 的唯一文件如下，不要在 Portainer 中维护复制版：
+
+| Portainer Stack 名称 | 仓库文件 | 更新后必须执行 |
+| --- | --- | --- |
+| `chaitin-wazuh` | `deploy/stacks/wazuh/docker-compose.yml` | 等待 `wazuh-role-bootstrap` 为 0 |
+| `chaitin-triage-platform` | `deploy/stacks/triage-platform/docker-compose.yml` | `bootstrap.sh`，然后 `verify.sh` |
+| `chaitin-release-webhook` | `deploy/stacks/release-webhook/docker-compose.yml` | 检查 receiver health 和 worker 运行状态 |
+
+镜像版本由 Compose 文件控制。agent-compose、guest、UI 和 OctoBus 使用固定 digest，Wazuh 使用固定 `4.14.7`；不要在更新时手工改成 `latest`。`wazuh-event-injector` 与 `release-webhook` 从仓库内 Dockerfile 构建，因此这两个 Stack 更新时需要启用重新构建。
+
 发布 worker 只接受 `develop` push；工作树不干净、origin 不匹配、远端最新 SHA 与事件 SHA 不一致或无法 fast-forward 时不会部署。失败记录保留在发布队列中。
 
 GitHub 接收器使用原始请求体和 `X-Hub-Signature-256` 做 HMAC-SHA256 常量时间校验，并按 delivery ID 去重；只有仓库、`refs/heads/develop` 与提交 SHA 都匹配时才进入受限部署队列。接收器不挂载代码目录或 Docker Socket，实际 worker 仍调用同一个 `deploy/update-stacks.sh`。
@@ -356,6 +473,7 @@ GitHub 接收器使用原始请求体和 `X-Hub-Signature-256` 做 HMAC-SHA256 �
 ### 8.1 快速状态检查
 
 ```sh
+cd /data/chaitin/chaitin-triage-agent
 /bin/sh deploy/stacks/triage-platform/verify.sh
 ```
 
@@ -387,7 +505,16 @@ docker exec \
   wazuh-event-injector node src/index.js
 ```
 
-命令应返回 `status=sent` 和本轮 `eventId`。随后等待分钟轮询、Wazuh 索引、事件触发和 Agent 运行完成。在 UI 中检查：
+命令应返回 `status=sent` 和本轮 `eventId`。Wazuh 可能在下一次分钟轮询后才可查询，事件 Agent 的多轮模型编排通常还需要 1～3 分钟。使用以下命令查看外层状态，不把 webhook 已接收误当作业务完成：
+
+```sh
+docker exec agent-compose agent-compose -p chaitin-triage-agent \
+  scheduler runs --trigger wazuh-intake --limit 3 --json
+docker exec agent-compose agent-compose -p chaitin-triage-agent \
+  scheduler runs --trigger wazuh-alert --limit 3 --json
+```
+
+在命令输出或 UI 中检查：
 
 1. `wazuh-intake` 外层运行成功；
 2. `wazuh-alert` 外层运行成功；
@@ -412,6 +539,8 @@ docker exec \
 
 ### 8.4 恢复、并发、重复与飞书重试
 
+本节包含主动中止运行、并发注入和临时改变飞书端点，仅允许在独立维护窗口执行；日常状态检查和两轮闭环不要执行这些故障注入。自动化测试已覆盖租约旋转、旧 token 围栏、最多两个活动研判、第三次停滞转人工以及飞书重试/转人工。
+
 恢复验证使用一条专用事件，在 Agent 取得 claim 后中止该次运行，并保持 3 分钟不再写入。下一次 `wazuh-intake` 会通过 OctoBus 调用 `RequeueStalledAlerts`：前两次生成带递增 attempt 的恢复事件；旧运行继续使用原 claimToken 写入时必须被拒绝。第三次仍停滞时进入安全人工态，对该 trace 执行：
 
 ```sh
@@ -429,6 +558,7 @@ docker exec \
 ### 8.5 OctoBus 访问证据
 
 ```sh
+cd /data/chaitin/chaitin-triage-agent
 docker exec --env-file deploy/stacks/triage-platform/generated/octobus-admin.env \
   octobus octobus logs --capset wazuh-ingress --tail 50
 
@@ -437,6 +567,27 @@ docker exec --env-file deploy/stacks/triage-platform/generated/octobus-admin.env
 ```
 
 同一运行窗口应看到分钟程序通过 `wazuh-ingress` 调用 `ListAlerts`、`IngestAlertEvent`、`RequeueStalledAlerts`，事件 Agent 通过 `triage-runner` 调用从 `ClaimAlert` 到 `FinalizeTriage` 的完整顺序。精确业务关联以 Agent run 返回的 trace ID 和 `verify-trace.sh` 为准。
+
+### 8.6 提交、备份和 Stack 定义核验
+
+```sh
+cd /data/chaitin/chaitin-triage-agent
+test "$(git branch --show-current)" = develop
+git status --short
+git rev-parse HEAD
+git rev-parse origin/develop
+
+test -d /data/chaitin_backup/chaitin-triage-agent
+test "$(stat -c '%a' /data/chaitin_backup/chaitin-triage-agent)" = 700
+find /data/chaitin_backup/chaitin-triage-agent -maxdepth 1 -type f \
+  -name '*-backup-*' -printf '%f\n' | sort
+
+docker compose --env-file .env -f deploy/stacks/wazuh/docker-compose.yml config --quiet
+docker compose --env-file .env -f deploy/stacks/triage-platform/docker-compose.yml config --quiet
+docker compose --env-file .env -f deploy/stacks/release-webhook/docker-compose.yml config --quiet
+```
+
+`git status --short` 应无输出，两个提交值应一致，三条 Compose 检查都应以 0 退出。备份目录中每个更新文件名都必须包含 `backup-YYYYMMDD-HHMMSS`；不要输出备份归档内容。
 
 ## 9. Portainer 更新顺序
 
@@ -451,9 +602,9 @@ docker exec --env-file deploy/stacks/triage-platform/generated/octobus-admin.env
 7. 更新 `chaitin-release-webhook`；
 8. 执行 `verify.sh`，再按第 8 章完成两轮业务验证。
 
-不要删除持久卷，不要把 `.env` 或 `generated/` 内容粘贴到 Stack YAML。
+不要删除持久卷，不要把 `.env`、`generated/` 或 `/data/chaitin_backup` 内容粘贴到 Stack YAML。
 
-不使用 Portainer 时，服务器人工更新统一执行 `/bin/sh deploy/update-stacks.sh`；它与 Portainer、签名 webhook 路径引用完全相同的三个 Compose 文件，并自动生成带 `backup` 和时间戳的回滚材料。
+不使用 Portainer 时，服务器人工更新统一执行 `/bin/sh deploy/update-stacks.sh`；它与 Portainer、签名 webhook 路径引用完全相同的三个 Compose 文件，并自动在 `/data/chaitin_backup/chaitin-triage-agent` 生成带 `backup` 和时间戳的回滚材料。
 
 ## 10. 故障定位
 
@@ -473,6 +624,7 @@ docker exec --env-file deploy/stacks/triage-platform/generated/octobus-admin.env
 
 - `docs/design/2026-09-security-ops-rearchitecture.md`
 - `docs/adr/0001-deterministic-intake-and-leased-triage.md`
+- `docs/adr/0002-separate-backup-root.md`
 - `docs/plans/2026-09-02-deterministic-intake-recovery.md`
 - [OctoBus overview](https://github.com/chaitin/OctoBus/blob/main/docs/design/overview.md)
 - [OctoBus operations](https://github.com/chaitin/OctoBus/blob/main/docs/design/product/operations.md)

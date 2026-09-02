@@ -19,4 +19,4 @@
 docker compose --env-file .env -f deploy/stacks/release-webhook/docker-compose.yml up -d --build
 ```
 
-每次完整更新都会在 `/data/chaitin/backups/chaitin-triage-agent` 生成 commit、配置和 SQLite 三类备份；每个备份文件名均包含 `backup-YYYYMMDD-HHMMSS`。
+每次完整更新都会在业务目录之外的 `/data/chaitin_backup/chaitin-triage-agent` 生成 commit、配置和 SQLite 三类备份；每个备份文件名均包含 `backup-YYYYMMDD-HHMMSS`。`release-worker` 只把宿主机 `/data/chaitin_backup` 挂载为 `/host-backup`，并通过 `/host-backup/chaitin-triage-agent` 写入备份。

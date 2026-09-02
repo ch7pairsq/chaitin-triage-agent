@@ -55,7 +55,7 @@ services:
       RELEASE_ENV_FILE: /run/secrets/deploy.env
       TRIAGE_HOST_REPO_ROOT: ${REPO_ROOT:?REPO_ROOT is required}
       UPDATE_STACKS_STATE_ROOT: /host-data/chaitin
-      UPDATE_STACKS_BACKUP_ROOT: /host-data/chaitin/backups/chaitin-triage-agent
+      UPDATE_STACKS_BACKUP_ROOT: /host-backup/chaitin-triage-agent
       GITHUB_REPOSITORY: ${GITHUB_REPOSITORY:?GITHUB_REPOSITORY is required}
       RELEASE_DEPLOY_BRANCH: ${RELEASE_DEPLOY_BRANCH:-develop}
     command: [node, src/worker.js]
@@ -64,6 +64,7 @@ services:
       - ${REPO_ROOT:?REPO_ROOT is required}:/workspace
       - ${REPO_ROOT}/.env:/run/secrets/deploy.env:ro
       - /data/chaitin:/host-data/chaitin
+      - /data/chaitin_backup:/host-backup
       - /var/run/docker.sock:/var/run/docker.sock
     security_opt: [no-new-privileges:true]
 
