@@ -21,13 +21,20 @@ test -n "$WAZUH_KIBANASERVER_PASSWORD" || { echo "WAZUH_KIBANASERVER_PASSWORD is
 test -n "$WAZUH_TRIAGE_READER_PASSWORD" || { echo "WAZUH_TRIAGE_READER_PASSWORD is required" >&2; exit 78; }
 test -n "$WAZUH_API_PASSWORD" || { echo "WAZUH_API_PASSWORD is required" >&2; exit 78; }
 
+umask 077
+temporary_dir=$(mktemp -d)
+trap 'rm -rf "$temporary_dir"' EXIT HUP INT TERM
+
 hash_password() {
-  printf '%s\n' "$1" | docker run --rm -i wazuh/wazuh-indexer:4.14.7 \
+  password_env="$temporary_dir/hash-password.env"
+  printf '%s\n' "WAZUH_HASH_PASSWORD=$1" > "$password_env"
+  chmod 0600 "$password_env"
+  docker run --rm --env-file "$password_env" wazuh/wazuh-indexer:4.14.7 \
     bash /usr/share/wazuh-indexer/plugins/opensearch-security/tools/hash.sh \
+    -env WAZUH_HASH_PASSWORD \
     | tr -d '\r' | grep '^\$2' | tail -n 1
 }
 
-umask 077
 WAZUH_ADMIN_HASH=$(hash_password "$WAZUH_INDEXER_ADMIN_PASSWORD")
 WAZUH_KIBANASERVER_HASH=$(hash_password "$WAZUH_KIBANASERVER_PASSWORD")
 WAZUH_TRIAGE_READER_HASH=$(hash_password "$WAZUH_TRIAGE_READER_PASSWORD")
@@ -35,8 +42,7 @@ test -n "$WAZUH_ADMIN_HASH"
 test -n "$WAZUH_KIBANASERVER_HASH"
 test -n "$WAZUH_TRIAGE_READER_HASH"
 
-render_env=$(mktemp)
-trap 'rm -f "$render_env"' EXIT HUP INT TERM
+render_env="$temporary_dir/render.env"
 printf '%s\n' \
   "WAZUH_ADMIN_HASH=$WAZUH_ADMIN_HASH" \
   "WAZUH_KIBANASERVER_HASH=$WAZUH_KIBANASERVER_HASH" \

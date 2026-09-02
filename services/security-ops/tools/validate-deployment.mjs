@@ -118,6 +118,11 @@ for (const file of [
   "deploy/stacks/release-webhook/prepare-config.sh"
 ]) runShellCheck(file);
 
+const wazuhPrepare = fs.readFileSync(path.join(root, "deploy/stacks/wazuh/prepare-config.sh"), "utf8");
+assert(/hash\.sh[\s\\]*\n[\s-]*-env WAZUH_HASH_PASSWORD/.test(wazuhPrepare), "Wazuh password hashing must use the official environment-variable input");
+assert(/--env-file "\$password_env"/.test(wazuhPrepare), "Wazuh password hashing must read a private environment file");
+assert(!/hash\.sh[\s\\]*\n[\s|]*\|/.test(wazuhPrepare), "Wazuh password hashing must not rely on console stdin");
+
 const temporaryRoot = fs.mkdtempSync(path.join(os.tmpdir(), "triage-deployment-validation-"));
 try {
   const commonEnv = {
