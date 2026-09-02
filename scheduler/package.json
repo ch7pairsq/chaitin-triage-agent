@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "check": "node --check triage-scheduler.js",
+    "check": "node --check triage-scheduler.js && node --check wazuh-intake.js",
     "test": "node --test"
   },
   "engines": {
