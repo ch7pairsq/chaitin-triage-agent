@@ -120,7 +120,13 @@ docker run --rm --network chaitin-net \
   node:22.23.2-alpine3.24 \
   node /app/configure-agent-webhook.mjs
 
-docker exec agent-compose sh -ec 'cd /repo && agent-compose -f agent-compose.yml project up'
+docker exec agent-compose sh -ec '
+  set -a
+  . /run/secrets/agent-compose.env
+  set +a
+  cd /repo
+  agent-compose -f agent-compose.yml project up
+'
 docker exec agent-compose agent-compose project ls --json
 docker exec agent-compose agent-compose -p chaitin-triage-agent scheduler ls --json
 octobus catalog wazuh-ingress --mcp --json

@@ -147,6 +147,12 @@ for (const file of [
 assert(/chmod 0700 deploy\/stacks\/triage-platform\/generated/.test(platformPrepare), "OctoBus generated directory must remain private");
 assert(/chmod 0600[\s\S]*wazuh-connector\.config\.json[\s\S]*security-ops\.secret\.json/.test(platformPrepare), "OctoBus instance files must remain owner-readable only");
 
+const platformBootstrap = fs.readFileSync(path.join(root, "deploy/stacks/triage-platform/bootstrap.sh"), "utf8");
+assert(
+  /set -a[\s\S]*\. \/run\/secrets\/agent-compose\.env[\s\S]*set \+a[\s\S]*agent-compose -f agent-compose\.yml project up/.test(platformBootstrap),
+  "agent-compose project apply must load interpolation values into the CLI process"
+);
+
 const temporaryRoot = fs.mkdtempSync(path.join(os.tmpdir(), "triage-deployment-validation-"));
 try {
   const commonEnv = {
