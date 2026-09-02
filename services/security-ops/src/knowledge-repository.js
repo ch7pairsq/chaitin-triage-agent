@@ -46,20 +46,20 @@ export class KnowledgeRepository {
     return selected
       .sort((left, right) => Number(right.hinted) - Number(left.hinted) || left.record.knowledgeId.localeCompare(right.record.knowledgeId))
       .map(({ record, evaluation }) => {
-      const evidenceRefs = normalizeStringArray(context.evidenceRefs);
-      return {
-        knowledgeId: record.knowledgeId,
-        applicability: record.applicability,
-        evidenceRefs,
-        missingEvidence: evaluation.missingFacts,
-        evaluation,
-        evaluationJson: JSON.stringify(evaluation),
-        wazuhObservability: record.wazuhMapping?.wazuhObservability ?? "partial",
-        additionalTelemetryRequired: record.wazuhMapping?.additionalTelemetryRequired ?? [],
-        ticketRequired: true,
-        autoCloseAllowed: false
-      };
-    });
+        const evidenceRefs = normalizeStringArray(context.evidenceRefs);
+        return {
+          knowledgeId: record.knowledgeId,
+          applicability: record.applicability,
+          evidenceRefs,
+          missingEvidence: evaluation.missingFacts,
+          evaluation,
+          evaluationJson: JSON.stringify(evaluation),
+          wazuhObservability: record.wazuhMapping?.wazuhObservability ?? "partial",
+          additionalTelemetryRequired: record.wazuhMapping?.additionalTelemetryRequired ?? [],
+          ticketRequired: true,
+          autoCloseAllowed: false
+        };
+      });
   }
 }
 

@@ -114,6 +114,7 @@ message EvaluatePolicyRequest {
 }
 
 message EvaluatePolicyResponse {
+  reserved 9;
   string trace_id = 1;
   string decision = 2;
   string action = 3;
@@ -126,6 +127,7 @@ message EvaluatePolicyResponse {
 }
 
 message RecordTriageResultRequest {
+  reserved 2;
   string trace_id = 1;
   string narrative = 3;
   string claim_token = 4;

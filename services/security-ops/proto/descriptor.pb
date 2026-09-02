@@ -1,5 +1,5 @@
 
-¤1
+°1
 security_ops.protosecurity.ops.v1"Á
 IngestAlertEventRequest
 event_id (	ReventId$
@@ -79,7 +79,7 @@ claimToken"Ò
 context_json (	RcontextJson#
 knowledge_ids (	RknowledgeIds
 claim_token (	R
-claimToken"Ø
+claimToken"Þ
 EvaluatePolicyResponse
 trace_id (	RtraceId
 decision (	Rdecision
@@ -90,12 +90,13 @@ claimToken"Ø
 policy_status (	RpolicyStatus,
 auto_close_allowed (RautoCloseAllowed'
 evaluation_json
- (	RevaluationJson"u
+ (	RevaluationJsonJ	
+"{
 RecordTriageResultRequest
 trace_id (	RtraceId
 	narrative (	R	narrative
 claim_token (	R
-claimToken"r
+claimTokenJ"r
 RecordTriageResultResponse
 	result_id (	RresultId
 trace_id (	RtraceId
