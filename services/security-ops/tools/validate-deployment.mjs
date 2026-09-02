@@ -132,6 +132,19 @@ assert(/chmod 0400 deploy\/stacks\/wazuh\/config\/wazuh_indexer_ssl_certs\/root-
 assert(/chmod 0600[\s\\]*\n[\s\S]*internal_users\.yml[\s\\]*\n[\s\S]*wazuh\.yml/.test(wazuhPrepare), "Wazuh generated credential files must remain owner-readable only");
 assert(!/chmod[^\n]*(?:-key\.pem|admin\.pem)/.test(wazuhPrepare), "Wazuh private key permissions must not be relaxed by prepare-config");
 
+const platformPrepare = fs.readFileSync(path.join(root, "deploy/stacks/triage-platform/prepare-config.sh"), "utf8");
+assert(/chown 999:999 deploy\/stacks\/triage-platform\/generated/.test(platformPrepare), "OctoBus must own the private generated directory");
+for (const file of [
+  "wazuh-connector.config.json",
+  "wazuh-connector.secret.json",
+  "security-ops.config.json",
+  "security-ops.secret.json"
+]) {
+  assert(platformPrepare.includes(`deploy/stacks/triage-platform/generated/${file}`), `OctoBus runtime permission is missing for ${file}`);
+}
+assert(/chmod 0700 deploy\/stacks\/triage-platform\/generated/.test(platformPrepare), "OctoBus generated directory must remain private");
+assert(/chmod 0600[\s\S]*wazuh-connector\.config\.json[\s\S]*security-ops\.secret\.json/.test(platformPrepare), "OctoBus instance files must remain owner-readable only");
+
 const temporaryRoot = fs.mkdtempSync(path.join(os.tmpdir(), "triage-deployment-validation-"));
 try {
   const commonEnv = {
