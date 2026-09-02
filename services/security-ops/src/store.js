@@ -1,4 +1,4 @@
-import { readFileSync, mkdirSync } from "node:fs";
+import { readFileSync, mkdirSync, readdirSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { randomUUID } from "node:crypto";
@@ -8,19 +8,61 @@ import { failedPrecondition, notFound } from "./errors.js";
 import { normalizeLimit } from "./validation.js";
 
 const MODULE_DIR = path.dirname(fileURLToPath(import.meta.url));
-const INITIAL_MIGRATION = path.resolve(MODULE_DIR, "../migrations/001_initial.sql");
+const DEFAULT_MIGRATIONS_DIR = path.resolve(MODULE_DIR, "../migrations");
+
+function configureDatabase(database) {
+  database.exec("PRAGMA journal_mode = WAL");
+  database.exec("PRAGMA foreign_keys = ON");
+  database.exec("PRAGMA busy_timeout = 5000");
+}
+
+function applyMigrations(database, migrationsDir, now) {
+  database.exec(`
+    CREATE TABLE IF NOT EXISTS schema_migrations (
+      version INTEGER PRIMARY KEY,
+      applied_at TEXT NOT NULL
+    )
+  `);
+  const files = readdirSync(migrationsDir)
+    .filter((name) => /^\d{3}_[a-z0-9_]+\.sql$/.test(name))
+    .sort((left, right) => left.localeCompare(right));
+  const seenVersions = new Set();
+  for (const file of files) {
+    const version = Number(file.slice(0, 3));
+    if (!Number.isSafeInteger(version) || version < 1 || seenVersions.has(version)) {
+      throw new Error(`invalid or duplicate migration version: ${file}`);
+    }
+    seenVersions.add(version);
+    const applied = database.prepare("SELECT 1 FROM schema_migrations WHERE version = ?").get(version);
+    if (applied) continue;
+    database.exec("BEGIN IMMEDIATE");
+    try {
+      database.exec(readFileSync(path.join(migrationsDir, file), "utf8"));
+      database.prepare("INSERT INTO schema_migrations(version, applied_at) VALUES (?, ?)")
+        .run(version, now().toISOString());
+      database.exec("COMMIT");
+    } catch (error) {
+      database.exec("ROLLBACK");
+      throw new Error(`migration ${file} failed`, { cause: error });
+    }
+  }
+}
 
 export class SecurityOpsStore {
-  constructor({ databasePath, now = () => new Date(), idFactory = randomUUID }) {
+  constructor({ databasePath, migrationsDir = DEFAULT_MIGRATIONS_DIR, now = () => new Date(), idFactory = randomUUID }) {
     if (!databasePath) throw new TypeError("databasePath is required");
     this.now = now;
     this.idFactory = idFactory;
     mkdirSync(path.dirname(path.resolve(databasePath)), { recursive: true });
     this.database = new DatabaseSync(path.resolve(databasePath));
-    this.database.exec(readFileSync(INITIAL_MIGRATION, "utf8"));
-    this.database.prepare("INSERT OR IGNORE INTO schema_migrations(version, applied_at) VALUES (1, ?)")
-      .run(this.now().toISOString());
-    this.statements = prepareStatements(this.database);
+    try {
+      configureDatabase(this.database);
+      applyMigrations(this.database, path.resolve(migrationsDir), this.now);
+      this.statements = prepareStatements(this.database);
+    } catch (error) {
+      this.database.close();
+      throw error;
+    }
   }
 
   ingestAlertEvent(event) {
