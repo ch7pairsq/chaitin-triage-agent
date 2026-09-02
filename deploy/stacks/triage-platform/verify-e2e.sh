@@ -54,12 +54,22 @@ if [ "$rounds" -gt 15 ] && [ "$allow_bulk" != true ]; then
   exit 64
 fi
 
-for required in +  "$script_dir/tools/verify-e2e.mjs" +  "$script_dir/generated/wazuh-ingress-token" +  "$script_dir/generated/triage-ops-token"; do
+for required in \
+  "$script_dir/tools/verify-e2e.mjs" \
+  "$script_dir/generated/wazuh-ingress-token" \
+  "$script_dir/generated/triage-ops-token"; do
   test -r "$required" || { echo "required verification file is missing: $required" >&2; exit 1; }
 done
 
 run_helper() {
-  docker run --rm -i --network chaitin-net +    --env "EXPECTED_SOURCE_EVENT_ID=${EXPECTED_SOURCE_EVENT_ID:-}" +    --env "EXPECTED_SCENARIO_ID=${EXPECTED_SCENARIO_ID:-}" +    --env "EXPECTED_BUSINESS_EVENT_ID=${EXPECTED_BUSINESS_EVENT_ID:-}" +    --env "E2E_TIMEOUT_SECONDS=$timeout_seconds" +    --volume "$host_repo_root/deploy/stacks/triage-platform/tools/verify-e2e.mjs:/app/verify-e2e.mjs:ro" +    --volume "$host_repo_root/deploy/stacks/triage-platform/generated/wazuh-ingress-token:/run/secrets/wazuh-ingress-token:ro" +    "$helper_image" node /app/verify-e2e.mjs "$@"
+  docker run --rm -i --network chaitin-net \
+    --env "EXPECTED_SOURCE_EVENT_ID=${EXPECTED_SOURCE_EVENT_ID:-}" \
+    --env "EXPECTED_SCENARIO_ID=${EXPECTED_SCENARIO_ID:-}" \
+    --env "EXPECTED_BUSINESS_EVENT_ID=${EXPECTED_BUSINESS_EVENT_ID:-}" \
+    --env "E2E_TIMEOUT_SECONDS=$timeout_seconds" \
+    --volume "$host_repo_root/deploy/stacks/triage-platform/tools/verify-e2e.mjs:/app/verify-e2e.mjs:ro" \
+    --volume "$host_repo_root/deploy/stacks/triage-platform/generated/wazuh-ingress-token:/run/secrets/wazuh-ingress-token:ro" \
+    "$helper_image" node /app/verify-e2e.mjs "$@"
 }
 
 echo "stage=platform-preflight"
@@ -68,7 +78,8 @@ echo "stage=platform-preflight"
 cycle=1
 while [ "$cycle" -le "$empty_cycles" ]; do
   echo "stage=empty-intake cycle=$cycle/$empty_cycles"
-  intake_output=$(docker exec agent-compose agent-compose -p chaitin-triage-agent +    scheduler invoke wazuh-intake --payload '{"mode":"cycle"}' --timeout 30s --json)
+  intake_output=$(docker exec agent-compose agent-compose -p chaitin-triage-agent \
+    scheduler invoke wazuh-intake --payload '{"mode":"cycle"}' --timeout 30s --json)
   printf '%s' "$intake_output" | run_helper validate-intake >/dev/null
   cycle=$((cycle + 1))
 done
@@ -79,7 +90,12 @@ round=1
 while [ "$round" -le "$rounds" ]; do
   sequence=$((round - 1))
   echo "stage=inject round=$round/$rounds profile=$profile sequence=$sequence"
-  injection_output=$(docker exec +    -e INJECT_ENABLED=true +    -e INJECT_ONCE=true +    -e "INJECT_PROFILE=$profile" +    -e "INJECT_SEQUENCE=$sequence" +    wazuh-event-injector node src/index.js)
+  injection_output=$(docker exec \
+    -e INJECT_ENABLED=true \
+    -e INJECT_ONCE=true \
+    -e "INJECT_PROFILE=$profile" \
+    -e "INJECT_SEQUENCE=$sequence" \
+    wazuh-event-injector node src/index.js)
   injection_fields=$(printf '%s' "$injection_output" | run_helper parse-injection)
   set -- $injection_fields
   [ "$#" -eq 4 ] || { echo "injector receipt field count is invalid" >&2; exit 1; }
@@ -99,14 +115,16 @@ while [ "$round" -le "$rounds" ]; do
   EXPECTED_BUSINESS_EVENT_ID="wazuh:$wazuh_alert_id"
 
   echo "stage=intake round=$round/$rounds wazuh_alert_id=$wazuh_alert_id"
-  intake_output=$(docker exec agent-compose agent-compose -p chaitin-triage-agent +    scheduler invoke wazuh-intake --payload '{"mode":"cycle"}' --timeout 30s --json)
+  intake_output=$(docker exec agent-compose agent-compose -p chaitin-triage-agent \
+    scheduler invoke wazuh-intake --payload '{"mode":"cycle"}' --timeout 30s --json)
   printf '%s' "$intake_output" | run_helper validate-intake >/dev/null
 
   echo "stage=agent-wait round=$round/$rounds"
   deadline=$(( $(date +%s) + timeout_seconds ))
   run_fields=""
   while [ "$(date +%s)" -lt "$deadline" ]; do
-    runs_output=$(docker exec agent-compose agent-compose -p chaitin-triage-agent +      scheduler runs --trigger wazuh-alert --limit 30 --json)
+    runs_output=$(docker exec agent-compose agent-compose -p chaitin-triage-agent \
+      scheduler runs --trigger wazuh-alert --limit 30 --json)
     if run_fields=$(printf '%s' "$runs_output" | run_helper find-run); then
       break
     else
@@ -128,7 +146,8 @@ while [ "$round" -le "$rounds" ]; do
 
   echo "stage=trace round=$round/$rounds trace_id=$trace_id"
   /bin/sh "$script_dir/verify-trace.sh" "$trace_id" completed >/dev/null
-  printf '{"round":%s,"scenarioId":"%s","domainId":"%s","attackTypeId":"%s","sourceEventId":"%s","wazuhAlertId":"%s","runId":"%s","traceId":"%s","agentDurationMs":%s,"status":"passed"}\n' +    "$round" "$scenario_id" "$domain_id" "$attack_type_id" "$source_event_id" "$wazuh_alert_id" "$run_id" "$trace_id" "$duration_ms"
+  printf '{"round":%s,"scenarioId":"%s","domainId":"%s","attackTypeId":"%s","sourceEventId":"%s","wazuhAlertId":"%s","runId":"%s","traceId":"%s","agentDurationMs":%s,"status":"passed"}\n' \
+    "$round" "$scenario_id" "$domain_id" "$attack_type_id" "$source_event_id" "$wazuh_alert_id" "$run_id" "$trace_id" "$duration_ms"
   round=$((round + 1))
 done
 
