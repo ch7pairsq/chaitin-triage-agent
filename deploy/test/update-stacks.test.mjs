@@ -6,6 +6,12 @@ import test from "node:test";
 
 const root = path.resolve(import.meta.dirname, "../..");
 const sourceScript = path.join(root, "deploy/update-stacks.sh");
+const readinessVerifier = readFileSync(path.join(root, "deploy/stacks/triage-platform/tools/verify-readiness.mjs"), "utf8");
+
+test("readiness verification normalizes omitted Proto JSON defaults", () => {
+  assert.match(readinessVerifier, /readiness\.activeBatch \?\? false/);
+  assert.match(readinessVerifier, /readiness\[field\] \?\? 0/);
+});
 
 function shellExecutable() {
   if (process.platform !== "win32") return "/bin/sh";

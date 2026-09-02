@@ -17,10 +17,13 @@ const readiness = JSON.parse(text);
 if (readiness.ready !== true || readiness.acceptingWork !== true) {
   throw new Error(`SecurityOps worker is not ready: ${text.slice(0, 512)}`);
 }
+const normalized = { ...readiness };
 for (const field of ["backlog", "manual", "oldestPendingAgeMs"]) {
   const value = Number(readiness[field] ?? 0);
   if (!Number.isSafeInteger(value) || value < 0) throw new Error(`invalid readiness field: ${field}`);
+  normalized[field] = value;
 }
-if (typeof readiness.activeBatch !== "boolean") throw new Error("invalid readiness field: activeBatch");
+normalized.activeBatch = readiness.activeBatch ?? false;
+if (typeof normalized.activeBatch !== "boolean") throw new Error("invalid readiness field: activeBatch");
 if (readiness.lastErrorJson) JSON.parse(readiness.lastErrorJson);
-console.log(JSON.stringify(readiness));
+console.log(JSON.stringify(normalized));
