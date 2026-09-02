@@ -17,14 +17,15 @@ function loadScheduler({ resultSuccess = true, formatResult = JSON.stringify } =
     },
     agent(prompt, options) {
       calls.push({ prompt, options });
+      const mode = prompt.includes("Mode: poll") ? "poll" : prompt.includes("Mode: hourly") ? "hourly" : prompt.includes("Mode: manual") ? "manual" : "event";
       const result = {
-        mode: prompt.includes("Mode: poll") ? "poll" : prompt.includes("Mode: hourly") ? "hourly" : prompt.includes("Mode: manual") ? "manual" : "event",
+        mode,
         success: resultSuccess,
         polled: 0,
         ingested: 0,
-        processed: 1,
-        traceIds: ["trace-1"],
-        terminalStates: ["COMPLETED"],
+        processed: mode === "poll" ? 0 : 1,
+        traceIds: mode === "poll" ? [] : ["trace-1"],
+        terminalStates: mode === "poll" ? [] : ["COMPLETED"],
       };
       return {
         success: true,
@@ -136,7 +137,7 @@ test("accepts an identical result repeated by the runtime transcript", () => {
   });
   const result = registrations.crons.get("wazuh-alert-poll").callback();
   assert.equal(result.mode, "poll");
-  assert.equal(result.processed, 1);
+  assert.equal(result.processed, 0);
 });
 
 test("accepts a corrected result only when the runtime repeats the final object", () => {
@@ -148,7 +149,7 @@ test("accepts a corrected result only when the runtime repeats the final object"
   });
   const result = registrations.crons.get("wazuh-alert-poll").callback();
   assert.equal(result.success, true);
-  assert.equal(result.processed, 1);
+  assert.equal(result.processed, 0);
 });
 
 test("normalizes an exact terminal-state mapping returned by the Agent", () => {
@@ -177,5 +178,29 @@ test("rejects a terminal-state mapping that does not match traceIds", () => {
   assert.throws(
     () => registrations.crons.get("hourly-security-triage").callback(),
     /result list is invalid: terminalStates/
+  );
+});
+
+test("rejects Wazuh counters invented by a non-poll run", () => {
+  const { registrations } = loadScheduler({
+    formatResult(result) {
+      return JSON.stringify({ ...result, polled: 3, ingested: 3 });
+    },
+  });
+  assert.throws(
+    () => registrations.crons.get("hourly-security-triage").callback(),
+    /non-poll counters are invalid/
+  );
+});
+
+test("rejects a processed count that does not match returned traces", () => {
+  const { registrations } = loadScheduler({
+    formatResult(result) {
+      return JSON.stringify({ ...result, processed: 2 });
+    },
+  });
+  assert.throws(
+    () => registrations.crons.get("hourly-security-triage").callback(),
+    /processed count does not match returned traces/
   );
 });

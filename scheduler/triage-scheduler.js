@@ -140,6 +140,16 @@ function parseTriageResult(reply, expectedMode) {
   if (!Array.isArray(terminalStates) || terminalStates.some((value) => typeof value !== "string")) {
     throw new Error("triage Agent result list is invalid: terminalStates");
   }
+  if (result.processed !== result.traceIds.length || result.processed !== terminalStates.length) {
+    throw new Error("triage Agent processed count does not match returned traces");
+  }
+  if (expectedMode === "poll") {
+    if (result.processed !== 0 || result.ingested > result.polled) {
+      throw new Error("triage Agent poll counters are invalid");
+    }
+  } else if (result.polled !== 0 || result.ingested !== 0) {
+    throw new Error("triage Agent non-poll counters are invalid");
+  }
   return { ...result, terminalStates };
 }
 
@@ -176,7 +186,7 @@ function buildPrompt(context) {
     context.correlationId ? "Expected correlationId: " + context.correlationId + "." : "",
     triageSequence,
     ...executionRules,
-    "Return only one JSON object with exactly these keys: success, mode, polled, ingested, processed, traceIds, terminalStates. Do not use a Markdown fence or add explanation. traceIds and terminalStates MUST both be JSON arrays of strings, with terminalStates in the same order as traceIds. polled is the number returned by Wazuh, ingested is the number accepted or already present, and processed is the number that reached a returned terminal state.",
+    "Return only one JSON object with exactly these keys: success, mode, polled, ingested, processed, traceIds, terminalStates. Do not use a Markdown fence or add explanation. traceIds and terminalStates MUST both be JSON arrays of strings, with terminalStates in the same order as traceIds. In poll mode, polled is the number returned by Wazuh, ingested is the number accepted or already present, and processed, traceIds and terminalStates MUST be zero or empty. In every non-poll mode, polled and ingested MUST both be 0. processed is the number that reached a returned terminal state and MUST equal the length of both arrays.",
     "Mode: " + context.mode,
   ].filter(Boolean).join("\n");
 }
