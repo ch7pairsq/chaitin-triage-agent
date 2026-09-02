@@ -127,11 +127,13 @@ assert(!receiverVolumes.some((item) => String(item).includes("/var/run/docker.so
 assert(!receiverVolumes.some((item) => String(item).includes(":/workspace")), "release receiver must not mount the repository");
 assert(workerVolumes.some((item) => String(item).includes("/var/run/docker.sock")), "release worker must mount the Docker socket");
 assert(workerVolumes.some((item) => String(item).includes(":/workspace")), "release worker must mount the repository");
+assert(workerVolumes.some((item) => String(item).includes("/data/chaitin:/host-data/chaitin")), "release worker must mount the state root for backups");
 const releaseWorker = read("tools/release-webhook/src/worker.js");
 assert(
-  releaseWorker.includes('"--force-recreate", "agent-compose", "agent-compose-ui"'),
-  "release worker must recreate single-file bind mounts after fast-forward"
+  releaseWorker.includes('path.join(config.workspace, "deploy/update-stacks.sh")'),
+  "release worker must delegate deployment to the shared update script"
 );
+assert(!releaseWorker.includes('compose(["-f"'), "release worker must not keep a second Stack update implementation");
 
 for (const file of [
   "deploy/stacks/wazuh/tools/configure-triage-role.mjs",
@@ -144,6 +146,7 @@ for (const file of [
 
 for (const file of [
   "deploy/_daemon_entry.sh",
+  "deploy/update-stacks.sh",
   "deploy/stacks/wazuh/prepare-config.sh",
   "deploy/stacks/triage-platform/prepare-config.sh",
   "deploy/stacks/triage-platform/bootstrap.sh",

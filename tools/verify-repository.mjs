@@ -46,4 +46,14 @@ for (const [directory, scripts] of packages) {
   }
 }
 
+if (mode !== "--check") {
+  const result = spawnSync(process.execPath, ["--test", path.join(root, "deploy/test/update-stacks.test.mjs")], {
+    cwd: root,
+    stdio: "inherit",
+    env: { ...process.env, NPM_CONFIG_CACHE: npmCache }
+  });
+  if (result.error) throw result.error;
+  if (result.status !== 0) process.exit(result.status ?? 1);
+}
+
 console.log(`repository ${mode.slice(2)} verification passed`);

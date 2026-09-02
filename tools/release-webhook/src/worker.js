@@ -46,32 +46,27 @@ export async function runWorker(config = loadWorkerConfig()) {
   }
 }
 
-export async function deploy(request, requestPath, config = loadWorkerConfig()) {
+export async function deploy(request, requestPath, config = loadWorkerConfig(), execute = run) {
   validateRequest(request, config);
-  const currentBranch = (await run("git", ["-C", config.workspace, "branch", "--show-current"])).stdout.trim();
+  const currentBranch = (await execute("git", ["-C", config.workspace, "branch", "--show-current"])).stdout.trim();
   if (currentBranch !== config.branch) throw new Error(`workspace branch ${currentBranch} does not match ${config.branch}`);
-  const dirty = (await run("git", ["-C", config.workspace, "status", "--porcelain"])).stdout.trim();
+  const dirty = (await execute("git", ["-C", config.workspace, "status", "--porcelain"])).stdout.trim();
   if (dirty) throw new Error("workspace has uncommitted or untracked files");
-  const remote = (await run("git", ["-C", config.workspace, "remote", "get-url", "origin"])).stdout.trim();
+  const remote = (await execute("git", ["-C", config.workspace, "remote", "get-url", "origin"])).stdout.trim();
   if (!allowedRemote(remote, config.repository)) throw new Error("origin does not match the configured GitHub repository");
 
   if (request.phase === "queued") {
-    await run("git", ["-C", config.workspace, "fetch", "--prune", "origin", config.branch], { timeoutMs: 120000 });
-    const remoteSha = (await run("git", ["-C", config.workspace, "rev-parse", `origin/${config.branch}`])).stdout.trim().toLowerCase();
+    await execute("git", ["-C", config.workspace, "fetch", "--prune", "origin", config.branch], { timeoutMs: 120000 });
+    const remoteSha = (await execute("git", ["-C", config.workspace, "rev-parse", `origin/${config.branch}`])).stdout.trim().toLowerCase();
     if (remoteSha !== request.commitSha) return { status: "superseded", remoteSha };
-    await run("git", ["-C", config.workspace, "merge-base", "--is-ancestor", "HEAD", request.commitSha]);
-    await run("git", ["-C", config.workspace, "merge", "--ff-only", request.commitSha], { timeoutMs: 120000 });
+    await execute("git", ["-C", config.workspace, "merge-base", "--is-ancestor", "HEAD", request.commitSha]);
+    await execute("git", ["-C", config.workspace, "merge", "--ff-only", request.commitSha], { timeoutMs: 120000 });
     request.phase = "checked-out";
     atomicWrite(requestPath, request);
   }
 
   if (request.phase === "checked-out") {
-    await run("/bin/sh", [path.join(config.workspace, "deploy/stacks/triage-platform/prepare-config.sh")], { timeoutMs: 1200000 });
-    await run("/bin/sh", [path.join(config.workspace, "deploy/stacks/wazuh/prepare-config.sh"), config.envFile], { timeoutMs: 1200000 });
-    await compose(["-f", stack("wazuh", config), "up", "-d", "--build"], { timeoutMs: 1200000 }, config);
-    await compose(["-f", stack("triage-platform", config), "up", "-d"], { timeoutMs: 1200000 }, config);
-    await compose(["-f", stack("triage-platform", config), "up", "-d", "--force-recreate", "agent-compose", "agent-compose-ui"], { timeoutMs: 1200000 }, config);
-    await run("/bin/sh", [path.join(config.workspace, "deploy/stacks/triage-platform/bootstrap.sh")], { timeoutMs: 1200000 });
+    await runUpdatePhase("platform", config, execute, 1200000);
     request.phase = "platform-updated";
     atomicWrite(requestPath, request);
   }
@@ -79,19 +74,20 @@ export async function deploy(request, requestPath, config = loadWorkerConfig()) 
   if (request.phase === "platform-updated") {
     request.phase = "release-updating";
     atomicWrite(requestPath, request);
-    await compose(["-f", stack("release-webhook", config), "up", "-d", "--build"], { timeoutMs: 1200000 }, config);
+    await runUpdatePhase("release", config, execute, 1200000);
   }
 
-  await run("/bin/sh", [path.join(config.workspace, "deploy/stacks/triage-platform/verify.sh")], { timeoutMs: 300000 });
+  await runUpdatePhase("verify", config, execute, 300000);
   return { status: "deployed", phase: "verified", commitSha: request.commitSha };
 }
 
-function compose(args, options, config) {
-  return run("docker", ["compose", "--env-file", config.envFile, ...args], options);
-}
-
-function stack(name, config) {
-  return path.join(config.workspace, `deploy/stacks/${name}/docker-compose.yml`);
+function runUpdatePhase(phase, config, execute, timeoutMs) {
+  return execute("/bin/sh", [
+    path.join(config.workspace, "deploy/update-stacks.sh"),
+    "--mode", "release-worker",
+    "--phase", phase,
+    "--env-file", config.envFile,
+  ], { timeoutMs });
 }
 
 export function allowedRemote(remote, expectedRepository) {
