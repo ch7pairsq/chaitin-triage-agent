@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import http from "node:http";
 import test from "node:test";
 
@@ -49,6 +50,44 @@ test("queries the real Wazuh alerts index contract and returns minimized records
     assert.equal(result.alerts[0].correlationId, "wazuh-alert-42");
     assert.match(result.alerts[0].alertJson, /vehicle gateway/);
   });
+});
+
+test("normalizes arbitrary Wazuh document ids without losing the source identifier", async () => {
+  const documentId = "_wazuh/document+id=";
+  await withServer((_req, res) => {
+    res.writeHead(200, { "content-type": "application/json" });
+    res.end(JSON.stringify({ hits: { hits: [{
+      _index: "wazuh-alerts-4.x-2026.09.02",
+      _id: documentId,
+      _source: { timestamp: "2026-09-02T01:02:03.000Z", rule: { level: 9, groups: ["triage_input"] } }
+    }] } }));
+  }, async (indexerUrl) => {
+    const client = new WazuhIndexerClient({ indexerUrl, username: "reader", password: "strong-password" });
+    const result = await client.listAlerts({ lookbackSeconds: 600, limit: 10 });
+    const expectedId = `wazuh-${createHash("sha256").update(documentId).digest("hex")}`;
+    assert.equal(result.alerts[0].alertId, expectedId);
+    assert.equal(result.alerts[0].correlationId, expectedId);
+    const alert = JSON.parse(result.alerts[0].alertJson);
+    assert.deepEqual(alert._triage_source, {
+      wazuh_document_id: documentId,
+      wazuh_index: "wazuh-alerts-4.x-2026.09.02"
+    });
+  });
+});
+
+test("rejects a missing or oversized Wazuh document id", async () => {
+  for (const documentId of ["", "x".repeat(513)]) {
+    await withServer((_req, res) => {
+      res.writeHead(200, { "content-type": "application/json" });
+      res.end(JSON.stringify({ hits: { hits: [{
+        _id: documentId,
+        _source: { timestamp: "2026-09-02T01:02:03.000Z", rule: { level: 9 } }
+      }] } }));
+    }, async (indexerUrl) => {
+      const client = new WazuhIndexerClient({ indexerUrl, username: "reader", password: "strong-password" });
+      await assert.rejects(() => client.listAlerts(), /missing or oversized _id/);
+    });
+  }
 });
 
 test("rejects backend authentication failures without leaking response bodies", async () => {

@@ -1,8 +1,10 @@
+import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import http from "node:http";
 import https from "node:https";
 
 const ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/;
+const MAX_WAZUH_DOCUMENT_ID_BYTES = 512;
 
 export class WazuhConnectorError extends Error {
   constructor(code, message, details = {}) {
@@ -79,10 +81,11 @@ export class WazuhIndexerClient {
   }
 
   #normalizeHit(hit) {
-    const alertId = String(hit?._id ?? "").trim();
-    if (!ID_PATTERN.test(alertId)) {
-      throw new WazuhConnectorError("UNAVAILABLE", "Wazuh alert has an invalid _id");
+    const documentId = String(hit?._id ?? "");
+    if (!documentId || Buffer.byteLength(documentId) > MAX_WAZUH_DOCUMENT_ID_BYTES) {
+      throw new WazuhConnectorError("UNAVAILABLE", "Wazuh alert has a missing or oversized _id");
     }
+    const alertId = normalizeAlertId(documentId);
     const source = hit?._source;
     if (!source || typeof source !== "object" || Array.isArray(source)) {
       throw new WazuhConnectorError("UNAVAILABLE", "Wazuh alert is missing _source", { alertId });
@@ -91,7 +94,13 @@ export class WazuhIndexerClient {
     if (Number.isNaN(occurredAt.getTime())) {
       throw new WazuhConnectorError("UNAVAILABLE", "Wazuh alert timestamp is invalid", { alertId });
     }
-    const alertJson = JSON.stringify(source);
+    const alertJson = JSON.stringify(alertId === documentId ? source : {
+      ...source,
+      _triage_source: {
+        wazuh_document_id: documentId,
+        wazuh_index: String(hit?._index ?? "")
+      }
+    });
     if (Buffer.byteLength(alertJson) > this.maxAlertBytes) {
       throw new WazuhConnectorError("RESOURCE_EXHAUSTED", "Wazuh alert exceeds the configured size limit", { alertId });
     }
@@ -127,6 +136,11 @@ export class WazuhIndexerClient {
     }
     throw new WazuhConnectorError("UNAVAILABLE", "Wazuh Indexer request exhausted retries");
   }
+}
+
+function normalizeAlertId(documentId) {
+  if (ID_PATTERN.test(documentId)) return documentId;
+  return `wazuh-${createHash("sha256").update(documentId, "utf8").digest("hex")}`;
 }
 
 function nodeRequestJson({ url, body, timeoutMs, username, password, ca }) {

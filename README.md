@@ -157,7 +157,7 @@ sequenceDiagram
   Bus->>Ops: 执行知识条件、保存策略、工单、飞书入队、终态
 ```
 
-固定采集程序只负责读取、接入和恢复检查，不在同一运行中执行研判。Wazuh Connector 只返回带 `triage_input` 规则组的安全运营告警，避免把 Wazuh 自身运维事件送入业务队列。接入事务提交后由 SecurityOps `trigger_outbox` 发布 agent-compose 事件，避免“告警已写入但事件丢失”。重复 Wazuh alert 使用稳定 `eventId=wazuh:<alertId>`，不会生成第二条业务记录；`status=pending` 或 `duplicate=true` 均表示本次接入调用成功。
+固定采集程序只负责读取、接入和恢复检查，不在同一运行中执行研判。Wazuh Connector 只返回带 `triage_input` 规则组的安全运营告警，避免把 Wazuh 自身运维事件送入业务队列；它把 Indexer `_id` 当作不透明值，内部键不安全时使用稳定哈希，并在告警 JSON 的 `_triage_source` 中保留原始文档 ID 与索引名。接入事务提交后由 SecurityOps `trigger_outbox` 发布 agent-compose 事件，避免“告警已写入但事件丢失”。重复 Wazuh alert 使用稳定 `eventId=wazuh:<alertId>`，不会生成第二条业务记录；`status=pending` 或 `duplicate=true` 均表示本次接入调用成功。
 
 `POST webhook.wazuh.alert` 是 agent-compose 官方事件入口，属于触发面，不包装成 OctoBus 业务方法。它只携带 `eventId` 和 `correlationId` 等不透明标识；事件 Agent 随后的告警上下文读取、状态推进、人工工单和通知入队全部通过 OctoBus `triage-runner`。因此简化数据流仍是 `Wazuh -> OctoBus -> agent-compose Agent -> OctoBus -> SecurityOps -> SQLite/飞书`，同时避免把 OctoBus 误用为事件总线。
 
