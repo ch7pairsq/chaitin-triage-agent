@@ -47,6 +47,23 @@ if (readme.includes("npm run generate") || readme.includes("decisionToken` ÊòØÂê
 if (existsSync(path.join(root, "knowledge-authoring/tools/generate.mjs"))) {
   throw new Error("the removed bulk knowledge generator must not be restored");
 }
+for (const relativePath of [
+  "scheduler/triage-scheduler.js",
+  "services/security-ops/proto/security_ops.proto",
+  "services/security-ops/src/runtime.js",
+  "services/security-ops/src/service.js",
+  "services/security-ops/src/store.js",
+  "services/security-ops/secret.schema.json",
+  "deploy/stacks/triage-platform/tools/render-config.mjs",
+  ".env.example"
+]) {
+  if (/decision[_ -]?token/i.test(readFileSync(path.join(root, relativePath), "utf8"))) {
+    throw new Error(`${relativePath} exposes the removed decision token`);
+  }
+}
+if (!existsSync(path.join(root, "services/security-ops/migrations/004_remove_decision_tokens.sql"))) {
+  throw new Error("decision-token removal migration is missing");
+}
 const sourceRegistry = JSON.parse(readFileSync(path.join(root, "knowledge-authoring/sources.json"), "utf8"));
 if (!Array.isArray(sourceRegistry.sources) || sourceRegistry.sources.length < 10) {
   throw new Error("knowledge source registry is incomplete");

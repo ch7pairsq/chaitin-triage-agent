@@ -16,6 +16,34 @@
       "usage": "告警字段、规则组和可观察性映射。"
     },
     {
+      "sourceId": "src-wazuh-sshd-ruleset",
+      "name": "Wazuh SSHD Ruleset",
+      "sourceType": "vendor_ruleset",
+      "url": "https://github.com/wazuh/wazuh-ruleset/blob/master/rules/0095-sshd_rules.xml",
+      "usage": "认证失败聚合阈值的公开实现参照；规则 5703/5705 使用 6 次，规则 5712 使用 8 次，项目再按领域风险与多账号条件采用保守初始边界。"
+    },
+    {
+      "sourceId": "src-threatbook-x",
+      "name": "微步在线 X 情报社区",
+      "sourceType": "external_threat_intelligence",
+      "url": "https://x.threatbook.com/",
+      "usage": "人工复核 IP、域名、URL 与文件哈希信誉；当前版本不自动调用，也不单独决定事件结论。"
+    },
+    {
+      "sourceId": "src-tencent-threat-intelligence",
+      "name": "腾讯云威胁情报云查与本地引擎",
+      "sourceType": "external_threat_intelligence",
+      "url": "https://cloud.tencent.com/product/tae",
+      "usage": "人工复核 IP、域名、URL 与文件哈希信誉；当前版本不自动调用，也不单独决定事件结论。"
+    },
+    {
+      "sourceId": "src-qianxin-threat-intelligence",
+      "name": "奇安信威胁情报中心",
+      "sourceType": "external_threat_intelligence",
+      "url": "https://ti.qianxin.com/",
+      "usage": "人工交叉核验外部威胁指标；当前版本不自动调用，也不单独决定事件结论。"
+    },
+    {
       "sourceId": "src-mitre-attack-enterprise",
       "name": "MITRE ATT&CK Enterprise",
       "sourceType": "public_knowledge_base",

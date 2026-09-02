@@ -106,7 +106,6 @@ chaitin-triage-agent/
 │   └── security-ops/                 # 独立 OctoBus service：业务核心与持久化
 │       ├── proto/                    # 入站能力契约
 │       ├── src/service.js            # 应用用例与状态推进
-│       ├── src/decision-token.js     # 决策完整性与防篡改
 │       ├── src/knowledge-rule-engine.js # 可执行知识的安全规则解释器
 │       ├── src/knowledge-policy.js      # 规则结果到安全动作的确定性映射
 │       ├── src/knowledge-repository.js
@@ -228,7 +227,7 @@ SecurityOps 的 `triage.db` 位于其 OctoBus instance workdir。主要表包括
 - `manual_tickets`：始终创建且保持 `open` 的人工工单；
 - `delivery_outbox`：飞书投递、重试和人工恢复状态。
 
-`EvaluatePolicy` 在服务端重新执行已批准规则，把权威 decision、action 和 `evaluation_json` 写入 `policy_decisions`。内部完整性材料不再交给模型转抄；`RecordTriageResult` 只接收 narrative，并在当前 `claimToken + traceId` 围栏内绑定已保存策略。调用方即使额外提交 decision 或 action 也不能覆盖服务端结果。所有路径都满足：
+`EvaluatePolicy` 在服务端重新执行已批准规则，把权威 decision、action 和 `evaluation_json` 写入 `policy_decisions`。`RecordTriageResult` 只接收 narrative，并在当前 `claimToken + traceId` 围栏内直接读取和绑定已保存策略；不再生成、返回或持久化需要模型转抄的第二套决策令牌。调用方即使额外提交 decision 或 action 也不能覆盖服务端结果。所有路径都满足：
 
 - `ticketRequired=true`；
 - `autoCloseAllowed=false`；
@@ -325,7 +324,7 @@ chmod 0600 .env
 - `REPO_ROOT=/data/chaitin/chaitin-triage-agent`；
 - 模型 endpoint/key/model；
 - OctoBus bootstrap admin、三个 capset、agent webhook、UI script token 使用互不相同且不少于 24 字符的随机值；其中初始化会按上一节所述为两个 agent-compose 项目 token 增加目录读取所需的服务端 admin 登记；
-- decision secret、UI auth secret、GitHub webhook secret 不少于 32 字符；
+- UI auth secret、GitHub webhook secret 不少于 32 字符，各能力 token 不少于 24 字符；
 - 四个 Wazuh 密码；
 - 飞书自定义机器人 webhook 和可选签名 secret；
 - 正确的 `GITHUB_REPOSITORY` 和 `RELEASE_DEPLOY_BRANCH=develop`。
@@ -344,7 +343,7 @@ chmod 0600 .env
 | `AUTH_SECRET` | agent-compose UI 会话签名 | `.env`，运行时进入 `agent-compose-ui` 容器环境 | 不作为登录密码，不应输入页面 |
 | `SCRIPT_SERVICE_TOKEN` | UI 到本地脚本服务的内部认证 | `.env`；`deploy/stacks/triage-platform/generated/script-service-token` | UI 内部使用，不作为人工登录凭据 |
 | `LLM_API_KEY` | Agent 模型调用 | `.env`；`deploy/stacks/triage-platform/generated/agent-compose.env` | 仅 daemon 私有配置，不进入 Wazuh 或 Portainer 页面 |
-| OctoBus、Agent webhook、decision token | 分能力集授权、事件认证和决策防篡改 | `.env`；`deploy/stacks/triage-platform/generated/` 下各 `0600` token/JSON 文件 | 无人工登录页面 |
+| OctoBus 与 Agent webhook token | 分能力集授权和事件认证 | `.env`；`deploy/stacks/triage-platform/generated/` 下各 `0600` token/JSON 文件 | 无人工登录页面 |
 | 飞书和 GitHub webhook secret | 通知签名与发布请求 HMAC | `.env`；分别进入 `security-ops.secret.json` 和 `release-webhook/generated/github-webhook-secret` | 无人工登录页面 |
 
 Wazuh Connector 的 TLS 配置位于 `wazuh-connector.config.json`，固定使用 `https://wazuh.indexer:9200` 和 `root-ca.pem`，用户名固定为 `triage_reader`。`root-ca.pem` 是公开证书链验证材料，可为 `0444`；账号密码、私钥和所有 token 必须保持私密。
@@ -637,7 +636,7 @@ docker compose --env-file .env -f deploy/stacks/release-webhook/docker-compose.y
 - `docs/design/2026-09-security-ops-rearchitecture.md`
 - `docs/adr/0001-deterministic-intake-and-leased-triage.md`
 - `docs/adr/0002-separate-backup-root.md`
-- `docs/plans/2026-09-02-deterministic-intake-recovery.md`
+- `docs/plans/2026-09-02-executable-operational-knowledge.md`
 - [OctoBus overview](https://github.com/chaitin/OctoBus/blob/main/docs/design/overview.md)
 - [OctoBus operations](https://github.com/chaitin/OctoBus/blob/main/docs/design/product/operations.md)
 - [OctoBus CLI](https://github.com/chaitin/OctoBus/blob/main/docs/design/product/cli.md)

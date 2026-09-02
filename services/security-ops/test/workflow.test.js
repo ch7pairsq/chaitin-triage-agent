@@ -8,7 +8,6 @@ import { KnowledgeRepository } from "../src/knowledge-repository.js";
 import { SecurityOpsService } from "../src/service.js";
 import { SecurityOpsStore } from "../src/store.js";
 
-const SECRET = "security-ops-test-decision-secret-1234567890";
 const EVIDENCE = ["认证失败与成功日志", "来源地址与设备身份", "账号状态和授权变更记录"];
 const FACTS = {
   auth_failures: 12,
@@ -66,7 +65,6 @@ function fixture() {
   const service = new SecurityOpsService({
     store,
     knowledgeRepository: new KnowledgeRepository([approvedKnowledge()]),
-    decisionTokenSecret: SECRET,
     now,
     eventIdFactory: () => "event-generated"
   });

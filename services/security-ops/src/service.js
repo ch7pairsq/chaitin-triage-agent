@@ -1,6 +1,5 @@
 import { randomUUID } from "node:crypto";
 
-import { hashDecisionToken, issueDecisionToken } from "./decision-token.js";
 import { failedPrecondition, invalidArgument } from "./errors.js";
 import { normalizeStringArray, parseContextJson } from "./knowledge-repository.js";
 import { decideKnowledgePolicy } from "./knowledge-policy.js";
@@ -14,11 +13,10 @@ import {
 } from "./validation.js";
 
 export class SecurityOpsService {
-  constructor({ store, knowledgeRepository = null, decisionTokenSecret = "", eventIdFactory = randomUUID, now = () => new Date() }) {
+  constructor({ store, knowledgeRepository = null, eventIdFactory = randomUUID, now = () => new Date() }) {
     if (!store) throw new TypeError("store is required");
     this.store = store;
     this.knowledgeRepository = knowledgeRepository;
-    this.decisionTokenSecret = decisionTokenSecret;
     this.eventIdFactory = eventIdFactory;
     this.now = now;
   }
@@ -136,20 +134,9 @@ export class SecurityOpsService {
       policyStatus: "executable_operational_knowledge",
       autoCloseAllowed: false
     };
-    const tokenClaims = {
-      traceId,
-      decision,
-      action,
-      evidenceRefs,
-      knowledgeRefs: authoritative.knowledgeRefs,
-      evaluationOutcomes: evaluation.map((item) => `${item.knowledgeId}:${item.outcome}`),
-      ticketRequired: true,
-      autoCloseAllowed: false
-    };
-    const decisionToken = issueDecisionToken(tokenClaims, { secret: this.decisionTokenSecret, now: this.now });
-    const saved = this.store.savePolicyDecision({ ...authoritative, decisionToken, decisionTokenHash: hashDecisionToken(decisionToken) });
+    const saved = this.store.savePolicyDecision(authoritative);
     if (!saved.duplicate) this.store.appendStep({ traceId, method: "EvaluatePolicy", evidenceRefs });
-    const { decisionToken: _decisionToken, decisionTokenHash: _decisionTokenHash, createdAt: _createdAt, ...publicDecision } = saved;
+    const { createdAt: _createdAt, ...publicDecision } = saved;
     return publicDecision;
   }
 
@@ -158,8 +145,7 @@ export class SecurityOpsService {
     this.#assertClaim(traceId, request);
     const narrative = String(request?.narrative ?? "").trim();
     if (!narrative || narrative.length > 4000) throw invalidArgument("narrative must contain between 1 and 4000 characters", { field: "narrative" });
-    const policy = this.store.getPolicyDecision(traceId);
-    const result = this.store.recordTriageResult({ traceId, decisionTokenHash: policy.decisionTokenHash, narrative });
+    const result = this.store.recordTriageResult({ traceId, narrative });
     if (!result.duplicate) this.store.appendStep({ traceId, method: "RecordTriageResult", evidenceRefs: result.evidenceRefs });
     return result;
   }

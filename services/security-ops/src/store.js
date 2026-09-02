@@ -15,8 +15,14 @@ const MANUALIZE_ON_RECOVERY = 3;
 
 function configureDatabase(database) {
   database.exec("PRAGMA journal_mode = WAL");
-  database.exec("PRAGMA foreign_keys = ON");
   database.exec("PRAGMA busy_timeout = 5000");
+  database.exec("PRAGMA foreign_keys = OFF");
+}
+
+function enableAndValidateForeignKeys(database) {
+  database.exec("PRAGMA foreign_keys = ON");
+  const violations = database.prepare("PRAGMA foreign_key_check").all();
+  if (violations.length > 0) throw new Error("database foreign-key validation failed after migrations");
 }
 
 function applyMigrations(database, migrationsDir, now) {
@@ -76,6 +82,7 @@ export class SecurityOpsStore {
     try {
       configureDatabase(this.database);
       applyMigrations(this.database, path.resolve(migrationsDir), this.now);
+      enableAndValidateForeignKeys(this.database);
       this.statements = prepareStatements(this.database);
     } catch (error) {
       this.database.close();
@@ -282,8 +289,6 @@ export class SecurityOpsStore {
       JSON.stringify(decision.knowledgeRefs),
       JSON.stringify(decision.evaluation ?? []),
       decision.policyStatus,
-      decision.decisionToken,
-      decision.decisionTokenHash,
       now
     );
     return { ...decision, ticketRequired: true, autoCloseAllowed: false, duplicate: false, createdAt: now };
@@ -295,14 +300,11 @@ export class SecurityOpsStore {
     return decodePolicyDecision(row, false);
   }
 
-  recordTriageResult({ traceId, decisionTokenHash, narrative }) {
+  recordTriageResult({ traceId, narrative }) {
     const existing = this.statements.findResultByTrace.get(traceId);
     if (existing) return decodeResult(existing, true);
     const decision = this.statements.findPolicyDecision.get(traceId);
     if (!decision) throw failedPrecondition("policy decision must be recorded first", { traceId });
-    if (decision.decision_token_hash !== decisionTokenHash) {
-      throw failedPrecondition("decisionToken does not match the authoritative policy decision", { traceId });
-    }
     const resultId = this.idFactory();
     const now = this.now().toISOString();
     this.statements.insertResult.run(
@@ -313,7 +315,6 @@ export class SecurityOpsStore {
       decision.evidence_json,
       decision.knowledge_json,
       narrative,
-      decisionTokenHash,
       now
     );
     return decodeResult(this.statements.findResultByTrace.get(traceId), false);
@@ -386,7 +387,7 @@ export class SecurityOpsStore {
       sandboxId: claim.sandbox_id,
       state: run.state,
       steps: this.statements.listSteps.all(traceId).map(decodeStep),
-      policy: policy ? publicPolicyDecision(decodePolicyDecision(policy, false)) : null,
+      policy: policy ? decodePolicyDecision(policy, false) : null,
       result: result ? decodeResult(result, false) : null,
       ticket: ticket ? decodeTicket(ticket, false) : null,
       delivery: delivery ? decodeDelivery(delivery, false) : null
@@ -588,8 +589,6 @@ export class SecurityOpsStore {
   #manualizeExhaustedRecovery({ run, event, recoveryAttempt, now }) {
     const evidenceRefs = [`event:${event.event_id}`, `trace:${run.trace_id}:recovery-exhausted`];
     const evidenceJson = JSON.stringify(evidenceRefs);
-    const internalToken = `internal-recovery:${run.trace_id}:${recoveryAttempt}`;
-    const internalTokenHash = createHash("sha256").update(internalToken).digest("hex");
     const resultId = this.idFactory();
     const ticketId = this.idFactory();
     const deliveryId = this.idFactory();
@@ -597,8 +596,6 @@ export class SecurityOpsStore {
     this.statements.upsertManualPolicy.run(
       run.trace_id,
       evidenceJson,
-      internalToken,
-      internalTokenHash,
       now
     );
     this.statements.upsertManualResult.run(
@@ -606,7 +603,6 @@ export class SecurityOpsStore {
       run.trace_id,
       evidenceJson,
       "研判运行连续停滞，已安全转入人工复核并请求补充证据。",
-      internalTokenHash,
       now
     );
     const result = this.statements.findResultByTrace.get(run.trace_id);
@@ -759,9 +755,9 @@ function prepareStatements(database) {
     insertStep: database.prepare(`INSERT INTO triage_steps (step_id, trace_id, sequence, method, status, evidence_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)`),
     listSteps: database.prepare("SELECT * FROM triage_steps WHERE trace_id = ? ORDER BY sequence"),
     findPolicyDecision: database.prepare("SELECT * FROM policy_decisions WHERE trace_id = ?"),
-    insertPolicyDecision: database.prepare(`INSERT INTO policy_decisions (trace_id, decision, action, evidence_json, knowledge_json, evaluation_json, policy_status, ticket_required, auto_close_allowed, decision_token, decision_token_hash, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, 1, 0, ?, ?, ?)`),
+    insertPolicyDecision: database.prepare(`INSERT INTO policy_decisions (trace_id, decision, action, evidence_json, knowledge_json, evaluation_json, policy_status, ticket_required, auto_close_allowed, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, 1, 0, ?)`),
     findResultByTrace: database.prepare("SELECT * FROM triage_results WHERE trace_id = ?"),
-    insertResult: database.prepare(`INSERT INTO triage_results (result_id, trace_id, decision, action, evidence_json, knowledge_json, narrative, decision_token_hash, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`),
+    insertResult: database.prepare(`INSERT INTO triage_results (result_id, trace_id, decision, action, evidence_json, knowledge_json, narrative, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`),
     findTicketByTrace: database.prepare("SELECT * FROM manual_tickets WHERE trace_id = ?"),
     insertTicket: database.prepare(`INSERT INTO manual_tickets (ticket_id, trace_id, result_id, status, created_at, updated_at) VALUES (?, ?, ?, 'open', ?, ?)`),
     findDeliveryByTicket: database.prepare("SELECT * FROM delivery_outbox WHERE ticket_id = ?"),
@@ -769,21 +765,20 @@ function prepareStatements(database) {
     upsertManualPolicy: database.prepare(`
       INSERT INTO policy_decisions
         (trace_id, decision, action, evidence_json, knowledge_json, evaluation_json, policy_status,
-         ticket_required, auto_close_allowed, decision_token, decision_token_hash, created_at)
-      VALUES (?, 'manual_review', 'request_additional_evidence', ?, '[]', '[]', 'recovery_fallback', 1, 0, ?, ?, ?)
+         ticket_required, auto_close_allowed, created_at)
+      VALUES (?, 'manual_review', 'request_additional_evidence', ?, '[]', '[]', 'recovery_fallback', 1, 0, ?)
       ON CONFLICT(trace_id) DO UPDATE SET
         decision = 'manual_review', action = 'request_additional_evidence', evidence_json = excluded.evidence_json,
         knowledge_json = '[]', evaluation_json = '[]', policy_status = 'recovery_fallback', ticket_required = 1,
-        auto_close_allowed = 0, decision_token = excluded.decision_token,
-        decision_token_hash = excluded.decision_token_hash
+        auto_close_allowed = 0
     `),
     upsertManualResult: database.prepare(`
       INSERT INTO triage_results
-        (result_id, trace_id, decision, action, evidence_json, knowledge_json, narrative, decision_token_hash, created_at)
-      VALUES (?, ?, 'manual_review', 'request_additional_evidence', ?, '[]', ?, ?, ?)
+        (result_id, trace_id, decision, action, evidence_json, knowledge_json, narrative, created_at)
+      VALUES (?, ?, 'manual_review', 'request_additional_evidence', ?, '[]', ?, ?)
       ON CONFLICT(trace_id) DO UPDATE SET
         decision = 'manual_review', action = 'request_additional_evidence', evidence_json = excluded.evidence_json,
-        knowledge_json = '[]', narrative = excluded.narrative, decision_token_hash = excluded.decision_token_hash
+        knowledge_json = '[]', narrative = excluded.narrative
     `),
     insertTicketIfMissing: database.prepare(`
       INSERT OR IGNORE INTO manual_tickets
@@ -921,12 +916,7 @@ function secureHashEquals(left, right) {
 }
 
 function decodePolicyDecision(row, duplicate) {
-  return { traceId: row.trace_id, decision: row.decision, action: row.action, evidenceRefs: JSON.parse(row.evidence_json), knowledgeRefs: JSON.parse(row.knowledge_json), evaluation: JSON.parse(row.evaluation_json ?? "[]"), evaluationJson: row.evaluation_json ?? "[]", policyStatus: row.policy_status, ticketRequired: true, autoCloseAllowed: false, decisionToken: row.decision_token, decisionTokenHash: row.decision_token_hash, duplicate, createdAt: row.created_at };
-}
-
-function publicPolicyDecision(decision) {
-  const { decisionToken: _decisionToken, decisionTokenHash: _decisionTokenHash, ...publicDecision } = decision;
-  return publicDecision;
+  return { traceId: row.trace_id, decision: row.decision, action: row.action, evidenceRefs: JSON.parse(row.evidence_json), knowledgeRefs: JSON.parse(row.knowledge_json), evaluation: JSON.parse(row.evaluation_json ?? "[]"), evaluationJson: row.evaluation_json ?? "[]", policyStatus: row.policy_status, ticketRequired: true, autoCloseAllowed: false, duplicate, createdAt: row.created_at };
 }
 
 function decodeResult(row, duplicate) {

@@ -14,6 +14,9 @@ import {
 const TEST_DIR = path.dirname(fileURLToPath(import.meta.url));
 const PROTO = readFileSync(path.resolve(TEST_DIR, "../proto/security_ops.proto"), "utf8");
 const RUNTIME = readFileSync(path.resolve(TEST_DIR, "../src/runtime.js"), "utf8");
+const SERVICE = readFileSync(path.resolve(TEST_DIR, "../src/service.js"), "utf8");
+const STORE = readFileSync(path.resolve(TEST_DIR, "../src/store.js"), "utf8");
+const SECRET_SCHEMA = readFileSync(path.resolve(TEST_DIR, "../secret.schema.json"), "utf8");
 
 test("Proto exposes lease, recovery and authorization contracts", () => {
   assert.match(PROTO, /rpc RequeueStalledAlerts\(/);
@@ -26,6 +29,12 @@ test("Proto exposes lease, recovery and authorization contracts", () => {
   assert.match(PROTO, /message KnowledgeMatch \{[\s\S]*string evaluation_json = 5;/);
   assert.match(PROTO, /message EvaluatePolicyResponse \{[\s\S]*string evaluation_json = 10;/);
   assert.doesNotMatch(PROTO, /decision_token/);
+});
+
+test("server-authoritative policy binding has no replayable decision token surface", () => {
+  for (const source of [PROTO, RUNTIME, SERVICE, STORE, SECRET_SCHEMA]) {
+    assert.doesNotMatch(source, /decision[_ -]?token/i);
+  }
 });
 
 test("claim tokens are required and strictly bounded", () => {

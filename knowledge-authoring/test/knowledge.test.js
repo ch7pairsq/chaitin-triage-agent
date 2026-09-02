@@ -20,7 +20,7 @@ function readJsonFiles(directory) {
 test("three-domain knowledge and test fixtures satisfy the publication contract", () => {
   const result = validateKnowledgeRepository();
   assert.deepEqual(result.errors, []);
-  assert.deepEqual(result.counts, { domains: 3, attackTypes: 33, knowledge: 99, fixtures: 396, sources: 12 });
+  assert.deepEqual(result.counts, { domains: 3, attackTypes: 33, knowledge: 99, fixtures: 396, sources: 16 });
 });
 
 test("all 396 boundary cases execute the same rules that SecurityOps publishes", () => {

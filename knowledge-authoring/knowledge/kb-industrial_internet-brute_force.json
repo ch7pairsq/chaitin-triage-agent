@@ -171,6 +171,7 @@
       "sourceIds": [
         "src-repository-reviewed-rule-cases",
         "src-wazuh-rule-language",
+        "src-wazuh-sshd-ruleset",
         "src-mitre-attack-ics"
       ],
       "statement": "五分钟内至少 6 次失败且影响至少 3 个账号时进入升级；阈值以下或身份字段缺失时不自动定性。",
@@ -180,6 +181,7 @@
   "sourceRefs": [
     "src-repository-reviewed-rule-cases",
     "src-wazuh-rule-language",
+    "src-wazuh-sshd-ruleset",
     "src-mitre-attack-ics"
   ]
 }

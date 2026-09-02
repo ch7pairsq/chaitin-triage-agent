@@ -87,6 +87,7 @@ test("triage prompt passes the acquired claim token to all eight leased methods"
   assert.match(prompt, /first character must be \{/);
   assert.match(prompt, /Do not use Markdown fences/);
   assert.match(prompt, /triage-runner capset/);
+  assert.doesNotMatch(prompt, /decisionToken|decision_token/);
 });
 
 test("manual entry requires a real event id and uses the same event workflow", () => {

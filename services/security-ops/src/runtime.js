@@ -32,8 +32,7 @@ function backendFor(context) {
     const knowledgeRepository = KnowledgeRepository.fromJsonLines(knowledgePath);
     const service = new SecurityOpsService({
       store,
-      knowledgeRepository,
-      decisionTokenSecret: secret.decision_token_secret
+      knowledgeRepository
     });
     const worker = new OutboxWorker({
       store,

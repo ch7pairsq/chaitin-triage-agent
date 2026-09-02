@@ -50,7 +50,6 @@ const values = {
   OCTOBUS_ADMIN_TOKEN: required("OCTOBUS_ADMIN_TOKEN", { minLength: 24, pattern: tokenPattern }),
   AGENT_WEBHOOK_TOKEN: required("AGENT_WEBHOOK_TOKEN", { minLength: 24, pattern: tokenPattern }),
   SCRIPT_SERVICE_TOKEN: required("SCRIPT_SERVICE_TOKEN", { minLength: 24, pattern: tokenPattern }),
-  DECISION_TOKEN_SECRET: required("DECISION_TOKEN_SECRET", { minLength: 32 }),
   WAZUH_TRIAGE_READER_PASSWORD: required("WAZUH_TRIAGE_READER_PASSWORD", { minLength: 12 }),
   AGENT_COMPOSE_GUEST_IMAGE: required("AGENT_COMPOSE_GUEST_IMAGE"),
   LLM_API_ENDPOINT: required("LLM_API_ENDPOINT"),
@@ -90,7 +89,6 @@ writePrivate("security-ops.config.json", `${JSON.stringify({
 const feishuWebhookSecret = optional("FEISHU_WEBHOOK_SECRET");
 writePrivate("security-ops.secret.json", `${JSON.stringify({
   agent_webhook_token: values.AGENT_WEBHOOK_TOKEN,
-  decision_token_secret: values.DECISION_TOKEN_SECRET,
   feishu_webhook_url: feishuWebhookUrl,
   ...(feishuWebhookSecret ? { feishu_webhook_secret: feishuWebhookSecret } : {})
 }, null, 2)}\n`);

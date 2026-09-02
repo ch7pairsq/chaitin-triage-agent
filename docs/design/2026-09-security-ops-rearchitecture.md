@@ -248,11 +248,11 @@ webhook 返回 HTTP 202 只表示 agent-compose 控制面接受了事件，不�
 }
 ```
 
-稳定业务错误码至少包括：`NOT_FOUND`、`ALREADY_EXISTS`、`LEASE_BUSY`、`LEASE_EXPIRED`、`CLAIM_FENCED`、`INVALID_STATE`、`INVALID_DECISION_TOKEN`、`EVIDENCE_REQUIRED`、`AUTHORIZATION_INVALID` 和 `DELIVERY_PENDING`。
+稳定业务错误码至少包括：`NOT_FOUND`、`ALREADY_EXISTS`、`LEASE_BUSY`、`LEASE_EXPIRED`、`CLAIM_FENCED`、`INVALID_STATE`、`EVIDENCE_REQUIRED`、`AUTHORIZATION_INVALID` 和 `DELIVERY_PENDING`。
 
 ## 5. 数据迁移与幂等
 
-保留 `001_initial.sql`，新增 `002_recovery_and_leases.sql` 与 `003_policy_rule_evaluation.sql`，服务启动逻辑按文件名顺序执行所有尚未应用的迁移。
+保留 `001_initial.sql`，新增 `002_recovery_and_leases.sql`、`003_policy_rule_evaluation.sql` 与 `004_remove_decision_tokens.sql`，服务启动逻辑按文件名顺序执行所有尚未应用的迁移。`004` 在保留既有策略和结果记录的同时移除历史决策令牌列，避免可重放材料进入数据库、Agent 输出或诊断日志。
 
 `002` 至少包括：
 
@@ -264,7 +264,7 @@ webhook 返回 HTTP 202 只表示 agent-compose 控制面接受了事件，不�
 - 新增 `authorization_records`，保存状态、作用域、起止时间和证据引用；
 - 为停滞扫描、可用槽位和投递重试建立必要索引。
 
-`003` 为 `policy_decisions` 增加 `evaluation_json`，保存规则版本、命中条件、失败条件、排除条件、缺失事实和阈值来源。内部策略完整性材料只在 SecurityOps 内部流转，不再要求 LLM 原样转抄长 token。
+`003` 为 `policy_decisions` 增加 `evaluation_json`，保存规则版本、命中条件、失败条件、排除条件、缺失事实和阈值来源。策略与叙述在同一 SecurityOps 服务内按 `traceId` 和当前租约直接绑定，不再生成需要 LLM 原样转抄的第二套令牌。
 
 部署前必须创建 SQLite 一致性备份；迁移失败时服务不得带着半迁移 schema 启动。
 
