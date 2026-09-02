@@ -118,11 +118,22 @@ test("extracts one fenced result from model metadata and keeps strict contract v
 test("rejects an ambiguous model response containing multiple business results", () => {
   const { registrations } = loadScheduler({
     formatResult(result) {
-      return JSON.stringify(result) + "\n" + JSON.stringify(result);
+      return JSON.stringify(result) + "\n" + JSON.stringify({ ...result, processed: result.processed + 1 });
     },
   });
   assert.throws(
     () => registrations.crons.get("wazuh-alert-poll").callback(),
     /ambiguous JSON results/
   );
+});
+
+test("accepts an identical result repeated by the runtime transcript", () => {
+  const { registrations } = loadScheduler({
+    formatResult(result) {
+      return "tool output\n" + JSON.stringify(result) + "\n" + JSON.stringify(result);
+    },
+  });
+  const result = registrations.crons.get("wazuh-alert-poll").callback();
+  assert.equal(result.mode, "poll");
+  assert.equal(result.processed, 1);
 });

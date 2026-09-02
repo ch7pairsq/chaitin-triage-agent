@@ -60,6 +60,12 @@ function extractJsonObjects(text) {
   return objects;
 }
 
+function uniqueObjects(objects) {
+  const unique = new Map();
+  for (const object of objects) unique.set(JSON.stringify(object), object);
+  return [...unique.values()];
+}
+
 function extractTriageObject(raw, expectedMode) {
   const text = String(raw ?? "").trim();
   const direct = parseObject(text);
@@ -71,9 +77,18 @@ function extractTriageObject(raw, expectedMode) {
     const parsed = parseObject(match[1].trim());
     if (parsed) fenced.push(parsed);
   }
-  if (fenced.length === 1) return fenced[0];
+  const uniqueFenced = uniqueObjects(fenced);
+  if (uniqueFenced.length === 1) return uniqueFenced[0];
 
-  const candidates = fenced.length > 1 ? fenced : extractJsonObjects(text);
+  const completeLines = text
+    .split(/\r?\n/)
+    .map((line) => parseObject(line.trim()))
+    .filter(Boolean);
+  const candidates = uniqueObjects([
+    ...uniqueFenced,
+    ...completeLines,
+    ...extractJsonObjects(text),
+  ]);
   const matching = candidates.filter((candidate) =>
     candidate.mode === expectedMode && typeof candidate.success === "boolean"
   );
