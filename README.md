@@ -268,7 +268,7 @@ sudo install -d -o "$(id -u)" -g "$(id -g)" -m 0700 \
   /data/chaitin_backup /data/chaitin_backup/chaitin-triage-agent
 ```
 
-不要把备份放回 `/data/chaitin`，也不要把 `/data/chaitin_backup` 挂载给 Wazuh、agent-compose、UI 或 OctoBus。只有无监听端口的 release-worker 具有该目录的写权限。
+不要把备份放回 `/data/chaitin`，也不要把 `/data/chaitin_backup` 挂载给 Wazuh、agent-compose、UI 或 OctoBus。只有无监听端口的 release-worker 具有该目录的写权限。统一更新脚本会拒绝位于业务状态根目录内部的 `--backup-root` 或 `UPDATE_STACKS_BACKUP_ROOT`，防止旧配置静默回退。
 
 ### 7.1 前提
 
@@ -453,6 +453,8 @@ docker compose --env-file .env -f deploy/stacks/release-webhook/docker-compose.y
 ```
 
 Portainer 使用 `deploy/stacks/release-webhook/docker-compose.yml` 新建 `chaitin-release-webhook`。默认只监听 `127.0.0.1:9080`；由现有 HTTPS 反向代理发布 `/webhooks/github`。GitHub 端只选择 `push`，Content type 为 `application/json`，Secret 与 `.env` 保持一致。
+
+备份路径变更后必须重新创建 `release-worker`，仅在宿主机拉取代码不会更新容器已有的环境变量和 bind mount。在重建完成前，新版更新脚本会拒绝旧的业务目录备份路径，自动发布将安全失败而不会写错目录。
 
 三个 Stack 的唯一文件如下，不要在 Portainer 中维护复制版：
 

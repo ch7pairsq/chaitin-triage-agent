@@ -93,14 +93,14 @@ exit 0
   return fixture;
 }
 
-function execute(fixture, args = ["--mode", "interactive", "--phase", "all"], extraEnv = {}) {
+function execute(fixture, args = ["--mode", "interactive", "--phase", "all"], extraEnv = {}, roots = {}) {
   const shell = shellExecutable();
   if (!shell) return { skipped: true };
   const log = path.join(fixture, "commands.log");
   return spawnSync(shell, [toShellPath(sourceScript), ...args,
     "--env-file", toShellPath(path.join(fixture, ".env")),
-    "--backup-root", toShellPath(path.join(fixture, "backups")),
-    "--state-root", toShellPath(path.join(fixture, "state"))], {
+    "--backup-root", toShellPath(roots.backupRoot ?? path.join(fixture, "backups")),
+    "--state-root", toShellPath(roots.stateRoot ?? path.join(fixture, "state"))], {
     cwd: fixture,
     encoding: "utf8",
     env: {
@@ -112,6 +112,18 @@ function execute(fixture, args = ["--mode", "interactive", "--phase", "all"], ex
     },
   });
 }
+
+test("rejects a backup root inside the business state root", (t) => {
+  const fixture = makeFixture();
+  t.after(() => rmSync(fixture, { recursive: true, force: true }));
+  const result = execute(fixture, undefined, {}, {
+    backupRoot: path.join(fixture, "state", "backups"),
+  });
+  if (result.skipped) return t.skip("POSIX shell unavailable");
+  assert.equal(result.status, 78);
+  assert.match(result.stderr, /backup root must be outside business state root/);
+  assert.equal(existsSync(path.join(fixture, "state", "backups")), false);
+});
 
 test("creates timestamped commit, configuration, and SQLite backups before updates", (t) => {
   const fixture = makeFixture();

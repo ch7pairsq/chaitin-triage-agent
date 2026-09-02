@@ -72,6 +72,22 @@ trap 'handle_exit $?' EXIT HUP INT TERM
 
 preflight() {
   current_stage=preflight
+  case "$state_root" in
+    /*) ;;
+    *) echo "state root must be an absolute path: $state_root" >&2; return 78 ;;
+  esac
+  case "$backup_root" in
+    /*) ;;
+    *) echo "backup root must be an absolute path: $backup_root" >&2; return 78 ;;
+  esac
+  [ "$state_root" != "/" ] || { echo "state root must not be /" >&2; return 78; }
+  [ "$backup_root" != "/" ] || { echo "backup root must not be /" >&2; return 78; }
+  case "$backup_root" in
+    "$state_root"|"$state_root"/*)
+      echo "backup root must be outside business state root: backup=$backup_root state=$state_root" >&2
+      return 78
+      ;;
+  esac
   for file in \
     "$env_file" \
     "$repo_root/agent-compose.yml" \

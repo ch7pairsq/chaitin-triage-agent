@@ -18,6 +18,7 @@
 采用方案 3。当前业务的所有新备份写入 `/data/chaitin_backup/chaitin-triage-agent`：
 
 - `deploy/update-stacks.sh` 的默认备份根目录指向该路径；
+- 更新脚本拒绝位于业务状态根目录内部的备份路径，旧 worker 配置只能安全失败；
 - release-worker 仅把宿主机 `/data/chaitin_backup` 挂载为容器内 `/host-backup`；
 - release-worker 使用 `/host-backup/chaitin-triage-agent`，不通过 `/host-data/chaitin` 写备份；
 - 备份目录权限为 `0700`，新归档文件权限为 `0600`；
