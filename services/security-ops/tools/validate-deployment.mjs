@@ -162,6 +162,16 @@ assert(
   "agent-compose project apply must load interpolation values into the CLI process"
 );
 
+const releasePrepare = read("deploy/stacks/release-webhook/prepare-config.sh");
+assert(
+  /chown 1000:1000[\s\\]*\n[\s\S]*generated[\s\\]*\n[\s\S]*generated\/github-webhook-secret/.test(releasePrepare),
+  "release webhook secret must belong to the uid 1000 runtime identity"
+);
+assert(
+  /chmod 0600 deploy\/stacks\/release-webhook\/generated\/github-webhook-secret/.test(releasePrepare),
+  "release webhook secret must remain owner-readable only"
+);
+
 const temporaryRoot = fs.mkdtempSync(path.join(os.tmpdir(), "triage-deployment-validation-"));
 try {
   const commonEnv = {

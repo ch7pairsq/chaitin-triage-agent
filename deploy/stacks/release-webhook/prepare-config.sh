@@ -13,3 +13,11 @@ docker run --rm \
   --workdir /repo \
   node:22.23.2-alpine3.24 \
   node deploy/stacks/release-webhook/tools/render-secret.mjs
+
+if [ "$(id -u)" -eq 0 ]; then
+  chown 1000:1000 \
+    deploy/stacks/release-webhook/generated \
+    deploy/stacks/release-webhook/generated/github-webhook-secret
+  chmod 0700 deploy/stacks/release-webhook/generated
+  chmod 0600 deploy/stacks/release-webhook/generated/github-webhook-secret
+fi
