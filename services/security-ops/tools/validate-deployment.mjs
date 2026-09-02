@@ -85,6 +85,7 @@ const wazuhStack = documents.get("deploy/stacks/wazuh/docker-compose.yml");
 assert(wazuhStack?.services?.["wazuh.manager"], "Wazuh manager service is missing");
 assert(wazuhStack?.services?.["wazuh.indexer"], "Wazuh indexer service is missing");
 assert(wazuhStack?.services?.["wazuh-role-bootstrap"], "Wazuh read-only role bootstrap is missing");
+assert(wazuhStack.services["wazuh-role-bootstrap"].user === "1000:1000", "Wazuh role bootstrap must use the certificate owner identity");
 assert(
   wazuhStack?.services?.["wazuh-event-injector"]?.environment?.INJECT_STAY_ALIVE === "true",
   "disabled Wazuh event injector must stay available for one-shot execution"
@@ -126,8 +127,10 @@ const wazuhPrepare = fs.readFileSync(path.join(root, "deploy/stacks/wazuh/prepar
 assert(/hash\.sh[\s\\]*\n[\s-]*-env WAZUH_HASH_PASSWORD/.test(wazuhPrepare), "Wazuh password hashing must use the official environment-variable input");
 assert(/--env-file "\$password_env"/.test(wazuhPrepare), "Wazuh password hashing must read a private environment file");
 assert(!/hash\.sh[\s\\]*\n[\s|]*\|/.test(wazuhPrepare), "Wazuh password hashing must not rely on console stdin");
-assert(/chmod 0444 "\$wazuh_ca_file"/.test(wazuhPrepare), "Wazuh public CA must remain readable after all bootstrap capabilities are dropped");
-assert(!/chmod 0444[^\n]*(?:key|admin\.pem)/.test(wazuhPrepare), "Wazuh private keys and admin certificate must not be made world-readable");
+assert(/chown 1000:1000[\s\\]*\n[\s\S]*root-ca\.pem[\s\\]*\n[\s\S]*internal_users\.yml[\s\\]*\n[\s\S]*wazuh\.yml/.test(wazuhPrepare), "Wazuh runtime files must belong to the uid 1000 service identity");
+assert(/chmod 0400 deploy\/stacks\/wazuh\/config\/wazuh_indexer_ssl_certs\/root-ca\.pem/.test(wazuhPrepare), "Wazuh public CA must remain owner-readable only");
+assert(/chmod 0600[\s\\]*\n[\s\S]*internal_users\.yml[\s\\]*\n[\s\S]*wazuh\.yml/.test(wazuhPrepare), "Wazuh generated credential files must remain owner-readable only");
+assert(!/chmod[^\n]*(?:-key\.pem|admin\.pem)/.test(wazuhPrepare), "Wazuh private key permissions must not be relaxed by prepare-config");
 
 const temporaryRoot = fs.mkdtempSync(path.join(os.tmpdir(), "triage-deployment-validation-"));
 try {

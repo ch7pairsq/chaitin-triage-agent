@@ -97,6 +97,7 @@ services:
   wazuh-role-bootstrap:
     image: node:22.23.2-alpine3.24
     container_name: wazuh-role-bootstrap
+    user: "1000:1000"
     restart: "no"
     depends_on: [wazuh.indexer]
     environment:

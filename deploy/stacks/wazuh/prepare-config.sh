@@ -9,9 +9,6 @@ test -r "$env_file" || { echo "missing root configuration: $env_file" >&2; exit 
 
 wazuh_ca_file="$stack_dir/config/wazuh_indexer_ssl_certs/root-ca.pem"
 test -s "$wazuh_ca_file" || { echo "missing Wazuh root CA: $wazuh_ca_file" >&2; exit 78; }
-# The CA is public certificate material. The bootstrap container drops every
-# Linux capability, so it must be world-readable without relaxing any key.
-chmod 0444 "$wazuh_ca_file"
 
 env_value() {
   key="$1"
@@ -61,6 +58,24 @@ docker run --rm \
   --workdir /repo \
   node:22.23.2-alpine3.24 \
   node deploy/stacks/wazuh/tools/render-config.mjs
+
+# Wazuh indexer, dashboard and the role bootstrap run as uid 1000. Keep the
+# generated credential-bearing files private while making them readable by
+# their actual runtime identity. No private key permissions are changed here.
+docker run --rm \
+  --volume "$host_repo_root:/repo" \
+  --workdir /repo \
+  node:22.23.2-alpine3.24 \
+  sh -ec '
+    chown 1000:1000 \
+      deploy/stacks/wazuh/config/wazuh_indexer_ssl_certs/root-ca.pem \
+      deploy/stacks/wazuh/generated/internal_users.yml \
+      deploy/stacks/wazuh/generated/wazuh.yml
+    chmod 0400 deploy/stacks/wazuh/config/wazuh_indexer_ssl_certs/root-ca.pem
+    chmod 0600 \
+      deploy/stacks/wazuh/generated/internal_users.yml \
+      deploy/stacks/wazuh/generated/wazuh.yml
+  '
 test -s "$stack_dir/generated/internal_users.yml"
 test -s "$stack_dir/generated/wazuh.yml"
 echo "Wazuh runtime configuration prepared"
