@@ -150,3 +150,32 @@ test("accepts a corrected result only when the runtime repeats the final object"
   assert.equal(result.success, true);
   assert.equal(result.processed, 1);
 });
+
+test("normalizes an exact terminal-state mapping returned by the Agent", () => {
+  const { registrations, calls } = loadScheduler({
+    formatResult(result) {
+      return JSON.stringify({
+        ...result,
+        terminalStates: { [result.traceIds[0]]: "COMPLETED" },
+      });
+    },
+  });
+  const result = registrations.crons.get("hourly-security-triage").callback();
+  assert.deepEqual(Array.from(result.terminalStates), ["COMPLETED"]);
+  assert.match(calls[0].prompt, /terminalStates MUST both be JSON arrays of strings/);
+});
+
+test("rejects a terminal-state mapping that does not match traceIds", () => {
+  const { registrations } = loadScheduler({
+    formatResult(result) {
+      return JSON.stringify({
+        ...result,
+        terminalStates: { "different-trace": "COMPLETED" },
+      });
+    },
+  });
+  assert.throws(
+    () => registrations.crons.get("hourly-security-triage").callback(),
+    /result list is invalid: terminalStates/
+  );
+});

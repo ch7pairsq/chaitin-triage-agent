@@ -127,12 +127,20 @@ function parseTriageResult(reply, expectedMode) {
       throw new Error("triage Agent result counter is invalid: " + field);
     }
   }
-  for (const field of ["traceIds", "terminalStates"]) {
-    if (!Array.isArray(result[field]) || result[field].some((value) => typeof value !== "string")) {
-      throw new Error("triage Agent result list is invalid: " + field);
-    }
+  if (!Array.isArray(result.traceIds) || result.traceIds.some((value) => typeof value !== "string")) {
+    throw new Error("triage Agent result list is invalid: traceIds");
   }
-  return result;
+  let terminalStates = result.terminalStates;
+  if (terminalStates && !Array.isArray(terminalStates) && typeof terminalStates === "object") {
+    const stateTraceIds = Object.keys(terminalStates);
+    const exactTraceMapping = stateTraceIds.length === result.traceIds.length
+      && stateTraceIds.every((traceId) => result.traceIds.includes(traceId));
+    if (exactTraceMapping) terminalStates = result.traceIds.map((traceId) => terminalStates[traceId]);
+  }
+  if (!Array.isArray(terminalStates) || terminalStates.some((value) => typeof value !== "string")) {
+    throw new Error("triage Agent result list is invalid: terminalStates");
+  }
+  return { ...result, terminalStates };
 }
 
 function buildPrompt(context) {
@@ -168,7 +176,7 @@ function buildPrompt(context) {
     context.correlationId ? "Expected correlationId: " + context.correlationId + "." : "",
     triageSequence,
     ...executionRules,
-    "Return only one JSON object with exactly these keys: success, mode, polled, ingested, processed, traceIds, terminalStates. Do not use a Markdown fence or add explanation. polled is the number returned by Wazuh, ingested is the number accepted or already present, and processed is the number that reached a returned terminal state.",
+    "Return only one JSON object with exactly these keys: success, mode, polled, ingested, processed, traceIds, terminalStates. Do not use a Markdown fence or add explanation. traceIds and terminalStates MUST both be JSON arrays of strings, with terminalStates in the same order as traceIds. polled is the number returned by Wazuh, ingested is the number accepted or already present, and processed is the number that reached a returned terminal state.",
     "Mode: " + context.mode,
   ].filter(Boolean).join("\n");
 }
