@@ -11,6 +11,11 @@ done
 
 role_exit=$(docker inspect --format '{{.State.ExitCode}}' wazuh-role-bootstrap 2>/dev/null || true)
 test "$role_exit" = "0" || { echo "Wazuh least-privilege role bootstrap did not complete successfully" >&2; exit 1; }
+wazuh_status=$(docker exec wazuh.manager /var/ossec/bin/wazuh-control status 2>&1 || true)
+printf '%s\n' "$wazuh_status" | grep -F 'wazuh-remoted is running' >/dev/null || {
+  echo "Wazuh syslog receiver is not running" >&2
+  exit 1
+}
 
 docker exec agent-compose agent-compose version
 docker exec agent-compose agent-compose project ls --json

@@ -96,6 +96,11 @@ assert(
   wazuhStack?.services?.["wazuh-event-injector"]?.environment?.INJECT_STAY_ALIVE === "true",
   "disabled Wazuh event injector must stay available for one-shot execution"
 );
+const wazuhManagerConfig = read("deploy/stacks/wazuh/config/wazuh_cluster/wazuh_manager.conf");
+const wazuhRemoteBlocks = [...wazuhManagerConfig.matchAll(/<remote>([\s\S]*?)<\/remote>/g)].map((match) => match[1]);
+const wazuhSyslogRemote = wazuhRemoteBlocks.find((block) => /<connection>\s*syslog\s*<\/connection>/.test(block));
+assert(wazuhSyslogRemote, "Wazuh syslog remote input is missing");
+assert(!/<queue_size>/.test(wazuhSyslogRemote), "Wazuh syslog remote must not declare secure-only queue_size");
 
 const platformStack = documents.get("deploy/stacks/triage-platform/docker-compose.yml");
 assert(platformStack?.services?.octobus, "OctoBus service is missing from triage-platform");

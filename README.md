@@ -339,7 +339,7 @@ Portainer 使用 `deploy/stacks/release-webhook/docker-compose.yml` 新建 `chai
 /bin/sh deploy/stacks/triage-platform/verify.sh
 ```
 
-该命令检查容器、Wazuh 最小权限角色初始化、agent-compose 版本与项目、三个 scheduler trigger、两个 OctoBus service、两个 instance、两个 agent-compose 目录 token 登记和三个 MCP catalog。
+该命令检查容器、Wazuh 最小权限角色初始化与 syslog 接收进程、agent-compose 版本与项目、三个 scheduler trigger、两个 OctoBus service、两个 instance、两个 agent-compose 目录 token 登记和三个 MCP catalog。
 
 ### 8.2 验证两次分钟级真实告警闭环
 
