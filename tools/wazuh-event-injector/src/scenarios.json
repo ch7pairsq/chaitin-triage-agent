@@ -1,0 +1,2210 @@
+{
+  "version": "2026.09.03",
+  "profiles": {
+    "quick": [
+      "kb-vehicle_platform-brute_force-confirmed-attack",
+      "kb-iot_platform-unauthorized_access-confirmed-attack",
+      "kb-industrial_internet-command_execution-confirmed-attack"
+    ],
+    "acceptance": [
+      "kb-vehicle_platform-brute_force-confirmed-attack",
+      "kb-iot_platform-unauthorized_access-confirmed-attack",
+      "kb-industrial_internet-command_execution-confirmed-attack",
+      "kb-vehicle_platform-denial_of_service-confirmed-attack",
+      "kb-iot_platform-sql_injection-confirmed-attack",
+      "kb-industrial_internet-privilege_escalation-confirmed-attack",
+      "kb-vehicle_platform-dns_hijacking-confirmed-attack",
+      "kb-iot_platform-xss-confirmed-attack",
+      "kb-industrial_internet-buffer_overflow-confirmed-attack",
+      "kb-vehicle_platform-remote_access_trojan-confirmed-attack",
+      "kb-iot_platform-network_worm-confirmed-attack",
+      "kb-industrial_internet-webshell-confirmed-attack",
+      "kb-vehicle_platform-request_forgery-confirmed-attack",
+      "kb-iot_platform-smart_device_system_attack-confirmed-attack",
+      "kb-industrial_internet-information_disclosure-confirmed-attack"
+    ],
+    "coverage": [
+      "kb-vehicle_platform-brute_force-confirmed-attack",
+      "kb-iot_platform-unauthorized_access-confirmed-attack",
+      "kb-industrial_internet-command_execution-confirmed-attack",
+      "kb-vehicle_platform-denial_of_service-confirmed-attack",
+      "kb-iot_platform-sql_injection-confirmed-attack",
+      "kb-industrial_internet-privilege_escalation-confirmed-attack",
+      "kb-vehicle_platform-dns_hijacking-confirmed-attack",
+      "kb-iot_platform-xss-confirmed-attack",
+      "kb-industrial_internet-buffer_overflow-confirmed-attack",
+      "kb-vehicle_platform-remote_access_trojan-confirmed-attack",
+      "kb-iot_platform-network_worm-confirmed-attack",
+      "kb-industrial_internet-webshell-confirmed-attack",
+      "kb-vehicle_platform-request_forgery-confirmed-attack",
+      "kb-iot_platform-smart_device_system_attack-confirmed-attack",
+      "kb-industrial_internet-information_disclosure-confirmed-attack",
+      "kb-industrial_internet-brute_force-confirmed-attack",
+      "kb-iot_platform-brute_force-confirmed-attack",
+      "kb-iot_platform-buffer_overflow-confirmed-attack",
+      "kb-vehicle_platform-buffer_overflow-confirmed-attack",
+      "kb-industrial_internet-business_logic_exploitation-confirmed-attack",
+      "kb-iot_platform-business_logic_exploitation-confirmed-attack",
+      "kb-vehicle_platform-business_logic_exploitation-confirmed-attack",
+      "kb-industrial_internet-code_execution-confirmed-attack",
+      "kb-iot_platform-code_execution-confirmed-attack",
+      "kb-vehicle_platform-code_execution-confirmed-attack",
+      "kb-iot_platform-command_execution-confirmed-attack",
+      "kb-vehicle_platform-command_execution-confirmed-attack",
+      "kb-industrial_internet-denial_of_service-confirmed-attack",
+      "kb-iot_platform-denial_of_service-confirmed-attack",
+      "kb-industrial_internet-dns_hijacking-confirmed-attack",
+      "kb-iot_platform-dns_hijacking-confirmed-attack",
+      "kb-industrial_internet-file_inclusion-confirmed-attack",
+      "kb-iot_platform-file_inclusion-confirmed-attack",
+      "kb-vehicle_platform-file_inclusion-confirmed-attack",
+      "kb-industrial_internet-im_worm-confirmed-attack",
+      "kb-iot_platform-im_worm-confirmed-attack",
+      "kb-vehicle_platform-im_worm-confirmed-attack",
+      "kb-iot_platform-information_disclosure-confirmed-attack",
+      "kb-vehicle_platform-information_disclosure-confirmed-attack",
+      "kb-industrial_internet-mail_worm-confirmed-attack",
+      "kb-iot_platform-mail_worm-confirmed-attack",
+      "kb-vehicle_platform-mail_worm-confirmed-attack",
+      "kb-industrial_internet-network_worm-confirmed-attack",
+      "kb-vehicle_platform-network_worm-confirmed-attack",
+      "kb-industrial_internet-other_attack-confirmed-attack",
+      "kb-iot_platform-other_attack-confirmed-attack",
+      "kb-vehicle_platform-other_attack-confirmed-attack",
+      "kb-industrial_internet-p2p_worm-confirmed-attack",
+      "kb-iot_platform-p2p_worm-confirmed-attack",
+      "kb-vehicle_platform-p2p_worm-confirmed-attack",
+      "kb-iot_platform-privilege_escalation-confirmed-attack",
+      "kb-vehicle_platform-privilege_escalation-confirmed-attack",
+      "kb-industrial_internet-remote_access_trojan-confirmed-attack",
+      "kb-iot_platform-remote_access_trojan-confirmed-attack",
+      "kb-industrial_internet-request_forgery-confirmed-attack",
+      "kb-iot_platform-request_forgery-confirmed-attack",
+      "kb-industrial_internet-smart_device_system_attack-confirmed-attack",
+      "kb-vehicle_platform-smart_device_system_attack-confirmed-attack",
+      "kb-industrial_internet-sniffing-confirmed-attack",
+      "kb-iot_platform-sniffing-confirmed-attack",
+      "kb-vehicle_platform-sniffing-confirmed-attack",
+      "kb-industrial_internet-sql_injection-confirmed-attack",
+      "kb-vehicle_platform-sql_injection-confirmed-attack",
+      "kb-industrial_internet-system_code_execution-confirmed-attack",
+      "kb-iot_platform-system_code_execution-confirmed-attack",
+      "kb-vehicle_platform-system_code_execution-confirmed-attack",
+      "kb-industrial_internet-trojan-confirmed-attack",
+      "kb-iot_platform-trojan-confirmed-attack",
+      "kb-vehicle_platform-trojan-confirmed-attack",
+      "kb-industrial_internet-trojan_clicker-confirmed-attack",
+      "kb-iot_platform-trojan_clicker-confirmed-attack",
+      "kb-vehicle_platform-trojan_clicker-confirmed-attack",
+      "kb-industrial_internet-trojan_downloader-confirmed-attack",
+      "kb-iot_platform-trojan_downloader-confirmed-attack",
+      "kb-vehicle_platform-trojan_downloader-confirmed-attack",
+      "kb-industrial_internet-trojan_dropper-confirmed-attack",
+      "kb-iot_platform-trojan_dropper-confirmed-attack",
+      "kb-vehicle_platform-trojan_dropper-confirmed-attack",
+      "kb-industrial_internet-trojan_proxy-confirmed-attack",
+      "kb-iot_platform-trojan_proxy-confirmed-attack",
+      "kb-vehicle_platform-trojan_proxy-confirmed-attack",
+      "kb-industrial_internet-trojan_psw-confirmed-attack",
+      "kb-iot_platform-trojan_psw-confirmed-attack",
+      "kb-vehicle_platform-trojan_psw-confirmed-attack",
+      "kb-industrial_internet-trojan_spy-confirmed-attack",
+      "kb-iot_platform-trojan_spy-confirmed-attack",
+      "kb-vehicle_platform-trojan_spy-confirmed-attack",
+      "kb-industrial_internet-unauthorized_access-confirmed-attack",
+      "kb-vehicle_platform-unauthorized_access-confirmed-attack",
+      "kb-industrial_internet-web_worm-confirmed-attack",
+      "kb-iot_platform-web_worm-confirmed-attack",
+      "kb-vehicle_platform-web_worm-confirmed-attack",
+      "kb-iot_platform-webshell-confirmed-attack",
+      "kb-vehicle_platform-webshell-confirmed-attack",
+      "kb-industrial_internet-xml_external_entity-confirmed-attack",
+      "kb-iot_platform-xml_external_entity-confirmed-attack",
+      "kb-vehicle_platform-xml_external_entity-confirmed-attack",
+      "kb-industrial_internet-xss-confirmed-attack",
+      "kb-vehicle_platform-xss-confirmed-attack"
+    ]
+  },
+  "scenarios": [
+    {
+      "scenarioId": "kb-vehicle_platform-brute_force-confirmed-attack",
+      "knowledgeId": "kb-vehicle_platform-brute_force",
+      "domainId": "vehicle_platform",
+      "attackTypeId": "brute_force",
+      "assetId": "vehicle-cloud-security-gateway",
+      "protocol": "HTTPS",
+      "sourceIp": "198.51.100.67",
+      "destinationUser": "fleet-operator",
+      "outcome": "observed",
+      "observedEvidence": [
+        "认证失败序列、成功登录、设备身份和账号状态",
+        "认证失败与成功日志",
+        "来源地址与设备身份"
+      ],
+      "data": {
+        "auth_failures": 12,
+        "window_seconds": 180,
+        "distinct_accounts": 4,
+        "authorization_valid": false
+      }
+    },
+    {
+      "scenarioId": "kb-iot_platform-unauthorized_access-confirmed-attack",
+      "knowledgeId": "kb-iot_platform-unauthorized_access",
+      "domainId": "iot_platform",
+      "attackTypeId": "unauthorized_access",
+      "assetId": "iot-device-management-api",
+      "protocol": "MQTT",
+      "sourceIp": "198.51.100.62",
+      "destinationUser": "device-service",
+      "outcome": "observed",
+      "observedEvidence": [
+        "认证上下文、授权策略、目标对象和请求响应",
+        "身份认证与授权日志",
+        "资源权限策略"
+      ],
+      "data": {
+        "protected_resource": true,
+        "authorization_valid": false,
+        "protected_action_succeeded": true
+      }
+    },
+    {
+      "scenarioId": "kb-industrial_internet-command_execution-confirmed-attack",
+      "knowledgeId": "kb-industrial_internet-command_execution",
+      "domainId": "industrial_internet",
+      "attackTypeId": "command_execution",
+      "assetId": "industrial-edge-gateway",
+      "protocol": "OPC-UA",
+      "sourceIp": "198.51.100.5",
+      "destinationUser": "edge-runtime",
+      "outcome": "observed",
+      "observedEvidence": [
+        "输入参数、应用调用链、子进程命令行和执行结果",
+        "进程树与命令行",
+        "文件哈希及创建来源"
+      ],
+      "data": {
+        "untrusted_input_reached_shell": true,
+        "shell_child_process": true,
+        "execution_side_effect": true
+      }
+    },
+    {
+      "scenarioId": "kb-vehicle_platform-denial_of_service-confirmed-attack",
+      "knowledgeId": "kb-vehicle_platform-denial_of_service",
+      "domainId": "vehicle_platform",
+      "attackTypeId": "denial_of_service",
+      "assetId": "vehicle-cloud-security-gateway",
+      "protocol": "HTTPS",
+      "sourceIp": "198.51.100.72",
+      "destinationUser": "fleet-operator",
+      "outcome": "observed",
+      "observedEvidence": [
+        "目标服务资源曲线、错误率与来源分布的同窗关联",
+        "时间窗口内请求与资源曲线",
+        "受影响服务错误日志"
+      ],
+      "data": {
+        "request_rate_per_second": 800,
+        "error_rate_percent": 20,
+        "service_degradation": true
+      }
+    },
+    {
+      "scenarioId": "kb-iot_platform-sql_injection-confirmed-attack",
+      "knowledgeId": "kb-iot_platform-sql_injection",
+      "domainId": "iot_platform",
+      "attackTypeId": "sql_injection",
+      "assetId": "iot-device-management-api",
+      "protocol": "MQTT",
+      "sourceIp": "198.51.100.53",
+      "destinationUser": "device-service",
+      "outcome": "observed",
+      "observedEvidence": [
+        "规范化请求、数据库审计和应用调用链的参数对应关系",
+        "规范化请求字段",
+        "应用与数据层错误日志"
+      ],
+      "data": {
+        "sql_control_token_count": 2,
+        "query_shape_changed": true,
+        "database_effect_observed": true
+      }
+    },
+    {
+      "scenarioId": "kb-industrial_internet-privilege_escalation-confirmed-attack",
+      "knowledgeId": "kb-industrial_internet-privilege_escalation",
+      "domainId": "industrial_internet",
+      "attackTypeId": "privilege_escalation",
+      "assetId": "industrial-edge-gateway",
+      "protocol": "OPC-UA",
+      "sourceIp": "198.51.100.15",
+      "destinationUser": "edge-runtime",
+      "outcome": "observed",
+      "observedEvidence": [
+        "权限变更、身份上下文、父子进程和敏感动作记录",
+        "权限变更审计",
+        "父子进程和身份上下文"
+      ],
+      "data": {
+        "privilege_before": "guest",
+        "privilege_after": "admin",
+        "sensitive_action_observed": true
+      }
+    },
+    {
+      "scenarioId": "kb-vehicle_platform-dns_hijacking-confirmed-attack",
+      "knowledgeId": "kb-vehicle_platform-dns_hijacking",
+      "domainId": "vehicle_platform",
+      "attackTypeId": "dns_hijacking",
+      "assetId": "vehicle-cloud-security-gateway",
+      "protocol": "HTTPS",
+      "sourceIp": "198.51.100.73",
+      "destinationUser": "fleet-operator",
+      "outcome": "observed",
+      "observedEvidence": [
+        "同一域名的请求响应、配置变更和可信解析基线",
+        "解析请求与响应记录",
+        "配置变更审计"
+      ],
+      "data": {
+        "dns_baseline_match": false,
+        "dns_response_trusted": false,
+        "resolver_changed": true
+      }
+    },
+    {
+      "scenarioId": "kb-iot_platform-xss-confirmed-attack",
+      "knowledgeId": "kb-iot_platform-xss",
+      "domainId": "iot_platform",
+      "attackTypeId": "xss",
+      "assetId": "iot-device-management-api",
+      "protocol": "MQTT",
+      "sourceIp": "198.51.100.66",
+      "destinationUser": "device-service",
+      "outcome": "observed",
+      "observedEvidence": [
+        "原始请求、输出编码结果、响应内容和客户端执行证据",
+        "原始与规范化请求",
+        "响应安全上下文"
+      ],
+      "data": {
+        "output_encoded": false,
+        "executable_browser_context": true,
+        "client_execution_observed": true
+      }
+    },
+    {
+      "scenarioId": "kb-industrial_internet-buffer_overflow-confirmed-attack",
+      "knowledgeId": "kb-industrial_internet-buffer_overflow",
+      "domainId": "industrial_internet",
+      "attackTypeId": "buffer_overflow",
+      "assetId": "industrial-edge-gateway",
+      "protocol": "OPC-UA",
+      "sourceIp": "198.51.100.2",
+      "destinationUser": "edge-runtime",
+      "outcome": "observed",
+      "observedEvidence": [
+        "触发输入、崩溃转储、组件版本和修复状态",
+        "崩溃转储或终端检测证据",
+        "触发请求与进程日志"
+      ],
+      "data": {
+        "input_size_bytes": 4096,
+        "process_crashed": true,
+        "memory_violation_observed": true
+      }
+    },
+    {
+      "scenarioId": "kb-vehicle_platform-remote_access_trojan-confirmed-attack",
+      "knowledgeId": "kb-vehicle_platform-remote_access_trojan",
+      "domainId": "vehicle_platform",
+      "attackTypeId": "remote_access_trojan",
+      "assetId": "vehicle-cloud-security-gateway",
+      "protocol": "HTTPS",
+      "sourceIp": "198.51.100.82",
+      "destinationUser": "fleet-operator",
+      "outcome": "observed",
+      "observedEvidence": [
+        "控制通道、执行命令、会话主体和持久化记录",
+        "文件哈希与签名",
+        "进程树、持久化和网络证据"
+      ],
+      "data": {
+        "interactive_remote_control": true,
+        "remote_command_count": 1,
+        "authorization_valid": false
+      }
+    },
+    {
+      "scenarioId": "kb-iot_platform-network_worm-confirmed-attack",
+      "knowledgeId": "kb-iot_platform-network_worm",
+      "domainId": "iot_platform",
+      "attackTypeId": "network_worm",
+      "assetId": "iot-device-management-api",
+      "protocol": "MQTT",
+      "sourceIp": "198.51.100.45",
+      "destinationUser": "device-service",
+      "outcome": "observed",
+      "observedEvidence": [
+        "跨资产时间线、漏洞或弱口令入口、文件进程与连接关联",
+        "跨资产时间线",
+        "文件、进程和网络关联"
+      ],
+      "data": {
+        "affected_assets": 3,
+        "autonomous_spread": true,
+        "shared_indicator": true
+      }
+    },
+    {
+      "scenarioId": "kb-industrial_internet-webshell-confirmed-attack",
+      "knowledgeId": "kb-industrial_internet-webshell",
+      "domainId": "industrial_internet",
+      "attackTypeId": "webshell",
+      "assetId": "industrial-edge-gateway",
+      "protocol": "OPC-UA",
+      "sourceIp": "198.51.100.30",
+      "destinationUser": "edge-runtime",
+      "outcome": "observed",
+      "observedEvidence": [
+        "Web 访问日志、文件哈希、进程树和发布基线",
+        "进程树与命令行",
+        "文件哈希及创建来源"
+      ],
+      "data": {
+        "new_script_file": true,
+        "web_process_child": true,
+        "release_artifact_match": false
+      }
+    },
+    {
+      "scenarioId": "kb-vehicle_platform-request_forgery-confirmed-attack",
+      "knowledgeId": "kb-vehicle_platform-request_forgery",
+      "domainId": "vehicle_platform",
+      "attackTypeId": "request_forgery",
+      "assetId": "vehicle-cloud-security-gateway",
+      "protocol": "HTTPS",
+      "sourceIp": "198.51.100.83",
+      "destinationUser": "fleet-operator",
+      "outcome": "observed",
+      "observedEvidence": [
+        "请求发起主体、目标地址、会话授权和服务端出站记录",
+        "原始与规范化请求",
+        "响应安全上下文"
+      ],
+      "data": {
+        "target_scope": "internal",
+        "requester_authorized": false,
+        "forged_action_observed": true
+      }
+    },
+    {
+      "scenarioId": "kb-iot_platform-smart_device_system_attack-confirmed-attack",
+      "knowledgeId": "kb-iot_platform-smart_device_system_attack",
+      "domainId": "iot_platform",
+      "attackTypeId": "smart_device_system_attack",
+      "assetId": "iot-device-management-api",
+      "protocol": "MQTT",
+      "sourceIp": "198.51.100.51",
+      "destinationUser": "device-service",
+      "outcome": "observed",
+      "observedEvidence": [
+        "固件签名、启动完整性、设备身份和指令审计",
+        "固件与配置完整性",
+        "设备身份和指令审计"
+      ],
+      "data": {
+        "device_integrity_valid": false,
+        "device_change_observed": true,
+        "authorization_valid": false
+      }
+    },
+    {
+      "scenarioId": "kb-industrial_internet-information_disclosure-confirmed-attack",
+      "knowledgeId": "kb-industrial_internet-information_disclosure",
+      "domainId": "industrial_internet",
+      "attackTypeId": "information_disclosure",
+      "assetId": "industrial-edge-gateway",
+      "protocol": "OPC-UA",
+      "sourceIp": "198.51.100.10",
+      "destinationUser": "edge-runtime",
+      "outcome": "observed",
+      "observedEvidence": [
+        "数据分类、访问主体、响应或文件内容和脱敏策略",
+        "数据分类与访问主体",
+        "响应或文件访问审计"
+      ],
+      "data": {
+        "sensitive_item_count": 1,
+        "recipient_authorized": false,
+        "exposure_confirmed": true
+      }
+    },
+    {
+      "scenarioId": "kb-industrial_internet-brute_force-confirmed-attack",
+      "knowledgeId": "kb-industrial_internet-brute_force",
+      "domainId": "industrial_internet",
+      "attackTypeId": "brute_force",
+      "assetId": "industrial-edge-gateway",
+      "protocol": "OPC-UA",
+      "sourceIp": "198.51.100.1",
+      "destinationUser": "edge-runtime",
+      "outcome": "observed",
+      "observedEvidence": [
+        "认证失败序列、成功登录、设备身份和账号状态",
+        "认证失败与成功日志",
+        "来源地址与设备身份"
+      ],
+      "data": {
+        "auth_failures": 6,
+        "window_seconds": 300,
+        "distinct_accounts": 3
+      }
+    },
+    {
+      "scenarioId": "kb-iot_platform-brute_force-confirmed-attack",
+      "knowledgeId": "kb-iot_platform-brute_force",
+      "domainId": "iot_platform",
+      "attackTypeId": "brute_force",
+      "assetId": "iot-device-management-api",
+      "protocol": "MQTT",
+      "sourceIp": "198.51.100.34",
+      "destinationUser": "device-service",
+      "outcome": "observed",
+      "observedEvidence": [
+        "认证失败序列、成功登录、设备身份和账号状态",
+        "认证失败与成功日志",
+        "来源地址与设备身份"
+      ],
+      "data": {
+        "auth_failures": 10,
+        "window_seconds": 300,
+        "distinct_accounts": 3
+      }
+    },
+    {
+      "scenarioId": "kb-iot_platform-buffer_overflow-confirmed-attack",
+      "knowledgeId": "kb-iot_platform-buffer_overflow",
+      "domainId": "iot_platform",
+      "attackTypeId": "buffer_overflow",
+      "assetId": "iot-device-management-api",
+      "protocol": "MQTT",
+      "sourceIp": "198.51.100.35",
+      "destinationUser": "device-service",
+      "outcome": "observed",
+      "observedEvidence": [
+        "触发输入、崩溃转储、组件版本和修复状态",
+        "崩溃转储或终端检测证据",
+        "触发请求与进程日志"
+      ],
+      "data": {
+        "input_size_bytes": 4096,
+        "process_crashed": true,
+        "memory_violation_observed": true
+      }
+    },
+    {
+      "scenarioId": "kb-vehicle_platform-buffer_overflow-confirmed-attack",
+      "knowledgeId": "kb-vehicle_platform-buffer_overflow",
+      "domainId": "vehicle_platform",
+      "attackTypeId": "buffer_overflow",
+      "assetId": "vehicle-cloud-security-gateway",
+      "protocol": "HTTPS",
+      "sourceIp": "198.51.100.68",
+      "destinationUser": "fleet-operator",
+      "outcome": "observed",
+      "observedEvidence": [
+        "触发输入、崩溃转储、组件版本和修复状态",
+        "崩溃转储或终端检测证据",
+        "触发请求与进程日志"
+      ],
+      "data": {
+        "input_size_bytes": 4096,
+        "process_crashed": true,
+        "memory_violation_observed": true
+      }
+    },
+    {
+      "scenarioId": "kb-industrial_internet-business_logic_exploitation-confirmed-attack",
+      "knowledgeId": "kb-industrial_internet-business_logic_exploitation",
+      "domainId": "industrial_internet",
+      "attackTypeId": "business_logic_exploitation",
+      "assetId": "industrial-edge-gateway",
+      "protocol": "OPC-UA",
+      "sourceIp": "198.51.100.3",
+      "destinationUser": "edge-runtime",
+      "outcome": "observed",
+      "observedEvidence": [
+        "完整业务操作链、幂等键、身份授权和状态快照",
+        "完整业务操作链",
+        "身份与授权快照"
+      ],
+      "data": {
+        "state_transition_valid": false,
+        "security_impact_observed": true,
+        "sequence_constraint_bypassed": true
+      }
+    },
+    {
+      "scenarioId": "kb-iot_platform-business_logic_exploitation-confirmed-attack",
+      "knowledgeId": "kb-iot_platform-business_logic_exploitation",
+      "domainId": "iot_platform",
+      "attackTypeId": "business_logic_exploitation",
+      "assetId": "iot-device-management-api",
+      "protocol": "MQTT",
+      "sourceIp": "198.51.100.36",
+      "destinationUser": "device-service",
+      "outcome": "observed",
+      "observedEvidence": [
+        "完整业务操作链、幂等键、身份授权和状态快照",
+        "完整业务操作链",
+        "身份与授权快照"
+      ],
+      "data": {
+        "state_transition_valid": false,
+        "security_impact_observed": true,
+        "sequence_constraint_bypassed": true
+      }
+    },
+    {
+      "scenarioId": "kb-vehicle_platform-business_logic_exploitation-confirmed-attack",
+      "knowledgeId": "kb-vehicle_platform-business_logic_exploitation",
+      "domainId": "vehicle_platform",
+      "attackTypeId": "business_logic_exploitation",
+      "assetId": "vehicle-cloud-security-gateway",
+      "protocol": "HTTPS",
+      "sourceIp": "198.51.100.69",
+      "destinationUser": "fleet-operator",
+      "outcome": "observed",
+      "observedEvidence": [
+        "完整业务操作链、幂等键、身份授权和状态快照",
+        "完整业务操作链",
+        "身份与授权快照"
+      ],
+      "data": {
+        "state_transition_valid": false,
+        "security_impact_observed": true,
+        "sequence_constraint_bypassed": true
+      }
+    },
+    {
+      "scenarioId": "kb-industrial_internet-code_execution-confirmed-attack",
+      "knowledgeId": "kb-industrial_internet-code_execution",
+      "domainId": "industrial_internet",
+      "attackTypeId": "code_execution",
+      "assetId": "industrial-edge-gateway",
+      "protocol": "OPC-UA",
+      "sourceIp": "198.51.100.4",
+      "destinationUser": "edge-runtime",
+      "outcome": "observed",
+      "observedEvidence": [
+        "载荷、解释器调用栈、进程或内存行为和网络副作用",
+        "进程树与命令行",
+        "文件哈希及创建来源"
+      ],
+      "data": {
+        "untrusted_payload": true,
+        "runtime_evaluation_observed": true,
+        "execution_side_effect": true
+      }
+    },
+    {
+      "scenarioId": "kb-iot_platform-code_execution-confirmed-attack",
+      "knowledgeId": "kb-iot_platform-code_execution",
+      "domainId": "iot_platform",
+      "attackTypeId": "code_execution",
+      "assetId": "iot-device-management-api",
+      "protocol": "MQTT",
+      "sourceIp": "198.51.100.37",
+      "destinationUser": "device-service",
+      "outcome": "observed",
+      "observedEvidence": [
+        "载荷、解释器调用栈、进程或内存行为和网络副作用",
+        "进程树与命令行",
+        "文件哈希及创建来源"
+      ],
+      "data": {
+        "untrusted_payload": true,
+        "runtime_evaluation_observed": true,
+        "execution_side_effect": true
+      }
+    },
+    {
+      "scenarioId": "kb-vehicle_platform-code_execution-confirmed-attack",
+      "knowledgeId": "kb-vehicle_platform-code_execution",
+      "domainId": "vehicle_platform",
+      "attackTypeId": "code_execution",
+      "assetId": "vehicle-cloud-security-gateway",
+      "protocol": "HTTPS",
+      "sourceIp": "198.51.100.70",
+      "destinationUser": "fleet-operator",
+      "outcome": "observed",
+      "observedEvidence": [
+        "载荷、解释器调用栈、进程或内存行为和网络副作用",
+        "进程树与命令行",
+        "文件哈希及创建来源"
+      ],
+      "data": {
+        "untrusted_payload": true,
+        "runtime_evaluation_observed": true,
+        "execution_side_effect": true
+      }
+    },
+    {
+      "scenarioId": "kb-iot_platform-command_execution-confirmed-attack",
+      "knowledgeId": "kb-iot_platform-command_execution",
+      "domainId": "iot_platform",
+      "attackTypeId": "command_execution",
+      "assetId": "iot-device-management-api",
+      "protocol": "MQTT",
+      "sourceIp": "198.51.100.38",
+      "destinationUser": "device-service",
+      "outcome": "observed",
+      "observedEvidence": [
+        "输入参数、应用调用链、子进程命令行和执行结果",
+        "进程树与命令行",
+        "文件哈希及创建来源"
+      ],
+      "data": {
+        "untrusted_input_reached_shell": true,
+        "shell_child_process": true,
+        "execution_side_effect": true
+      }
+    },
+    {
+      "scenarioId": "kb-vehicle_platform-command_execution-confirmed-attack",
+      "knowledgeId": "kb-vehicle_platform-command_execution",
+      "domainId": "vehicle_platform",
+      "attackTypeId": "command_execution",
+      "assetId": "vehicle-cloud-security-gateway",
+      "protocol": "HTTPS",
+      "sourceIp": "198.51.100.71",
+      "destinationUser": "fleet-operator",
+      "outcome": "observed",
+      "observedEvidence": [
+        "输入参数、应用调用链、子进程命令行和执行结果",
+        "进程树与命令行",
+        "文件哈希及创建来源"
+      ],
+      "data": {
+        "untrusted_input_reached_shell": true,
+        "shell_child_process": true,
+        "execution_side_effect": true
+      }
+    },
+    {
+      "scenarioId": "kb-industrial_internet-denial_of_service-confirmed-attack",
+      "knowledgeId": "kb-industrial_internet-denial_of_service",
+      "domainId": "industrial_internet",
+      "attackTypeId": "denial_of_service",
+      "assetId": "industrial-edge-gateway",
+      "protocol": "OPC-UA",
+      "sourceIp": "198.51.100.6",
+      "destinationUser": "edge-runtime",
+      "outcome": "observed",
+      "observedEvidence": [
+        "目标服务资源曲线、错误率与来源分布的同窗关联",
+        "时间窗口内请求与资源曲线",
+        "受影响服务错误日志"
+      ],
+      "data": {
+        "request_rate_per_second": 300,
+        "error_rate_percent": 20,
+        "service_degradation": true
+      }
+    },
+    {
+      "scenarioId": "kb-iot_platform-denial_of_service-confirmed-attack",
+      "knowledgeId": "kb-iot_platform-denial_of_service",
+      "domainId": "iot_platform",
+      "attackTypeId": "denial_of_service",
+      "assetId": "iot-device-management-api",
+      "protocol": "MQTT",
+      "sourceIp": "198.51.100.39",
+      "destinationUser": "device-service",
+      "outcome": "observed",
+      "observedEvidence": [
+        "目标服务资源曲线、错误率与来源分布的同窗关联",
+        "时间窗口内请求与资源曲线",
+        "受影响服务错误日志"
+      ],
+      "data": {
+        "request_rate_per_second": 500,
+        "error_rate_percent": 20,
+        "service_degradation": true
+      }
+    },
+    {
+      "scenarioId": "kb-industrial_internet-dns_hijacking-confirmed-attack",
+      "knowledgeId": "kb-industrial_internet-dns_hijacking",
+      "domainId": "industrial_internet",
+      "attackTypeId": "dns_hijacking",
+      "assetId": "industrial-edge-gateway",
+      "protocol": "OPC-UA",
+      "sourceIp": "198.51.100.7",
+      "destinationUser": "edge-runtime",
+      "outcome": "observed",
+      "observedEvidence": [
+        "同一域名的请求响应、配置变更和可信解析基线",
+        "解析请求与响应记录",
+        "配置变更审计"
+      ],
+      "data": {
+        "dns_baseline_match": false,
+        "dns_response_trusted": false,
+        "resolver_changed": true
+      }
+    },
+    {
+      "scenarioId": "kb-iot_platform-dns_hijacking-confirmed-attack",
+      "knowledgeId": "kb-iot_platform-dns_hijacking",
+      "domainId": "iot_platform",
+      "attackTypeId": "dns_hijacking",
+      "assetId": "iot-device-management-api",
+      "protocol": "MQTT",
+      "sourceIp": "198.51.100.40",
+      "destinationUser": "device-service",
+      "outcome": "observed",
+      "observedEvidence": [
+        "同一域名的请求响应、配置变更和可信解析基线",
+        "解析请求与响应记录",
+        "配置变更审计"
+      ],
+      "data": {
+        "dns_baseline_match": false,
+        "dns_response_trusted": false,
+        "resolver_changed": true
+      }
+    },
+    {
+      "scenarioId": "kb-industrial_internet-file_inclusion-confirmed-attack",
+      "knowledgeId": "kb-industrial_internet-file_inclusion",
+      "domainId": "industrial_internet",
+      "attackTypeId": "file_inclusion",
+      "assetId": "industrial-edge-gateway",
+      "protocol": "OPC-UA",
+      "sourceIp": "198.51.100.8",
+      "destinationUser": "edge-runtime",
+      "outcome": "observed",
+      "observedEvidence": [
+        "规范化路径、应用加载记录、文件访问和返回内容",
+        "规范化请求字段",
+        "应用与数据层错误日志"
+      ],
+      "data": {
+        "normalized_path_outside_root": true,
+        "application_loaded_file": true,
+        "file_load_effect_observed": true
+      }
+    },
+    {
+      "scenarioId": "kb-iot_platform-file_inclusion-confirmed-attack",
+      "knowledgeId": "kb-iot_platform-file_inclusion",
+      "domainId": "iot_platform",
+      "attackTypeId": "file_inclusion",
+      "assetId": "iot-device-management-api",
+      "protocol": "MQTT",
+      "sourceIp": "198.51.100.41",
+      "destinationUser": "device-service",
+      "outcome": "observed",
+      "observedEvidence": [
+        "规范化路径、应用加载记录、文件访问和返回内容",
+        "规范化请求字段",
+        "应用与数据层错误日志"
+      ],
+      "data": {
+        "normalized_path_outside_root": true,
+        "application_loaded_file": true,
+        "file_load_effect_observed": true
+      }
+    },
+    {
+      "scenarioId": "kb-vehicle_platform-file_inclusion-confirmed-attack",
+      "knowledgeId": "kb-vehicle_platform-file_inclusion",
+      "domainId": "vehicle_platform",
+      "attackTypeId": "file_inclusion",
+      "assetId": "vehicle-cloud-security-gateway",
+      "protocol": "HTTPS",
+      "sourceIp": "198.51.100.74",
+      "destinationUser": "fleet-operator",
+      "outcome": "observed",
+      "observedEvidence": [
+        "规范化路径、应用加载记录、文件访问和返回内容",
+        "规范化请求字段",
+        "应用与数据层错误日志"
+      ],
+      "data": {
+        "normalized_path_outside_root": true,
+        "application_loaded_file": true,
+        "file_load_effect_observed": true
+      }
+    },
+    {
+      "scenarioId": "kb-industrial_internet-im_worm-confirmed-attack",
+      "knowledgeId": "kb-industrial_internet-im_worm",
+      "domainId": "industrial_internet",
+      "attackTypeId": "im_worm",
+      "assetId": "industrial-edge-gateway",
+      "protocol": "OPC-UA",
+      "sourceIp": "198.51.100.9",
+      "destinationUser": "edge-runtime",
+      "outcome": "observed",
+      "observedEvidence": [
+        "消息元数据、附件哈希、客户端进程和转发链",
+        "跨资产时间线",
+        "文件、进程和网络关联"
+      ],
+      "data": {
+        "forwarded_contacts": 3,
+        "malicious_payload": true,
+        "autonomous_spread": true
+      }
+    },
+    {
+      "scenarioId": "kb-iot_platform-im_worm-confirmed-attack",
+      "knowledgeId": "kb-iot_platform-im_worm",
+      "domainId": "iot_platform",
+      "attackTypeId": "im_worm",
+      "assetId": "iot-device-management-api",
+      "protocol": "MQTT",
+      "sourceIp": "198.51.100.42",
+      "destinationUser": "device-service",
+      "outcome": "observed",
+      "observedEvidence": [
+        "消息元数据、附件哈希、客户端进程和转发链",
+        "跨资产时间线",
+        "文件、进程和网络关联"
+      ],
+      "data": {
+        "forwarded_contacts": 3,
+        "malicious_payload": true,
+        "autonomous_spread": true
+      }
+    },
+    {
+      "scenarioId": "kb-vehicle_platform-im_worm-confirmed-attack",
+      "knowledgeId": "kb-vehicle_platform-im_worm",
+      "domainId": "vehicle_platform",
+      "attackTypeId": "im_worm",
+      "assetId": "vehicle-cloud-security-gateway",
+      "protocol": "HTTPS",
+      "sourceIp": "198.51.100.75",
+      "destinationUser": "fleet-operator",
+      "outcome": "observed",
+      "observedEvidence": [
+        "消息元数据、附件哈希、客户端进程和转发链",
+        "跨资产时间线",
+        "文件、进程和网络关联"
+      ],
+      "data": {
+        "forwarded_contacts": 3,
+        "malicious_payload": true,
+        "autonomous_spread": true
+      }
+    },
+    {
+      "scenarioId": "kb-iot_platform-information_disclosure-confirmed-attack",
+      "knowledgeId": "kb-iot_platform-information_disclosure",
+      "domainId": "iot_platform",
+      "attackTypeId": "information_disclosure",
+      "assetId": "iot-device-management-api",
+      "protocol": "MQTT",
+      "sourceIp": "198.51.100.43",
+      "destinationUser": "device-service",
+      "outcome": "observed",
+      "observedEvidence": [
+        "数据分类、访问主体、响应或文件内容和脱敏策略",
+        "数据分类与访问主体",
+        "响应或文件访问审计"
+      ],
+      "data": {
+        "sensitive_item_count": 1,
+        "recipient_authorized": false,
+        "exposure_confirmed": true
+      }
+    },
+    {
+      "scenarioId": "kb-vehicle_platform-information_disclosure-confirmed-attack",
+      "knowledgeId": "kb-vehicle_platform-information_disclosure",
+      "domainId": "vehicle_platform",
+      "attackTypeId": "information_disclosure",
+      "assetId": "vehicle-cloud-security-gateway",
+      "protocol": "HTTPS",
+      "sourceIp": "198.51.100.76",
+      "destinationUser": "fleet-operator",
+      "outcome": "observed",
+      "observedEvidence": [
+        "数据分类、访问主体、响应或文件内容和脱敏策略",
+        "数据分类与访问主体",
+        "响应或文件访问审计"
+      ],
+      "data": {
+        "sensitive_item_count": 1,
+        "recipient_authorized": false,
+        "exposure_confirmed": true
+      }
+    },
+    {
+      "scenarioId": "kb-industrial_internet-mail_worm-confirmed-attack",
+      "knowledgeId": "kb-industrial_internet-mail_worm",
+      "domainId": "industrial_internet",
+      "attackTypeId": "mail_worm",
+      "assetId": "industrial-edge-gateway",
+      "protocol": "OPC-UA",
+      "sourceIp": "198.51.100.11",
+      "destinationUser": "edge-runtime",
+      "outcome": "observed",
+      "observedEvidence": [
+        "邮件头、附件哈希、进程行为和后续外发记录",
+        "跨资产时间线",
+        "文件、进程和网络关联"
+      ],
+      "data": {
+        "outbound_recipients": 10,
+        "malicious_payload": true,
+        "autonomous_spread": true
+      }
+    },
+    {
+      "scenarioId": "kb-iot_platform-mail_worm-confirmed-attack",
+      "knowledgeId": "kb-iot_platform-mail_worm",
+      "domainId": "iot_platform",
+      "attackTypeId": "mail_worm",
+      "assetId": "iot-device-management-api",
+      "protocol": "MQTT",
+      "sourceIp": "198.51.100.44",
+      "destinationUser": "device-service",
+      "outcome": "observed",
+      "observedEvidence": [
+        "邮件头、附件哈希、进程行为和后续外发记录",
+        "跨资产时间线",
+        "文件、进程和网络关联"
+      ],
+      "data": {
+        "outbound_recipients": 10,
+        "malicious_payload": true,
+        "autonomous_spread": true
+      }
+    },
+    {
+      "scenarioId": "kb-vehicle_platform-mail_worm-confirmed-attack",
+      "knowledgeId": "kb-vehicle_platform-mail_worm",
+      "domainId": "vehicle_platform",
+      "attackTypeId": "mail_worm",
+      "assetId": "vehicle-cloud-security-gateway",
+      "protocol": "HTTPS",
+      "sourceIp": "198.51.100.77",
+      "destinationUser": "fleet-operator",
+      "outcome": "observed",
+      "observedEvidence": [
+        "邮件头、附件哈希、进程行为和后续外发记录",
+        "跨资产时间线",
+        "文件、进程和网络关联"
+      ],
+      "data": {
+        "outbound_recipients": 10,
+        "malicious_payload": true,
+        "autonomous_spread": true
+      }
+    },
+    {
+      "scenarioId": "kb-industrial_internet-network_worm-confirmed-attack",
+      "knowledgeId": "kb-industrial_internet-network_worm",
+      "domainId": "industrial_internet",
+      "attackTypeId": "network_worm",
+      "assetId": "industrial-edge-gateway",
+      "protocol": "OPC-UA",
+      "sourceIp": "198.51.100.12",
+      "destinationUser": "edge-runtime",
+      "outcome": "observed",
+      "observedEvidence": [
+        "跨资产时间线、漏洞或弱口令入口、文件进程与连接关联",
+        "跨资产时间线",
+        "文件、进程和网络关联"
+      ],
+      "data": {
+        "affected_assets": 3,
+        "autonomous_spread": true,
+        "shared_indicator": true
+      }
+    },
+    {
+      "scenarioId": "kb-vehicle_platform-network_worm-confirmed-attack",
+      "knowledgeId": "kb-vehicle_platform-network_worm",
+      "domainId": "vehicle_platform",
+      "attackTypeId": "network_worm",
+      "assetId": "vehicle-cloud-security-gateway",
+      "protocol": "HTTPS",
+      "sourceIp": "198.51.100.78",
+      "destinationUser": "fleet-operator",
+      "outcome": "observed",
+      "observedEvidence": [
+        "跨资产时间线、漏洞或弱口令入口、文件进程与连接关联",
+        "跨资产时间线",
+        "文件、进程和网络关联"
+      ],
+      "data": {
+        "affected_assets": 3,
+        "autonomous_spread": true,
+        "shared_indicator": true
+      }
+    },
+    {
+      "scenarioId": "kb-industrial_internet-other_attack-confirmed-attack",
+      "knowledgeId": "kb-industrial_internet-other_attack",
+      "domainId": "industrial_internet",
+      "attackTypeId": "other_attack",
+      "assetId": "industrial-edge-gateway",
+      "protocol": "OPC-UA",
+      "sourceIp": "198.51.100.13",
+      "destinationUser": "edge-runtime",
+      "outcome": "observed",
+      "observedEvidence": [
+        "原始告警、资产上下文、负责人说明和补充遥测",
+        "原始告警与上下文",
+        "资产负责人说明"
+      ],
+      "data": {
+        "anomaly_observed": true,
+        "classification_complete": false,
+        "manual_context_required": true
+      }
+    },
+    {
+      "scenarioId": "kb-iot_platform-other_attack-confirmed-attack",
+      "knowledgeId": "kb-iot_platform-other_attack",
+      "domainId": "iot_platform",
+      "attackTypeId": "other_attack",
+      "assetId": "iot-device-management-api",
+      "protocol": "MQTT",
+      "sourceIp": "198.51.100.46",
+      "destinationUser": "device-service",
+      "outcome": "observed",
+      "observedEvidence": [
+        "原始告警、资产上下文、负责人说明和补充遥测",
+        "原始告警与上下文",
+        "资产负责人说明"
+      ],
+      "data": {
+        "anomaly_observed": true,
+        "classification_complete": false,
+        "manual_context_required": true
+      }
+    },
+    {
+      "scenarioId": "kb-vehicle_platform-other_attack-confirmed-attack",
+      "knowledgeId": "kb-vehicle_platform-other_attack",
+      "domainId": "vehicle_platform",
+      "attackTypeId": "other_attack",
+      "assetId": "vehicle-cloud-security-gateway",
+      "protocol": "HTTPS",
+      "sourceIp": "198.51.100.79",
+      "destinationUser": "fleet-operator",
+      "outcome": "observed",
+      "observedEvidence": [
+        "原始告警、资产上下文、负责人说明和补充遥测",
+        "原始告警与上下文",
+        "资产负责人说明"
+      ],
+      "data": {
+        "anomaly_observed": true,
+        "classification_complete": false,
+        "manual_context_required": true
+      }
+    },
+    {
+      "scenarioId": "kb-industrial_internet-p2p_worm-confirmed-attack",
+      "knowledgeId": "kb-industrial_internet-p2p_worm",
+      "domainId": "industrial_internet",
+      "attackTypeId": "p2p_worm",
+      "assetId": "industrial-edge-gateway",
+      "protocol": "OPC-UA",
+      "sourceIp": "198.51.100.14",
+      "destinationUser": "edge-runtime",
+      "outcome": "observed",
+      "observedEvidence": [
+        "共享文件哈希、P2P 进程、节点连接和跨资产命中",
+        "跨资产时间线",
+        "文件、进程和网络关联"
+      ],
+      "data": {
+        "p2p_peer_count": 3,
+        "shared_payload_match": true,
+        "autonomous_spread": true
+      }
+    },
+    {
+      "scenarioId": "kb-iot_platform-p2p_worm-confirmed-attack",
+      "knowledgeId": "kb-iot_platform-p2p_worm",
+      "domainId": "iot_platform",
+      "attackTypeId": "p2p_worm",
+      "assetId": "iot-device-management-api",
+      "protocol": "MQTT",
+      "sourceIp": "198.51.100.47",
+      "destinationUser": "device-service",
+      "outcome": "observed",
+      "observedEvidence": [
+        "共享文件哈希、P2P 进程、节点连接和跨资产命中",
+        "跨资产时间线",
+        "文件、进程和网络关联"
+      ],
+      "data": {
+        "p2p_peer_count": 3,
+        "shared_payload_match": true,
+        "autonomous_spread": true
+      }
+    },
+    {
+      "scenarioId": "kb-vehicle_platform-p2p_worm-confirmed-attack",
+      "knowledgeId": "kb-vehicle_platform-p2p_worm",
+      "domainId": "vehicle_platform",
+      "attackTypeId": "p2p_worm",
+      "assetId": "vehicle-cloud-security-gateway",
+      "protocol": "HTTPS",
+      "sourceIp": "198.51.100.80",
+      "destinationUser": "fleet-operator",
+      "outcome": "observed",
+      "observedEvidence": [
+        "共享文件哈希、P2P 进程、节点连接和跨资产命中",
+        "跨资产时间线",
+        "文件、进程和网络关联"
+      ],
+      "data": {
+        "p2p_peer_count": 3,
+        "shared_payload_match": true,
+        "autonomous_spread": true
+      }
+    },
+    {
+      "scenarioId": "kb-iot_platform-privilege_escalation-confirmed-attack",
+      "knowledgeId": "kb-iot_platform-privilege_escalation",
+      "domainId": "iot_platform",
+      "attackTypeId": "privilege_escalation",
+      "assetId": "iot-device-management-api",
+      "protocol": "MQTT",
+      "sourceIp": "198.51.100.48",
+      "destinationUser": "device-service",
+      "outcome": "observed",
+      "observedEvidence": [
+        "权限变更、身份上下文、父子进程和敏感动作记录",
+        "权限变更审计",
+        "父子进程和身份上下文"
+      ],
+      "data": {
+        "privilege_before": "guest",
+        "privilege_after": "admin",
+        "sensitive_action_observed": true
+      }
+    },
+    {
+      "scenarioId": "kb-vehicle_platform-privilege_escalation-confirmed-attack",
+      "knowledgeId": "kb-vehicle_platform-privilege_escalation",
+      "domainId": "vehicle_platform",
+      "attackTypeId": "privilege_escalation",
+      "assetId": "vehicle-cloud-security-gateway",
+      "protocol": "HTTPS",
+      "sourceIp": "198.51.100.81",
+      "destinationUser": "fleet-operator",
+      "outcome": "observed",
+      "observedEvidence": [
+        "权限变更、身份上下文、父子进程和敏感动作记录",
+        "权限变更审计",
+        "父子进程和身份上下文"
+      ],
+      "data": {
+        "privilege_before": "guest",
+        "privilege_after": "admin",
+        "sensitive_action_observed": true
+      }
+    },
+    {
+      "scenarioId": "kb-industrial_internet-remote_access_trojan-confirmed-attack",
+      "knowledgeId": "kb-industrial_internet-remote_access_trojan",
+      "domainId": "industrial_internet",
+      "attackTypeId": "remote_access_trojan",
+      "assetId": "industrial-edge-gateway",
+      "protocol": "OPC-UA",
+      "sourceIp": "198.51.100.16",
+      "destinationUser": "edge-runtime",
+      "outcome": "observed",
+      "observedEvidence": [
+        "控制通道、执行命令、会话主体和持久化记录",
+        "文件哈希与签名",
+        "进程树、持久化和网络证据"
+      ],
+      "data": {
+        "interactive_remote_control": true,
+        "remote_command_count": 1,
+        "authorization_valid": false
+      }
+    },
+    {
+      "scenarioId": "kb-iot_platform-remote_access_trojan-confirmed-attack",
+      "knowledgeId": "kb-iot_platform-remote_access_trojan",
+      "domainId": "iot_platform",
+      "attackTypeId": "remote_access_trojan",
+      "assetId": "iot-device-management-api",
+      "protocol": "MQTT",
+      "sourceIp": "198.51.100.49",
+      "destinationUser": "device-service",
+      "outcome": "observed",
+      "observedEvidence": [
+        "控制通道、执行命令、会话主体和持久化记录",
+        "文件哈希与签名",
+        "进程树、持久化和网络证据"
+      ],
+      "data": {
+        "interactive_remote_control": true,
+        "remote_command_count": 1,
+        "authorization_valid": false
+      }
+    },
+    {
+      "scenarioId": "kb-industrial_internet-request_forgery-confirmed-attack",
+      "knowledgeId": "kb-industrial_internet-request_forgery",
+      "domainId": "industrial_internet",
+      "attackTypeId": "request_forgery",
+      "assetId": "industrial-edge-gateway",
+      "protocol": "OPC-UA",
+      "sourceIp": "198.51.100.17",
+      "destinationUser": "edge-runtime",
+      "outcome": "observed",
+      "observedEvidence": [
+        "请求发起主体、目标地址、会话授权和服务端出站记录",
+        "原始与规范化请求",
+        "响应安全上下文"
+      ],
+      "data": {
+        "target_scope": "internal",
+        "requester_authorized": false,
+        "forged_action_observed": true
+      }
+    },
+    {
+      "scenarioId": "kb-iot_platform-request_forgery-confirmed-attack",
+      "knowledgeId": "kb-iot_platform-request_forgery",
+      "domainId": "iot_platform",
+      "attackTypeId": "request_forgery",
+      "assetId": "iot-device-management-api",
+      "protocol": "MQTT",
+      "sourceIp": "198.51.100.50",
+      "destinationUser": "device-service",
+      "outcome": "observed",
+      "observedEvidence": [
+        "请求发起主体、目标地址、会话授权和服务端出站记录",
+        "原始与规范化请求",
+        "响应安全上下文"
+      ],
+      "data": {
+        "target_scope": "internal",
+        "requester_authorized": false,
+        "forged_action_observed": true
+      }
+    },
+    {
+      "scenarioId": "kb-industrial_internet-smart_device_system_attack-confirmed-attack",
+      "knowledgeId": "kb-industrial_internet-smart_device_system_attack",
+      "domainId": "industrial_internet",
+      "attackTypeId": "smart_device_system_attack",
+      "assetId": "industrial-edge-gateway",
+      "protocol": "OPC-UA",
+      "sourceIp": "198.51.100.18",
+      "destinationUser": "edge-runtime",
+      "outcome": "observed",
+      "observedEvidence": [
+        "固件签名、启动完整性、设备身份和指令审计",
+        "固件与配置完整性",
+        "设备身份和指令审计"
+      ],
+      "data": {
+        "device_integrity_valid": false,
+        "device_change_observed": true,
+        "authorization_valid": false
+      }
+    },
+    {
+      "scenarioId": "kb-vehicle_platform-smart_device_system_attack-confirmed-attack",
+      "knowledgeId": "kb-vehicle_platform-smart_device_system_attack",
+      "domainId": "vehicle_platform",
+      "attackTypeId": "smart_device_system_attack",
+      "assetId": "vehicle-cloud-security-gateway",
+      "protocol": "HTTPS",
+      "sourceIp": "198.51.100.84",
+      "destinationUser": "fleet-operator",
+      "outcome": "observed",
+      "observedEvidence": [
+        "固件签名、启动完整性、设备身份和指令审计",
+        "固件与配置完整性",
+        "设备身份和指令审计"
+      ],
+      "data": {
+        "device_integrity_valid": false,
+        "device_change_observed": true,
+        "authorization_valid": false
+      }
+    },
+    {
+      "scenarioId": "kb-industrial_internet-sniffing-confirmed-attack",
+      "knowledgeId": "kb-industrial_internet-sniffing",
+      "domainId": "industrial_internet",
+      "attackTypeId": "sniffing",
+      "assetId": "industrial-edge-gateway",
+      "protocol": "OPC-UA",
+      "sourceIp": "198.51.100.19",
+      "destinationUser": "edge-runtime",
+      "outcome": "observed",
+      "observedEvidence": [
+        "进程身份、网卡模式变更与抓包文件创建记录",
+        "进程与网卡状态证据",
+        "网络流量或终端检测证据"
+      ],
+      "data": {
+        "promiscuous_mode": true,
+        "packet_capture_process": true,
+        "sensitive_plaintext_observed": true
+      }
+    },
+    {
+      "scenarioId": "kb-iot_platform-sniffing-confirmed-attack",
+      "knowledgeId": "kb-iot_platform-sniffing",
+      "domainId": "iot_platform",
+      "attackTypeId": "sniffing",
+      "assetId": "iot-device-management-api",
+      "protocol": "MQTT",
+      "sourceIp": "198.51.100.52",
+      "destinationUser": "device-service",
+      "outcome": "observed",
+      "observedEvidence": [
+        "进程身份、网卡模式变更与抓包文件创建记录",
+        "进程与网卡状态证据",
+        "网络流量或终端检测证据"
+      ],
+      "data": {
+        "promiscuous_mode": true,
+        "packet_capture_process": true,
+        "sensitive_plaintext_observed": true
+      }
+    },
+    {
+      "scenarioId": "kb-vehicle_platform-sniffing-confirmed-attack",
+      "knowledgeId": "kb-vehicle_platform-sniffing",
+      "domainId": "vehicle_platform",
+      "attackTypeId": "sniffing",
+      "assetId": "vehicle-cloud-security-gateway",
+      "protocol": "HTTPS",
+      "sourceIp": "198.51.100.85",
+      "destinationUser": "fleet-operator",
+      "outcome": "observed",
+      "observedEvidence": [
+        "进程身份、网卡模式变更与抓包文件创建记录",
+        "进程与网卡状态证据",
+        "网络流量或终端检测证据"
+      ],
+      "data": {
+        "promiscuous_mode": true,
+        "packet_capture_process": true,
+        "sensitive_plaintext_observed": true
+      }
+    },
+    {
+      "scenarioId": "kb-industrial_internet-sql_injection-confirmed-attack",
+      "knowledgeId": "kb-industrial_internet-sql_injection",
+      "domainId": "industrial_internet",
+      "attackTypeId": "sql_injection",
+      "assetId": "industrial-edge-gateway",
+      "protocol": "OPC-UA",
+      "sourceIp": "198.51.100.20",
+      "destinationUser": "edge-runtime",
+      "outcome": "observed",
+      "observedEvidence": [
+        "规范化请求、数据库审计和应用调用链的参数对应关系",
+        "规范化请求字段",
+        "应用与数据层错误日志"
+      ],
+      "data": {
+        "sql_control_token_count": 2,
+        "query_shape_changed": true,
+        "database_effect_observed": true
+      }
+    },
+    {
+      "scenarioId": "kb-vehicle_platform-sql_injection-confirmed-attack",
+      "knowledgeId": "kb-vehicle_platform-sql_injection",
+      "domainId": "vehicle_platform",
+      "attackTypeId": "sql_injection",
+      "assetId": "vehicle-cloud-security-gateway",
+      "protocol": "HTTPS",
+      "sourceIp": "198.51.100.86",
+      "destinationUser": "fleet-operator",
+      "outcome": "observed",
+      "observedEvidence": [
+        "规范化请求、数据库审计和应用调用链的参数对应关系",
+        "规范化请求字段",
+        "应用与数据层错误日志"
+      ],
+      "data": {
+        "sql_control_token_count": 2,
+        "query_shape_changed": true,
+        "database_effect_observed": true
+      }
+    },
+    {
+      "scenarioId": "kb-industrial_internet-system_code_execution-confirmed-attack",
+      "knowledgeId": "kb-industrial_internet-system_code_execution",
+      "domainId": "industrial_internet",
+      "attackTypeId": "system_code_execution",
+      "assetId": "industrial-edge-gateway",
+      "protocol": "OPC-UA",
+      "sourceIp": "198.51.100.21",
+      "destinationUser": "edge-runtime",
+      "outcome": "observed",
+      "observedEvidence": [
+        "系统服务调用链、内核或高权限进程证据和载荷来源",
+        "进程树与命令行",
+        "文件哈希及创建来源"
+      ],
+      "data": {
+        "execution_context": "kernel",
+        "code_trusted": false,
+        "execution_observed": true
+      }
+    },
+    {
+      "scenarioId": "kb-iot_platform-system_code_execution-confirmed-attack",
+      "knowledgeId": "kb-iot_platform-system_code_execution",
+      "domainId": "iot_platform",
+      "attackTypeId": "system_code_execution",
+      "assetId": "iot-device-management-api",
+      "protocol": "MQTT",
+      "sourceIp": "198.51.100.54",
+      "destinationUser": "device-service",
+      "outcome": "observed",
+      "observedEvidence": [
+        "系统服务调用链、内核或高权限进程证据和载荷来源",
+        "进程树与命令行",
+        "文件哈希及创建来源"
+      ],
+      "data": {
+        "execution_context": "kernel",
+        "code_trusted": false,
+        "execution_observed": true
+      }
+    },
+    {
+      "scenarioId": "kb-vehicle_platform-system_code_execution-confirmed-attack",
+      "knowledgeId": "kb-vehicle_platform-system_code_execution",
+      "domainId": "vehicle_platform",
+      "attackTypeId": "system_code_execution",
+      "assetId": "vehicle-cloud-security-gateway",
+      "protocol": "HTTPS",
+      "sourceIp": "198.51.100.87",
+      "destinationUser": "fleet-operator",
+      "outcome": "observed",
+      "observedEvidence": [
+        "系统服务调用链、内核或高权限进程证据和载荷来源",
+        "进程树与命令行",
+        "文件哈希及创建来源"
+      ],
+      "data": {
+        "execution_context": "kernel",
+        "code_trusted": false,
+        "execution_observed": true
+      }
+    },
+    {
+      "scenarioId": "kb-industrial_internet-trojan-confirmed-attack",
+      "knowledgeId": "kb-industrial_internet-trojan",
+      "domainId": "industrial_internet",
+      "attackTypeId": "trojan",
+      "assetId": "industrial-edge-gateway",
+      "protocol": "OPC-UA",
+      "sourceIp": "198.51.100.22",
+      "destinationUser": "edge-runtime",
+      "outcome": "observed",
+      "observedEvidence": [
+        "文件来源与签名、进程树、持久化和控制通信",
+        "文件哈希与签名",
+        "进程树、持久化和网络证据"
+      ],
+      "data": {
+        "persistence_created": true,
+        "publisher_trusted": false,
+        "command_control_observed": true
+      }
+    },
+    {
+      "scenarioId": "kb-iot_platform-trojan-confirmed-attack",
+      "knowledgeId": "kb-iot_platform-trojan",
+      "domainId": "iot_platform",
+      "attackTypeId": "trojan",
+      "assetId": "iot-device-management-api",
+      "protocol": "MQTT",
+      "sourceIp": "198.51.100.55",
+      "destinationUser": "device-service",
+      "outcome": "observed",
+      "observedEvidence": [
+        "文件来源与签名、进程树、持久化和控制通信",
+        "文件哈希与签名",
+        "进程树、持久化和网络证据"
+      ],
+      "data": {
+        "persistence_created": true,
+        "publisher_trusted": false,
+        "command_control_observed": true
+      }
+    },
+    {
+      "scenarioId": "kb-vehicle_platform-trojan-confirmed-attack",
+      "knowledgeId": "kb-vehicle_platform-trojan",
+      "domainId": "vehicle_platform",
+      "attackTypeId": "trojan",
+      "assetId": "vehicle-cloud-security-gateway",
+      "protocol": "HTTPS",
+      "sourceIp": "198.51.100.88",
+      "destinationUser": "fleet-operator",
+      "outcome": "observed",
+      "observedEvidence": [
+        "文件来源与签名、进程树、持久化和控制通信",
+        "文件哈希与签名",
+        "进程树、持久化和网络证据"
+      ],
+      "data": {
+        "persistence_created": true,
+        "publisher_trusted": false,
+        "command_control_observed": true
+      }
+    },
+    {
+      "scenarioId": "kb-industrial_internet-trojan_clicker-confirmed-attack",
+      "knowledgeId": "kb-industrial_internet-trojan_clicker",
+      "domainId": "industrial_internet",
+      "attackTypeId": "trojan_clicker",
+      "assetId": "industrial-edge-gateway",
+      "protocol": "OPC-UA",
+      "sourceIp": "198.51.100.23",
+      "destinationUser": "edge-runtime",
+      "outcome": "observed",
+      "observedEvidence": [
+        "进程网络请求、点击标识、前台交互和收益目标",
+        "文件哈希与签名",
+        "进程树、持久化和网络证据"
+      ],
+      "data": {
+        "click_requests": 20,
+        "user_interaction_present": false,
+        "background_process": true
+      }
+    },
+    {
+      "scenarioId": "kb-iot_platform-trojan_clicker-confirmed-attack",
+      "knowledgeId": "kb-iot_platform-trojan_clicker",
+      "domainId": "iot_platform",
+      "attackTypeId": "trojan_clicker",
+      "assetId": "iot-device-management-api",
+      "protocol": "MQTT",
+      "sourceIp": "198.51.100.56",
+      "destinationUser": "device-service",
+      "outcome": "observed",
+      "observedEvidence": [
+        "进程网络请求、点击标识、前台交互和收益目标",
+        "文件哈希与签名",
+        "进程树、持久化和网络证据"
+      ],
+      "data": {
+        "click_requests": 20,
+        "user_interaction_present": false,
+        "background_process": true
+      }
+    },
+    {
+      "scenarioId": "kb-vehicle_platform-trojan_clicker-confirmed-attack",
+      "knowledgeId": "kb-vehicle_platform-trojan_clicker",
+      "domainId": "vehicle_platform",
+      "attackTypeId": "trojan_clicker",
+      "assetId": "vehicle-cloud-security-gateway",
+      "protocol": "HTTPS",
+      "sourceIp": "198.51.100.89",
+      "destinationUser": "fleet-operator",
+      "outcome": "observed",
+      "observedEvidence": [
+        "进程网络请求、点击标识、前台交互和收益目标",
+        "文件哈希与签名",
+        "进程树、持久化和网络证据"
+      ],
+      "data": {
+        "click_requests": 20,
+        "user_interaction_present": false,
+        "background_process": true
+      }
+    },
+    {
+      "scenarioId": "kb-industrial_internet-trojan_downloader-confirmed-attack",
+      "knowledgeId": "kb-industrial_internet-trojan_downloader",
+      "domainId": "industrial_internet",
+      "attackTypeId": "trojan_downloader",
+      "assetId": "industrial-edge-gateway",
+      "protocol": "OPC-UA",
+      "sourceIp": "198.51.100.24",
+      "destinationUser": "edge-runtime",
+      "outcome": "observed",
+      "observedEvidence": [
+        "初始文件、下载地址、落地哈希和执行链",
+        "文件哈希与签名",
+        "进程树、持久化和网络证据"
+      ],
+      "data": {
+        "external_download": true,
+        "second_stage_executed": true,
+        "publisher_trusted": false
+      }
+    },
+    {
+      "scenarioId": "kb-iot_platform-trojan_downloader-confirmed-attack",
+      "knowledgeId": "kb-iot_platform-trojan_downloader",
+      "domainId": "iot_platform",
+      "attackTypeId": "trojan_downloader",
+      "assetId": "iot-device-management-api",
+      "protocol": "MQTT",
+      "sourceIp": "198.51.100.57",
+      "destinationUser": "device-service",
+      "outcome": "observed",
+      "observedEvidence": [
+        "初始文件、下载地址、落地哈希和执行链",
+        "文件哈希与签名",
+        "进程树、持久化和网络证据"
+      ],
+      "data": {
+        "external_download": true,
+        "second_stage_executed": true,
+        "publisher_trusted": false
+      }
+    },
+    {
+      "scenarioId": "kb-vehicle_platform-trojan_downloader-confirmed-attack",
+      "knowledgeId": "kb-vehicle_platform-trojan_downloader",
+      "domainId": "vehicle_platform",
+      "attackTypeId": "trojan_downloader",
+      "assetId": "vehicle-cloud-security-gateway",
+      "protocol": "HTTPS",
+      "sourceIp": "198.51.100.90",
+      "destinationUser": "fleet-operator",
+      "outcome": "observed",
+      "observedEvidence": [
+        "初始文件、下载地址、落地哈希和执行链",
+        "文件哈希与签名",
+        "进程树、持久化和网络证据"
+      ],
+      "data": {
+        "external_download": true,
+        "second_stage_executed": true,
+        "publisher_trusted": false
+      }
+    },
+    {
+      "scenarioId": "kb-industrial_internet-trojan_dropper-confirmed-attack",
+      "knowledgeId": "kb-industrial_internet-trojan_dropper",
+      "domainId": "industrial_internet",
+      "attackTypeId": "trojan_dropper",
+      "assetId": "industrial-edge-gateway",
+      "protocol": "OPC-UA",
+      "sourceIp": "198.51.100.25",
+      "destinationUser": "edge-runtime",
+      "outcome": "observed",
+      "observedEvidence": [
+        "父载荷哈希、释放文件、内存映射和子进程链",
+        "文件哈希与签名",
+        "进程树、持久化和网络证据"
+      ],
+      "data": {
+        "payload_released": true,
+        "released_child_executed": true,
+        "parent_child_hash_link": true
+      }
+    },
+    {
+      "scenarioId": "kb-iot_platform-trojan_dropper-confirmed-attack",
+      "knowledgeId": "kb-iot_platform-trojan_dropper",
+      "domainId": "iot_platform",
+      "attackTypeId": "trojan_dropper",
+      "assetId": "iot-device-management-api",
+      "protocol": "MQTT",
+      "sourceIp": "198.51.100.58",
+      "destinationUser": "device-service",
+      "outcome": "observed",
+      "observedEvidence": [
+        "父载荷哈希、释放文件、内存映射和子进程链",
+        "文件哈希与签名",
+        "进程树、持久化和网络证据"
+      ],
+      "data": {
+        "payload_released": true,
+        "released_child_executed": true,
+        "parent_child_hash_link": true
+      }
+    },
+    {
+      "scenarioId": "kb-vehicle_platform-trojan_dropper-confirmed-attack",
+      "knowledgeId": "kb-vehicle_platform-trojan_dropper",
+      "domainId": "vehicle_platform",
+      "attackTypeId": "trojan_dropper",
+      "assetId": "vehicle-cloud-security-gateway",
+      "protocol": "HTTPS",
+      "sourceIp": "198.51.100.91",
+      "destinationUser": "fleet-operator",
+      "outcome": "observed",
+      "observedEvidence": [
+        "父载荷哈希、释放文件、内存映射和子进程链",
+        "文件哈希与签名",
+        "进程树、持久化和网络证据"
+      ],
+      "data": {
+        "payload_released": true,
+        "released_child_executed": true,
+        "parent_child_hash_link": true
+      }
+    },
+    {
+      "scenarioId": "kb-industrial_internet-trojan_proxy-confirmed-attack",
+      "knowledgeId": "kb-industrial_internet-trojan_proxy",
+      "domainId": "industrial_internet",
+      "attackTypeId": "trojan_proxy",
+      "assetId": "industrial-edge-gateway",
+      "protocol": "OPC-UA",
+      "sourceIp": "198.51.100.26",
+      "destinationUser": "edge-runtime",
+      "outcome": "observed",
+      "observedEvidence": [
+        "监听端口、隧道进程、双向流量和持久化项",
+        "文件哈希与签名",
+        "进程树、持久化和网络证据"
+      ],
+      "data": {
+        "listening_port_opened": true,
+        "bidirectional_forwarding": true,
+        "authorization_valid": false
+      }
+    },
+    {
+      "scenarioId": "kb-iot_platform-trojan_proxy-confirmed-attack",
+      "knowledgeId": "kb-iot_platform-trojan_proxy",
+      "domainId": "iot_platform",
+      "attackTypeId": "trojan_proxy",
+      "assetId": "iot-device-management-api",
+      "protocol": "MQTT",
+      "sourceIp": "198.51.100.59",
+      "destinationUser": "device-service",
+      "outcome": "observed",
+      "observedEvidence": [
+        "监听端口、隧道进程、双向流量和持久化项",
+        "文件哈希与签名",
+        "进程树、持久化和网络证据"
+      ],
+      "data": {
+        "listening_port_opened": true,
+        "bidirectional_forwarding": true,
+        "authorization_valid": false
+      }
+    },
+    {
+      "scenarioId": "kb-vehicle_platform-trojan_proxy-confirmed-attack",
+      "knowledgeId": "kb-vehicle_platform-trojan_proxy",
+      "domainId": "vehicle_platform",
+      "attackTypeId": "trojan_proxy",
+      "assetId": "vehicle-cloud-security-gateway",
+      "protocol": "HTTPS",
+      "sourceIp": "198.51.100.92",
+      "destinationUser": "fleet-operator",
+      "outcome": "observed",
+      "observedEvidence": [
+        "监听端口、隧道进程、双向流量和持久化项",
+        "文件哈希与签名",
+        "进程树、持久化和网络证据"
+      ],
+      "data": {
+        "listening_port_opened": true,
+        "bidirectional_forwarding": true,
+        "authorization_valid": false
+      }
+    },
+    {
+      "scenarioId": "kb-industrial_internet-trojan_psw-confirmed-attack",
+      "knowledgeId": "kb-industrial_internet-trojan_psw",
+      "domainId": "industrial_internet",
+      "attackTypeId": "trojan_psw",
+      "assetId": "industrial-edge-gateway",
+      "protocol": "OPC-UA",
+      "sourceIp": "198.51.100.27",
+      "destinationUser": "edge-runtime",
+      "outcome": "observed",
+      "observedEvidence": [
+        "凭据访问、进程树、文件哈希和外联目的地",
+        "文件哈希与签名",
+        "进程树、持久化和网络证据"
+      ],
+      "data": {
+        "credential_store_access": true,
+        "process_trusted": false,
+        "exfiltration_observed": true
+      }
+    },
+    {
+      "scenarioId": "kb-iot_platform-trojan_psw-confirmed-attack",
+      "knowledgeId": "kb-iot_platform-trojan_psw",
+      "domainId": "iot_platform",
+      "attackTypeId": "trojan_psw",
+      "assetId": "iot-device-management-api",
+      "protocol": "MQTT",
+      "sourceIp": "198.51.100.60",
+      "destinationUser": "device-service",
+      "outcome": "observed",
+      "observedEvidence": [
+        "凭据访问、进程树、文件哈希和外联目的地",
+        "文件哈希与签名",
+        "进程树、持久化和网络证据"
+      ],
+      "data": {
+        "credential_store_access": true,
+        "process_trusted": false,
+        "exfiltration_observed": true
+      }
+    },
+    {
+      "scenarioId": "kb-vehicle_platform-trojan_psw-confirmed-attack",
+      "knowledgeId": "kb-vehicle_platform-trojan_psw",
+      "domainId": "vehicle_platform",
+      "attackTypeId": "trojan_psw",
+      "assetId": "vehicle-cloud-security-gateway",
+      "protocol": "HTTPS",
+      "sourceIp": "198.51.100.93",
+      "destinationUser": "fleet-operator",
+      "outcome": "observed",
+      "observedEvidence": [
+        "凭据访问、进程树、文件哈希和外联目的地",
+        "文件哈希与签名",
+        "进程树、持久化和网络证据"
+      ],
+      "data": {
+        "credential_store_access": true,
+        "process_trusted": false,
+        "exfiltration_observed": true
+      }
+    },
+    {
+      "scenarioId": "kb-industrial_internet-trojan_spy-confirmed-attack",
+      "knowledgeId": "kb-industrial_internet-trojan_spy",
+      "domainId": "industrial_internet",
+      "attackTypeId": "trojan_spy",
+      "assetId": "industrial-edge-gateway",
+      "protocol": "OPC-UA",
+      "sourceIp": "198.51.100.28",
+      "destinationUser": "edge-runtime",
+      "outcome": "observed",
+      "observedEvidence": [
+        "采集接口调用、缓存文件、进程身份和外联记录",
+        "文件哈希与签名",
+        "进程树、持久化和网络证据"
+      ],
+      "data": {
+        "sensitive_capture": true,
+        "user_consent_valid": false,
+        "exfiltration_observed": true
+      }
+    },
+    {
+      "scenarioId": "kb-iot_platform-trojan_spy-confirmed-attack",
+      "knowledgeId": "kb-iot_platform-trojan_spy",
+      "domainId": "iot_platform",
+      "attackTypeId": "trojan_spy",
+      "assetId": "iot-device-management-api",
+      "protocol": "MQTT",
+      "sourceIp": "198.51.100.61",
+      "destinationUser": "device-service",
+      "outcome": "observed",
+      "observedEvidence": [
+        "采集接口调用、缓存文件、进程身份和外联记录",
+        "文件哈希与签名",
+        "进程树、持久化和网络证据"
+      ],
+      "data": {
+        "sensitive_capture": true,
+        "user_consent_valid": false,
+        "exfiltration_observed": true
+      }
+    },
+    {
+      "scenarioId": "kb-vehicle_platform-trojan_spy-confirmed-attack",
+      "knowledgeId": "kb-vehicle_platform-trojan_spy",
+      "domainId": "vehicle_platform",
+      "attackTypeId": "trojan_spy",
+      "assetId": "vehicle-cloud-security-gateway",
+      "protocol": "HTTPS",
+      "sourceIp": "198.51.100.94",
+      "destinationUser": "fleet-operator",
+      "outcome": "observed",
+      "observedEvidence": [
+        "采集接口调用、缓存文件、进程身份和外联记录",
+        "文件哈希与签名",
+        "进程树、持久化和网络证据"
+      ],
+      "data": {
+        "sensitive_capture": true,
+        "user_consent_valid": false,
+        "exfiltration_observed": true
+      }
+    },
+    {
+      "scenarioId": "kb-industrial_internet-unauthorized_access-confirmed-attack",
+      "knowledgeId": "kb-industrial_internet-unauthorized_access",
+      "domainId": "industrial_internet",
+      "attackTypeId": "unauthorized_access",
+      "assetId": "industrial-edge-gateway",
+      "protocol": "OPC-UA",
+      "sourceIp": "198.51.100.29",
+      "destinationUser": "edge-runtime",
+      "outcome": "observed",
+      "observedEvidence": [
+        "认证上下文、授权策略、目标对象和请求响应",
+        "身份认证与授权日志",
+        "资源权限策略"
+      ],
+      "data": {
+        "protected_resource": true,
+        "authorization_valid": false,
+        "protected_action_succeeded": true
+      }
+    },
+    {
+      "scenarioId": "kb-vehicle_platform-unauthorized_access-confirmed-attack",
+      "knowledgeId": "kb-vehicle_platform-unauthorized_access",
+      "domainId": "vehicle_platform",
+      "attackTypeId": "unauthorized_access",
+      "assetId": "vehicle-cloud-security-gateway",
+      "protocol": "HTTPS",
+      "sourceIp": "198.51.100.95",
+      "destinationUser": "fleet-operator",
+      "outcome": "observed",
+      "observedEvidence": [
+        "认证上下文、授权策略、目标对象和请求响应",
+        "身份认证与授权日志",
+        "资源权限策略"
+      ],
+      "data": {
+        "protected_resource": true,
+        "authorization_valid": false,
+        "protected_action_succeeded": true
+      }
+    },
+    {
+      "scenarioId": "kb-industrial_internet-web_worm-confirmed-attack",
+      "knowledgeId": "kb-industrial_internet-web_worm",
+      "domainId": "industrial_internet",
+      "attackTypeId": "web_worm",
+      "assetId": "industrial-edge-gateway",
+      "protocol": "OPC-UA",
+      "sourceIp": "198.51.100.31",
+      "destinationUser": "edge-runtime",
+      "outcome": "observed",
+      "observedEvidence": [
+        "页面内容、会话行为、脚本执行和跨用户传播链",
+        "跨资产时间线",
+        "文件、进程和网络关联"
+      ],
+      "data": {
+        "affected_accounts": 3,
+        "script_replication": true,
+        "autonomous_spread": true
+      }
+    },
+    {
+      "scenarioId": "kb-iot_platform-web_worm-confirmed-attack",
+      "knowledgeId": "kb-iot_platform-web_worm",
+      "domainId": "iot_platform",
+      "attackTypeId": "web_worm",
+      "assetId": "iot-device-management-api",
+      "protocol": "MQTT",
+      "sourceIp": "198.51.100.64",
+      "destinationUser": "device-service",
+      "outcome": "observed",
+      "observedEvidence": [
+        "页面内容、会话行为、脚本执行和跨用户传播链",
+        "跨资产时间线",
+        "文件、进程和网络关联"
+      ],
+      "data": {
+        "affected_accounts": 3,
+        "script_replication": true,
+        "autonomous_spread": true
+      }
+    },
+    {
+      "scenarioId": "kb-vehicle_platform-web_worm-confirmed-attack",
+      "knowledgeId": "kb-vehicle_platform-web_worm",
+      "domainId": "vehicle_platform",
+      "attackTypeId": "web_worm",
+      "assetId": "vehicle-cloud-security-gateway",
+      "protocol": "HTTPS",
+      "sourceIp": "198.51.100.97",
+      "destinationUser": "fleet-operator",
+      "outcome": "observed",
+      "observedEvidence": [
+        "页面内容、会话行为、脚本执行和跨用户传播链",
+        "跨资产时间线",
+        "文件、进程和网络关联"
+      ],
+      "data": {
+        "affected_accounts": 3,
+        "script_replication": true,
+        "autonomous_spread": true
+      }
+    },
+    {
+      "scenarioId": "kb-iot_platform-webshell-confirmed-attack",
+      "knowledgeId": "kb-iot_platform-webshell",
+      "domainId": "iot_platform",
+      "attackTypeId": "webshell",
+      "assetId": "iot-device-management-api",
+      "protocol": "MQTT",
+      "sourceIp": "198.51.100.63",
+      "destinationUser": "device-service",
+      "outcome": "observed",
+      "observedEvidence": [
+        "Web 访问日志、文件哈希、进程树和发布基线",
+        "进程树与命令行",
+        "文件哈希及创建来源"
+      ],
+      "data": {
+        "new_script_file": true,
+        "web_process_child": true,
+        "release_artifact_match": false
+      }
+    },
+    {
+      "scenarioId": "kb-vehicle_platform-webshell-confirmed-attack",
+      "knowledgeId": "kb-vehicle_platform-webshell",
+      "domainId": "vehicle_platform",
+      "attackTypeId": "webshell",
+      "assetId": "vehicle-cloud-security-gateway",
+      "protocol": "HTTPS",
+      "sourceIp": "198.51.100.96",
+      "destinationUser": "fleet-operator",
+      "outcome": "observed",
+      "observedEvidence": [
+        "Web 访问日志、文件哈希、进程树和发布基线",
+        "进程树与命令行",
+        "文件哈希及创建来源"
+      ],
+      "data": {
+        "new_script_file": true,
+        "web_process_child": true,
+        "release_artifact_match": false
+      }
+    },
+    {
+      "scenarioId": "kb-industrial_internet-xml_external_entity-confirmed-attack",
+      "knowledgeId": "kb-industrial_internet-xml_external_entity",
+      "domainId": "industrial_internet",
+      "attackTypeId": "xml_external_entity",
+      "assetId": "industrial-edge-gateway",
+      "protocol": "OPC-UA",
+      "sourceIp": "198.51.100.32",
+      "destinationUser": "edge-runtime",
+      "outcome": "observed",
+      "observedEvidence": [
+        "原始 XML、解析器配置、文件或出站访问记录",
+        "规范化请求字段",
+        "应用与数据层错误日志"
+      ],
+      "data": {
+        "external_entity_declared": true,
+        "external_entities_enabled": true,
+        "external_access_observed": true
+      }
+    },
+    {
+      "scenarioId": "kb-iot_platform-xml_external_entity-confirmed-attack",
+      "knowledgeId": "kb-iot_platform-xml_external_entity",
+      "domainId": "iot_platform",
+      "attackTypeId": "xml_external_entity",
+      "assetId": "iot-device-management-api",
+      "protocol": "MQTT",
+      "sourceIp": "198.51.100.65",
+      "destinationUser": "device-service",
+      "outcome": "observed",
+      "observedEvidence": [
+        "原始 XML、解析器配置、文件或出站访问记录",
+        "规范化请求字段",
+        "应用与数据层错误日志"
+      ],
+      "data": {
+        "external_entity_declared": true,
+        "external_entities_enabled": true,
+        "external_access_observed": true
+      }
+    },
+    {
+      "scenarioId": "kb-vehicle_platform-xml_external_entity-confirmed-attack",
+      "knowledgeId": "kb-vehicle_platform-xml_external_entity",
+      "domainId": "vehicle_platform",
+      "attackTypeId": "xml_external_entity",
+      "assetId": "vehicle-cloud-security-gateway",
+      "protocol": "HTTPS",
+      "sourceIp": "198.51.100.98",
+      "destinationUser": "fleet-operator",
+      "outcome": "observed",
+      "observedEvidence": [
+        "原始 XML、解析器配置、文件或出站访问记录",
+        "规范化请求字段",
+        "应用与数据层错误日志"
+      ],
+      "data": {
+        "external_entity_declared": true,
+        "external_entities_enabled": true,
+        "external_access_observed": true
+      }
+    },
+    {
+      "scenarioId": "kb-industrial_internet-xss-confirmed-attack",
+      "knowledgeId": "kb-industrial_internet-xss",
+      "domainId": "industrial_internet",
+      "attackTypeId": "xss",
+      "assetId": "industrial-edge-gateway",
+      "protocol": "OPC-UA",
+      "sourceIp": "198.51.100.33",
+      "destinationUser": "edge-runtime",
+      "outcome": "observed",
+      "observedEvidence": [
+        "原始请求、输出编码结果、响应内容和客户端执行证据",
+        "原始与规范化请求",
+        "响应安全上下文"
+      ],
+      "data": {
+        "output_encoded": false,
+        "executable_browser_context": true,
+        "client_execution_observed": true
+      }
+    },
+    {
+      "scenarioId": "kb-vehicle_platform-xss-confirmed-attack",
+      "knowledgeId": "kb-vehicle_platform-xss",
+      "domainId": "vehicle_platform",
+      "attackTypeId": "xss",
+      "assetId": "vehicle-cloud-security-gateway",
+      "protocol": "HTTPS",
+      "sourceIp": "198.51.100.99",
+      "destinationUser": "fleet-operator",
+      "outcome": "observed",
+      "observedEvidence": [
+        "原始请求、输出编码结果、响应内容和客户端执行证据",
+        "原始与规范化请求",
+        "响应安全上下文"
+      ],
+      "data": {
+        "output_encoded": false,
+        "executable_browser_context": true,
+        "client_execution_observed": true
+      }
+    }
+  ]
+}

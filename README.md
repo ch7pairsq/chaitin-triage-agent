@@ -114,12 +114,12 @@ chaitin-triage-agent/
 │       └── src/runtime.js            # OctoBus SDK 入口与依赖装配
 ├── knowledge-authoring/              # 99 条知识、复核登记和 396 条边界测试记录
 ├── tools/
-│   ├── wazuh-event-injector/         # 从 Wazuh syslog 入口写入验证事件
+│   ├── wazuh-event-injector/         # 99 条可选择事件经 Wazuh syslog 进入正式链路
 │   ├── release-webhook/              # GitHub HMAC 接收器与受限发布 worker
 │   └── verify-repository.mjs         # 仓库统一验证入口
 ├── deploy/
 │   ├── update-stacks.sh              # 备份、更新、注册和检查的统一入口
-│   └── stacks/                       # 三个唯一 Stack 定义与配套脚本
+│   └── stacks/                       # 三个唯一 Stack 定义及平台/闭环验证脚本
 └── docs/                             # 设计、ADR 和实施计划
 ```
 
@@ -256,6 +256,8 @@ SecurityOps 的 `triage.db` 位于其 OctoBus instance workdir。主要表包括
 `sources.json` 登记 Wazuh 文档、MITRE ATT&CK/ICS、CAPEC、CWE、OWASP、CISA KEV、CNVD 工控、CNNVD、NISTIR 8259 和 UNECE R155 等核验入口。公开知识只提供攻击语义、观察点和外部核验线索，最终结果来自事件事实对本仓库可执行条件的命中。
 
 运行知识只接受 `reviewStatus=approved` 且填写 `reviewedBy`、`reviewMarker`、`reviewedAt` 的记录。396 条边界用例用生产规则解释器逐条执行，并包含知识移除、排除条件移除和阈值边界消融测试；移除知识会使确认匹配消失。用例不进入运行知识包，也不作为历史事件数量或准确率。仓库不会自动替人工完成批准，也不提供批量模板生成器覆盖已复核知识。
+
+验证事件与运行知识分离。`tools/wazuh-event-injector/src/scenarios.json` 为每条已批准知识提供一个可显式选择的确定性事件，并通过 `knowledgeId` 保持一一对应；它不参与知识加载或规则判定。`quick` 包含跨三个领域的 3 条事件，`acceptance` 包含跨三个领域和不同规则形态的 15 条事件，`coverage` 包含 99 条事件。默认关闭自动发送，只有显式执行验证命令才会写入 Wazuh。
 
 ## 7. 新服务器独立初始化
 
@@ -479,9 +481,63 @@ Portainer 使用 `deploy/stacks/release-webhook/docker-compose.yml` 新建 `chai
 
 GitHub 接收器使用原始请求体和 `X-Hub-Signature-256` 做 HMAC-SHA256 常量时间校验，并按 delivery ID 去重；只有仓库、`refs/heads/develop` 与提交 SHA 都匹配时才进入受限部署队列。接收器不挂载代码目录或 Docker Socket，实际 worker 仍调用同一个 `deploy/update-stacks.sh`。
 
-## 8. 完整流程验证
+## 8. 更新与发布顺序
 
-### 8.1 快速状态检查
+### 8.1 三种更新路径与 Portainer 顺序
+
+提交进入 `develop` 后，release-webhook 会校验 HMAC 并尝试自动 fast-forward 和部署。人工更新 Portainer 时保持相同顺序：
+
+1. 宿主机 `git fetch` 并确认工作树干净；
+2. fast-forward 到 `origin/develop`；
+3. 重新运行三个 Stack 的 `prepare-config.sh`；
+4. 更新 `chaitin-wazuh`；
+5. 更新 `chaitin-triage-platform`；
+6. 确认 `agent-compose` 与 `agent-compose-ui` 已重新创建，再执行 `bootstrap.sh`；
+7. 更新 `chaitin-release-webhook`；
+8. 执行 `verify.sh`，再按第 9 章完成两轮业务验证。
+
+不要删除持久卷，不要把 `.env`、`generated/` 或 `/data/chaitin_backup` 内容粘贴到 Stack YAML。
+
+不使用 Portainer 时，服务器人工更新统一执行 `/bin/sh deploy/update-stacks.sh`；它与 Portainer、签名 webhook 路径引用完全相同的三个 Compose 文件，并自动在 `/data/chaitin_backup/chaitin-triage-agent` 生成带 `backup` 和时间戳的回滚材料。
+
+### 8.2 提交、备份和 Stack 定义核验
+
+```sh
+cd /data/chaitin/chaitin-triage-agent
+test "$(git branch --show-current)" = develop
+git status --short
+git rev-parse HEAD
+git rev-parse origin/develop
+
+test -d /data/chaitin_backup/chaitin-triage-agent
+test "$(stat -c '%a' /data/chaitin_backup/chaitin-triage-agent)" = 700
+find /data/chaitin_backup/chaitin-triage-agent -maxdepth 1 -type f \
+  -name '*-backup-*' -printf '%f\n' | sort
+
+docker compose --env-file .env -f deploy/stacks/wazuh/docker-compose.yml config --quiet
+docker compose --env-file .env -f deploy/stacks/triage-platform/docker-compose.yml config --quiet
+docker compose --env-file .env -f deploy/stacks/release-webhook/docker-compose.yml config --quiet
+```
+
+`git status --short` 应无输出，两个提交值应一致，三条 Compose 检查都应以 0 退出。备份目录中每个更新文件名都必须包含 `backup-YYYYMMDD-HHMMSS`；不要输出备份归档内容。
+
+## 9. 完整流程验证
+
+### 9.1 统一闭环验证入口
+
+部署或更新完成后，推荐先执行统一入口：
+
+```sh
+cd /data/chaitin/chaitin-triage-agent
+/bin/sh deploy/stacks/triage-platform/verify-e2e.sh \
+  --empty-cycles 10 --rounds 2 --profile acceptance
+```
+
+脚本顺序执行平台预检、10 次正式空采集、按稳定场景 ID 写入 Wazuh、通过 `wazuh-ingress` 查询本轮真实 Wazuh alert ID、主动执行分钟采集、按业务 `eventId` 精确关联 `wazuh-alert` 外层运行、提取 trace ID、通过 `triage-ops` 核验完整 trace，最后再次检查 readiness。每轮输出 `scenarioId`、领域、事件类型、source event ID、Wazuh alert ID、run ID、trace ID 和 Agent 耗时；任一阶段失败均以非 0 退出。
+
+`quick`、`acceptance`、`coverage` 分别提供 3、15、99 条可选择事件。统一脚本默认只执行前两条，并确保 source event ID 与 trace ID 均不重复。超过 15 轮必须显式增加 `--allow-bulk`，因为每一轮都会创建人工工单和飞书投递；99 条覆盖只能在隔离环境和独立通知端点执行。9.2～9.6 保留与统一脚本等价的分步骤命令，用于演示具体证据或定位失败阶段。
+
+### 9.2 快速状态检查
 
 ```sh
 cd /data/chaitin/chaitin-triage-agent
@@ -490,7 +546,7 @@ cd /data/chaitin/chaitin-triage-agent
 
 该命令检查容器、Wazuh 最小权限角色初始化与 syslog 接收进程、agent-compose 版本与项目、`wazuh-intake` 和 `wazuh-alert` 两个 trigger、两个 OctoBus service、两个 instance、三个 MCP catalog，以及 SecurityOps worker readiness。readiness 会显示待重试积压、人工处理数量、最老待处理时长、当前批次和最近错误；旧调度器仍存在时检查失败。
 
-### 8.2 连续 10 次空采集时延
+### 9.3 连续 10 次空采集时延
 
 没有新告警时连续执行 10 次正式分钟入口：
 
@@ -498,25 +554,36 @@ cd /data/chaitin/chaitin-triage-agent
 i=1
 while [ "$i" -le 10 ]; do
   docker exec agent-compose agent-compose -p chaitin-triage-agent \
-    scheduler invoke wazuh-intake --payload '{"mode":"cycle"}' --timeout 30s
+    scheduler invoke wazuh-intake --payload '{"mode":"cycle"}' --timeout 30s --json
   i=$((i + 1))
 done
 ```
 
 每次结果必须为 `success=true`、`polled=0` 或只包含已接入告警，并带非负的 `ingested`、`duplicates`、`requeued`、`manualized` 与 `durationMs`；每次均应在 30 秒内返回。手工入口使用 `scheduler invoke`，不创建另一套任务。
 
-### 8.3 验证两次分钟级真实告警闭环
+### 9.4 验证两次分钟级真实告警闭环
 
-每一轮执行一次：
+第一轮显式选择车联网暴力破解事件，等待该轮完成后，第二轮选择物联网未授权访问事件。不要依赖进程内计数器决定事件类型：
 
 ```sh
 docker exec \
   -e INJECT_ENABLED=true \
   -e INJECT_ONCE=true \
+  -e INJECT_SCENARIO_ID=kb-vehicle_platform-brute_force-confirmed-attack \
   wazuh-event-injector node src/index.js
 ```
 
-命令应返回 `status=sent` 和本轮 `eventId`。Wazuh 可能在下一次分钟轮询后才可查询，事件 Agent 的多轮模型编排通常还需要 1～3 分钟。使用以下命令查看外层状态，不把 webhook 已接收误当作业务完成：
+第二轮执行：
+
+```sh
+docker exec \
+  -e INJECT_ENABLED=true \
+  -e INJECT_ONCE=true \
+  -e INJECT_SCENARIO_ID=kb-iot_platform-unauthorized_access-confirmed-attack \
+  wazuh-event-injector node src/index.js
+```
+
+命令应返回 `status=sent`、本轮 `eventId`、`scenarioId`、`domainId` 和 `attackTypeId`。也可使用 `INJECT_PROFILE=acceptance` 与 `INJECT_SEQUENCE=0..14` 逐项选择，但分步骤演示推荐固定 `INJECT_SCENARIO_ID`，确保命令重复执行时含义不变。Wazuh 可能在下一次分钟轮询后才可查询，事件 Agent 的多轮模型编排通常还需要 1～3 分钟。使用以下命令查看外层状态，不把 webhook 已接收误当作业务完成：
 
 ```sh
 docker exec agent-compose agent-compose -p chaitin-triage-agent \
@@ -543,12 +610,12 @@ docker exec agent-compose agent-compose -p chaitin-triage-agent \
 - `state=completed`；
 - policy、result、open ticket、Feishu delivery 均存在；
 - `ticketRequired=true`、`autoCloseAllowed=false`；
-- `steps` 至少包含完整业务方法链；
+- `steps` 必须按顺序包含 `ClaimAlert`、`GetAlertContext`、`EnrichAlert`、`MatchKnowledge`、`EvaluatePolicy`、`RecordTriageResult`、`CreateManualTicket`、`QueueFeishuNotification`、`FinalizeTriage`；
 - 飞书 delivery 已进入 `delivered`；仅写入 outbox 不算完整闭环。
 
 第二轮必须获得不同的 Wazuh alert ID 和 trace ID。重复轮询同一个 alert 不应产生第二条业务记录。
 
-### 8.4 恢复、并发、重复与飞书重试
+### 9.5 恢复、并发、重复与飞书重试
 
 本节包含主动中止运行、并发注入和临时改变飞书端点，仅允许在独立维护窗口执行；日常状态检查和两轮闭环不要执行这些故障注入。自动化测试已覆盖租约旋转、旧 token 围栏、最多两个活动研判、第三次停滞转人工以及飞书重试/转人工。
 
@@ -566,7 +633,7 @@ docker exec agent-compose agent-compose -p chaitin-triage-agent \
 
 飞书重试只在受控维护窗口使用可恢复的临时失败端点验证：先完成研判、结果和 open ticket，再确认 delivery 从 `pending` 经指数退避重试；临时错误解除后应变为 `delivered`。非重试错误或第 9 次失败进入 `manual`，由运维通过 `triage-ops/RecoverDelivery(includeManual=true)` 恢复，禁止绕过 outbox 直接发送。业务 `state=completed` 与飞书投递确认是两个独立状态，通知失败不得删除或回滚 result 和 ticket。
 
-### 8.5 OctoBus 访问证据
+### 9.6 OctoBus 访问证据
 
 ```sh
 cd /data/chaitin/chaitin-triage-agent
@@ -578,44 +645,6 @@ docker exec --env-file deploy/stacks/triage-platform/generated/octobus-admin.env
 ```
 
 同一运行窗口应看到分钟程序通过 `wazuh-ingress` 调用 `ListAlerts`、`IngestAlertEvent`、`RequeueStalledAlerts`，事件 Agent 通过 `triage-runner` 调用从 `ClaimAlert` 到 `FinalizeTriage` 的完整顺序。精确业务关联以 Agent run 返回的 trace ID 和 `verify-trace.sh` 为准。
-
-### 8.6 提交、备份和 Stack 定义核验
-
-```sh
-cd /data/chaitin/chaitin-triage-agent
-test "$(git branch --show-current)" = develop
-git status --short
-git rev-parse HEAD
-git rev-parse origin/develop
-
-test -d /data/chaitin_backup/chaitin-triage-agent
-test "$(stat -c '%a' /data/chaitin_backup/chaitin-triage-agent)" = 700
-find /data/chaitin_backup/chaitin-triage-agent -maxdepth 1 -type f \
-  -name '*-backup-*' -printf '%f\n' | sort
-
-docker compose --env-file .env -f deploy/stacks/wazuh/docker-compose.yml config --quiet
-docker compose --env-file .env -f deploy/stacks/triage-platform/docker-compose.yml config --quiet
-docker compose --env-file .env -f deploy/stacks/release-webhook/docker-compose.yml config --quiet
-```
-
-`git status --short` 应无输出，两个提交值应一致，三条 Compose 检查都应以 0 退出。备份目录中每个更新文件名都必须包含 `backup-YYYYMMDD-HHMMSS`；不要输出备份归档内容。
-
-## 9. Portainer 更新顺序
-
-提交进入 `develop` 后，release-webhook 会校验 HMAC 并尝试自动 fast-forward 和部署。人工更新 Portainer 时保持相同顺序：
-
-1. 宿主机 `git fetch` 并确认工作树干净；
-2. fast-forward 到 `origin/develop`；
-3. 重新运行三个 Stack 的 `prepare-config.sh`；
-4. 更新 `chaitin-wazuh`；
-5. 更新 `chaitin-triage-platform`；
-6. 确认 `agent-compose` 与 `agent-compose-ui` 已重新创建，再执行 `bootstrap.sh`；
-7. 更新 `chaitin-release-webhook`；
-8. 执行 `verify.sh`，再按第 8 章完成两轮业务验证。
-
-不要删除持久卷，不要把 `.env`、`generated/` 或 `/data/chaitin_backup` 内容粘贴到 Stack YAML。
-
-不使用 Portainer 时，服务器人工更新统一执行 `/bin/sh deploy/update-stacks.sh`；它与 Portainer、签名 webhook 路径引用完全相同的三个 Compose 文件，并自动在 `/data/chaitin_backup/chaitin-triage-agent` 生成带 `backup` 和时间戳的回滚材料。
 
 ## 10. 故障定位
 

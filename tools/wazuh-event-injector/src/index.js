@@ -1,61 +1,90 @@
 import dgram from "node:dgram";
+import { randomUUID } from "node:crypto";
+import { readFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 
-const profiles = Object.freeze([
-  {
-    domain_id: "vehicle_platform",
-    attack_type_id: "brute_force",
-    asset_id: "vehicle-cloud-auth-gateway",
-    protocol: "HTTPS",
-    srcip: "198.51.100.41",
-    dstuser: "fleet-operator",
-    outcome: "failed",
-    auth_failures: 12,
-    window_seconds: 180,
-    distinct_accounts: 4,
-    authorization_valid: false,
-    observed_evidence: ["认证失败与成功日志", "来源地址与设备身份", "账号状态和授权变更记录"]
-  },
-  {
-    domain_id: "iot_platform",
-    attack_type_id: "unauthorized_access",
-    asset_id: "iot-device-management-api",
-    protocol: "MQTT",
-    srcip: "198.51.100.42",
-    dstuser: "device-service",
-    outcome: "allowed",
-    protected_resource: true,
-    authorization_valid: false,
-    protected_action_succeeded: true,
-    public_resource: false,
-    observed_evidence: ["身份认证与授权日志", "资源权限策略", "请求和响应状态"]
-  },
-  {
-    domain_id: "industrial_internet",
-    attack_type_id: "command_execution",
-    asset_id: "industrial-edge-gateway",
-    protocol: "OPC-UA",
-    srcip: "198.51.100.43",
-    dstuser: "edge-runtime",
-    outcome: "executed",
-    untrusted_input_reached_shell: true,
-    shell_child_process: true,
-    execution_side_effect: true,
-    authorization_valid: false,
-    observed_evidence: ["进程树与命令行", "应用调用链和网络连接", "命令执行结果"]
-  }
-]);
+const manifest = JSON.parse(readFileSync(new URL("./scenarios.json", import.meta.url), "utf8"));
+const identifierPattern = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/;
 
-export function buildEvent({ sequence, now = new Date() }) {
+function validateManifest(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) throw new TypeError("validation scenario manifest must be an object");
+  if (!Array.isArray(value.scenarios) || value.scenarios.length !== 99) throw new TypeError("validation scenario manifest must contain 99 scenarios");
+  if (!value.profiles || typeof value.profiles !== "object" || Array.isArray(value.profiles)) throw new TypeError("validation profiles are missing");
+  const scenarioIds = new Set();
+  for (const scenario of value.scenarios) {
+    for (const field of ["scenarioId", "knowledgeId", "domainId", "attackTypeId"]) {
+      if (!identifierPattern.test(String(scenario?.[field] ?? ""))) throw new TypeError(`validation scenario ${field} is invalid`);
+    }
+    if (scenarioIds.has(scenario.scenarioId)) throw new TypeError(`duplicate validation scenario: ${scenario.scenarioId}`);
+    scenarioIds.add(scenario.scenarioId);
+    if (!scenario.data || typeof scenario.data !== "object" || Array.isArray(scenario.data)) throw new TypeError(`validation scenario data is invalid: ${scenario.scenarioId}`);
+    if (!Array.isArray(scenario.observedEvidence) || scenario.observedEvidence.length < 2) throw new TypeError(`validation scenario evidence is incomplete: ${scenario.scenarioId}`);
+  }
+  for (const [profile, scenarioList] of Object.entries(value.profiles)) {
+    if (!identifierPattern.test(profile) || !Array.isArray(scenarioList) || scenarioList.length === 0) throw new TypeError(`validation profile is invalid: ${profile}`);
+    if (new Set(scenarioList).size !== scenarioList.length) throw new TypeError(`validation profile contains duplicates: ${profile}`);
+    for (const scenarioId of scenarioList) {
+      if (!scenarioIds.has(scenarioId)) throw new TypeError(`validation profile references an unknown scenario: ${scenarioId}`);
+    }
+  }
+}
+
+validateManifest(manifest);
+
+const scenariosById = new Map(manifest.scenarios.map((scenario) => [scenario.scenarioId, Object.freeze(scenario)]));
+const profiles = Object.freeze(Object.fromEntries(
+  Object.entries(manifest.profiles).map(([name, scenarioIds]) => [name, Object.freeze([...scenarioIds])])
+));
+
+function normalizeSequence(value) {
+  const sequence = typeof value === "number" ? value : Number(String(value ?? "").trim());
   if (!Number.isSafeInteger(sequence) || sequence < 0) throw new TypeError("sequence must be a non-negative safe integer");
-  const profile = profiles[sequence % profiles.length];
+  return sequence;
+}
+
+function selectScenario({ scenarioId = "", profile = "quick", sequence = 0 }) {
+  const normalizedSequence = normalizeSequence(sequence);
+  if (scenarioId) {
+    const selected = scenariosById.get(String(scenarioId).trim());
+    if (!selected) throw new TypeError(`unknown validation scenario: ${scenarioId}`);
+    return { scenario: selected, sequence: normalizedSequence };
+  }
+  const normalizedProfile = String(profile).trim();
+  const scenarioIds = profiles[normalizedProfile];
+  if (!scenarioIds) throw new TypeError(`unknown validation profile: ${profile}`);
   return {
+    scenario: scenariosById.get(scenarioIds[normalizedSequence % scenarioIds.length]),
+    sequence: normalizedSequence
+  };
+}
+
+export function listScenarios(profile = "quick") {
+  const normalizedProfile = String(profile).trim();
+  const scenarioIds = profiles[normalizedProfile];
+  if (!scenarioIds) throw new TypeError(`unknown validation profile: ${profile}`);
+  return scenarioIds.map((scenarioId) => ({ ...scenariosById.get(scenarioId) }));
+}
+
+export function buildEvent({ sequence = 0, scenarioId = "", profile = "quick", now = new Date(), eventIdFactory = randomUUID } = {}) {
+  const selected = selectScenario({ scenarioId, profile, sequence });
+  const scenario = selected.scenario;
+  return {
+    ...scenario.data,
     security_program: "triage_event_injector",
     event_version: "1",
-    event_id: `test-event-${now.getTime()}-${sequence}`,
+    event_id: `triage-event-${eventIdFactory()}`,
+    scenario_id: scenario.scenarioId,
+    knowledge_id: scenario.knowledgeId,
     occurred_at: now.toISOString(),
     authorized: false,
-    ...profile
+    domain_id: scenario.domainId,
+    attack_type_id: scenario.attackTypeId,
+    asset_id: scenario.assetId,
+    protocol: scenario.protocol,
+    srcip: scenario.sourceIp,
+    dstuser: scenario.destinationUser,
+    outcome: scenario.outcome,
+    observed_evidence: [...scenario.observedEvidence]
   };
 }
 
@@ -80,6 +109,9 @@ export async function run({
   enabled = String(process.env.INJECT_ENABLED ?? "false").toLowerCase() === "true",
   once = String(process.env.INJECT_ONCE ?? "false").toLowerCase() === "true",
   stayAlive = String(process.env.INJECT_STAY_ALIVE ?? "false").toLowerCase() === "true",
+  profile = process.env.INJECT_PROFILE ?? "quick",
+  scenarioId = process.env.INJECT_SCENARIO_ID ?? "",
+  initialSequence = process.env.INJECT_SEQUENCE ?? 0,
   socketFactory,
   waitForShutdown = () => new Promise((resolve) => {
     const timer = setInterval(() => {}, 3_600_000);
@@ -101,11 +133,18 @@ export async function run({
   if (!Number.isInteger(intervalMs) || intervalMs < 60_000 || intervalMs > 86_400_000) {
     throw new TypeError("INJECT_INTERVAL_MS must be between 60000 and 86400000");
   }
-  let sequence = 0;
+  let sequence = normalizeSequence(initialSequence);
   const emit = async () => {
-    const event = buildEvent({ sequence: sequence++ });
+    const event = buildEvent({ sequence: sequence++, scenarioId, profile });
     const result = await sendEvent(event, { host, port, ...(socketFactory ? { socketFactory } : {}) });
-    console.log(JSON.stringify({ status: "sent", eventId: result.eventId, bytes: result.bytes }));
+    console.log(JSON.stringify({
+      status: "sent",
+      eventId: result.eventId,
+      scenarioId: event.scenario_id,
+      domainId: event.domain_id,
+      attackTypeId: event.attack_type_id,
+      bytes: result.bytes
+    }));
   };
   await emit();
   if (once) return () => {};

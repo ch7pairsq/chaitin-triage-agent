@@ -100,6 +100,8 @@ preflight() {
     "$repo_root/deploy/stacks/triage-platform/prepare-config.sh" \
     "$repo_root/deploy/stacks/triage-platform/bootstrap.sh" \
     "$repo_root/deploy/stacks/triage-platform/verify.sh" \
+    "$repo_root/deploy/stacks/triage-platform/verify-e2e.sh" \
+    "$repo_root/deploy/stacks/triage-platform/tools/verify-e2e.mjs" \
     "$repo_root/deploy/stacks/release-webhook/prepare-config.sh"
   do
     [ -r "$file" ] || { echo "required deployment file is missing: $file" >&2; return 78; }
@@ -115,6 +117,7 @@ preflight() {
   /bin/sh -n "$repo_root/deploy/stacks/triage-platform/prepare-config.sh"
   /bin/sh -n "$repo_root/deploy/stacks/triage-platform/bootstrap.sh"
   /bin/sh -n "$repo_root/deploy/stacks/triage-platform/verify.sh"
+  /bin/sh -n "$repo_root/deploy/stacks/triage-platform/verify-e2e.sh"
   /bin/sh -n "$repo_root/deploy/stacks/release-webhook/prepare-config.sh"
   run_external docker info >/dev/null
   run_external docker compose --env-file "$env_file" -f "$wazuh_certs_compose" config --quiet

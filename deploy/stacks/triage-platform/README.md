@@ -18,4 +18,12 @@ Portainer 手工更新仍受支持，且必须直接选择仓库中的以下文�
 
 在 Portainer 更新前，仍需从服务器仓库执行对应的 `prepare-config.sh`；更新 Wazuh 与 triage platform 后执行本目录的 `bootstrap.sh` 和 `verify.sh`。`REPO_ROOT` 必须填写服务器上的当前 clone 绝对路径。
 
+平台状态通过后，执行统一闭环验证：
+
+```sh
+/bin/sh deploy/stacks/triage-platform/verify-e2e.sh --empty-cycles 10 --rounds 2 --profile acceptance
+```
+
+该入口通过 Wazuh 告警内容、业务 event ID 和 agent-compose run 逐级关联本轮 trace，再调用 `verify-trace.sh` 检查按顺序完成的 OctoBus 方法链、人工工单和飞书投递。分步骤命令和批量限制见仓库根 README 第 9 章。
+
 若已批准的 `services/security-ops/resources/knowledge.jsonl` 不存在，初始化会明确停止，避免未完成审阅的知识进入运行路径。

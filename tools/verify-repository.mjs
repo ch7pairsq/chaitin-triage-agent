@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, readFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -37,9 +37,16 @@ for (const required of [
   "/bin/sh deploy/update-stacks.sh",
   "Portainer",
   "X-Hub-Signature-256",
-  "Wazuh Dashboard 仅用于可视化"
+  "Wazuh Dashboard 仅用于可视化",
+  "/bin/sh deploy/stacks/triage-platform/verify-e2e.sh",
+  "INJECT_SCENARIO_ID"
 ]) {
   if (!readme.includes(required)) throw new Error(`README.md is missing current design text: ${required}`);
+}
+const updateChapter = readme.indexOf("## 8. 更新与发布顺序");
+const verificationChapter = readme.indexOf("## 9. 完整流程验证");
+if (updateChapter < 0 || verificationChapter < 0 || updateChapter >= verificationChapter) {
+  throw new Error("README.md must document updates before end-to-end verification");
 }
 if (readme.includes("npm run generate") || readme.includes("decisionToken` 是否原样传递")) {
   throw new Error("README.md contains a removed authoring or token-relay step");
@@ -63,6 +70,13 @@ for (const relativePath of [
 }
 if (!existsSync(path.join(root, "services/security-ops/migrations/004_remove_decision_tokens.sql"))) {
   throw new Error("decision-token removal migration is missing");
+}
+for (const relativePath of [
+  "tools/wazuh-event-injector/src/scenarios.json",
+  "deploy/stacks/triage-platform/verify-e2e.sh",
+  "deploy/stacks/triage-platform/tools/verify-e2e.mjs"
+]) {
+  if (!existsSync(path.join(root, relativePath))) throw new Error(`required verification artifact is missing: ${relativePath}`);
 }
 const sourceRegistry = JSON.parse(readFileSync(path.join(root, "knowledge-authoring/sources.json"), "utf8"));
 if (!Array.isArray(sourceRegistry.sources) || sourceRegistry.sources.length < 10) {
@@ -101,7 +115,11 @@ for (const [directory, scripts] of packages) {
 }
 
 if (mode !== "--check") {
-  const result = spawnSync(process.execPath, ["--test", path.join(root, "deploy/test/update-stacks.test.mjs")], {
+  const deployTests = readdirSync(path.join(root, "deploy/test"))
+    .filter((name) => name.endsWith(".test.mjs"))
+    .sort()
+    .map((name) => path.join(root, "deploy/test", name));
+  const result = spawnSync(process.execPath, ["--test", ...deployTests], {
     cwd: root,
     stdio: "inherit",
     env: { ...process.env, NPM_CONFIG_CACHE: npmCache }

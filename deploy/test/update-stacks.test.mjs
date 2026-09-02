@@ -62,8 +62,10 @@ function makeFixture() {
     "deploy/stacks/triage-platform/prepare-config.sh",
     "deploy/stacks/triage-platform/bootstrap.sh",
     "deploy/stacks/triage-platform/verify.sh",
+    "deploy/stacks/triage-platform/verify-e2e.sh",
     "deploy/stacks/release-webhook/prepare-config.sh",
   ]) put(file, "#!/bin/sh\nexit 0\n");
+  put("deploy/stacks/triage-platform/tools/verify-e2e.mjs", "// placeholder\n");
   put("deploy/stacks/wazuh/config/wazuh_indexer_ssl_certs/root-ca.pem", "ca\n");
   put("deploy/stacks/wazuh/generated/wazuh.yml", "generated\n");
   put("deploy/stacks/triage-platform/generated/agent-compose.env", "generated\n");

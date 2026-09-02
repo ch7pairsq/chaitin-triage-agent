@@ -22,3 +22,5 @@ test "$(docker inspect --format '{{.State.ExitCode}}' wazuh-role-bootstrap)" = 0
 Stack 固定使用 `chaitin-net` 的 `172.30.0.0/24`。Wazuh syslog UDP 514 只在该 Docker 网络内开放；manager、Indexer 和 dashboard 的宿主机端口均绑定 `127.0.0.1`。
 
 Portainer 使用本目录的 `docker-compose.yml` 新建或更新 Stack，并设置与根 `.env` 一致的变量。`REPO_ROOT` 必须是宿主机 clone 的绝对路径；Portainer 和统一脚本使用的是同一份已提交 Compose 文件。
+
+`wazuh-event-injector` 默认不自动发送。它提供 `quick`、`acceptance`、`coverage` 三组共 99 条可显式选择的验证事件；执行时使用 `INJECT_SCENARIO_ID`，或同时指定 `INJECT_PROFILE` 与 `INJECT_SEQUENCE`。每次单次执行都由输入参数确定事件，不依赖容器或 Node 进程中的历史计数。
