@@ -54,6 +54,7 @@ test("minute poll reads Wazuh and ingests alerts only through OctoBus capabiliti
   assert.match(calls[0].prompt, /WazuhConnector\.ListAlerts/);
   assert.match(calls[0].prompt, /SecurityOps\.IngestAlertEvent/);
   assert.match(calls[0].prompt, /eventId='wazuh:' \+ alertId/);
+  assert.match(calls[0].prompt, /status=pending or duplicate=true/);
   assert.match(calls[0].prompt, /Do not run any triage method in this poll run/);
   assert.doesNotMatch(calls[0].prompt, /ClaimAlert|GetTriageTrace/);
   assert.match(calls[0].prompt, /wazuh-ingress capset/);
@@ -135,5 +136,17 @@ test("accepts an identical result repeated by the runtime transcript", () => {
   });
   const result = registrations.crons.get("wazuh-alert-poll").callback();
   assert.equal(result.mode, "poll");
+  assert.equal(result.processed, 1);
+});
+
+test("accepts a corrected result only when the runtime repeats the final object", () => {
+  const { registrations } = loadScheduler({
+    formatResult(result) {
+      const early = { ...result, success: false, processed: 0 };
+      return JSON.stringify(early) + "\nself-correction\n" + JSON.stringify(result) + "\n" + JSON.stringify(result);
+    },
+  });
+  const result = registrations.crons.get("wazuh-alert-poll").callback();
+  assert.equal(result.success, true);
   assert.equal(result.processed, 1);
 });

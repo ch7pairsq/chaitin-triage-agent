@@ -84,6 +84,14 @@ function extractTriageObject(raw, expectedMode) {
     .split(/\r?\n/)
     .map((line) => parseObject(line.trim()))
     .filter(Boolean);
+  const matchingCompleteLines = completeLines.filter((candidate) =>
+    candidate.mode === expectedMode && typeof candidate.success === "boolean"
+  );
+  if (matchingCompleteLines.length >= 2) {
+    const last = matchingCompleteLines.at(-1);
+    const previous = matchingCompleteLines.at(-2);
+    if (JSON.stringify(last) === JSON.stringify(previous)) return last;
+  }
   const candidates = uniqueObjects([
     ...uniqueFenced,
     ...completeLines,
@@ -139,6 +147,7 @@ function buildPrompt(context) {
   const executionRules = context.mode === "poll"
     ? [
         "Use the alert fields returned by ListAlerts unchanged when calling IngestAlertEvent; do not invent or enrich alert content.",
+        "Count an IngestAlertEvent response with status=pending or duplicate=true as ingested. Do not retry an accepted or duplicate event.",
         "If ListAlerts or any IngestAlertEvent call fails, report success=false and stop this poll run.",
       ]
     : [

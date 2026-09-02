@@ -26,6 +26,7 @@ test("queries the real Wazuh alerts index contract and returns minimized records
       const query = JSON.parse(Buffer.concat(chunks).toString("utf8"));
       assert.equal(query.size, 10);
       assert.deepEqual(query.query.bool.filter[1], { range: { "rule.level": { gte: 7 } } });
+      assert.deepEqual(query.query.bool.filter[2], { term: { "rule.groups": "triage_input" } });
       res.writeHead(200, { "content-type": "application/json" });
       res.end(JSON.stringify({ hits: { hits: [{ _id: "wazuh-alert-42", _source: {
         timestamp: "2026-09-02T01:02:03.000Z",
@@ -39,6 +40,7 @@ test("queries the real Wazuh alerts index contract and returns minimized records
       username: "reader",
       password: "strong-password",
       minimumRuleLevel: 7,
+      requiredRuleGroup: "triage_input",
       now: () => new Date("2026-09-02T01:10:00.000Z")
     });
     const result = await client.listAlerts({ lookbackSeconds: 600, limit: 10 });
@@ -66,6 +68,10 @@ test("rejects unsafe index paths and malformed request bounds", async () => {
   assert.throws(
     () => new WazuhIndexerClient({ indexerUrl: "http://localhost:9200", username: "reader", password: "strong-password", indexPattern: "../secret" }),
     /index_pattern is invalid/
+  );
+  assert.throws(
+    () => new WazuhIndexerClient({ indexerUrl: "http://localhost:9200", username: "reader", password: "strong-password", requiredRuleGroup: "bad/group" }),
+    /required_rule_group is invalid/
   );
   const client = new WazuhIndexerClient({ indexerUrl: "http://localhost:9200", username: "reader", password: "strong-password" });
   await assert.rejects(() => client.listAlerts({ lookbackSeconds: 1 }), /lookbackSeconds/);

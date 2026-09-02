@@ -20,6 +20,7 @@ export class WazuhIndexerClient {
     password,
     indexPattern = "wazuh-alerts-*",
     minimumRuleLevel = 3,
+    requiredRuleGroup = "",
     requestTimeoutMs = 10_000,
     caPath = "",
     maxAlertBytes = 262_144,
@@ -30,6 +31,7 @@ export class WazuhIndexerClient {
     this.password = requiredSecret(password, "indexer_password");
     this.indexPattern = normalizeIndexPattern(indexPattern);
     this.minimumRuleLevel = boundedInteger(minimumRuleLevel, 0, 16, "minimum_rule_level");
+    this.requiredRuleGroup = normalizeRuleGroup(requiredRuleGroup);
     this.requestTimeoutMs = boundedInteger(requestTimeoutMs, 1000, 30_000, "request_timeout_ms");
     this.maxAlertBytes = boundedInteger(maxAlertBytes, 1024, 524_288, "max_alert_bytes");
     this.ca = caPath ? readFileSync(caPath) : undefined;
@@ -41,15 +43,17 @@ export class WazuhIndexerClient {
     const limit = boundedInteger(request.limit ?? 20, 1, 100, "limit");
     const queriedAt = this.now();
     const start = new Date(queriedAt.getTime() - lookbackSeconds * 1000).toISOString();
+    const filters = [
+      { range: { timestamp: { gte: start, lte: queriedAt.toISOString() } } },
+      { range: { "rule.level": { gte: this.minimumRuleLevel } } }
+    ];
+    if (this.requiredRuleGroup) filters.push({ term: { "rule.groups": this.requiredRuleGroup } });
     const body = {
       size: limit,
       track_total_hits: false,
       query: {
         bool: {
-          filter: [
-            { range: { timestamp: { gte: start, lte: queriedAt.toISOString() } } },
-            { range: { "rule.level": { gte: this.minimumRuleLevel } } }
-          ]
+          filter: filters
         }
       },
       sort: [{ timestamp: { order: "desc", unmapped_type: "date" } }]
@@ -163,6 +167,14 @@ function normalizeIndexPattern(value) {
   const normalized = String(value ?? "").trim();
   if (!/^[A-Za-z0-9._*-]{1,128}$/.test(normalized) || normalized.includes("..")) {
     throw new WazuhConnectorError("INVALID_ARGUMENT", "index_pattern is invalid");
+  }
+  return normalized;
+}
+
+function normalizeRuleGroup(value) {
+  const normalized = String(value ?? "").trim();
+  if (normalized && !/^[A-Za-z0-9_.-]{1,128}$/.test(normalized)) {
+    throw new WazuhConnectorError("INVALID_ARGUMENT", "required_rule_group is invalid");
   }
   return normalized;
 }

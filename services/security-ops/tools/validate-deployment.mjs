@@ -210,6 +210,8 @@ try {
     "security-ops.config.json",
     "security-ops.secret.json"
   ]) JSON.parse(fs.readFileSync(path.join(platformOutput, file), "utf8"));
+  const renderedWazuhConnector = JSON.parse(fs.readFileSync(path.join(platformOutput, "wazuh-connector.config.json"), "utf8"));
+  assert(renderedWazuhConnector.required_rule_group === "triage_input", "Wazuh connector must select only triage_input alerts");
 
   const releaseOutput = path.join(temporaryRoot, "release");
   runRenderer("deploy/stacks/release-webhook/tools/render-secret.mjs", {

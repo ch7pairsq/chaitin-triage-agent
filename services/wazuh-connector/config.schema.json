@@ -19,6 +19,12 @@
       "maximum": 16,
       "default": 3
     },
+    "required_rule_group": {
+      "type": "string",
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9_.-]*$",
+      "default": ""
+    },
     "request_timeout_ms": {
       "type": "integer",
       "minimum": 1000,
