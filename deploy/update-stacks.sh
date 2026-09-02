@@ -126,12 +126,16 @@ create_backups() {
   rollback_point="$commit_backup"
 
   current_stage=backup-configuration
-  tar -czf "$configuration_backup" -C "$repo_root" \
-    .env \
+  set -- .env
+  for relative_path in \
     deploy/stacks/wazuh/config \
     deploy/stacks/wazuh/generated \
     deploy/stacks/triage-platform/generated \
     deploy/stacks/release-webhook/generated
+  do
+    [ ! -e "$repo_root/$relative_path" ] || set -- "$@" "$relative_path"
+  done
+  tar -czf "$configuration_backup" -C "$repo_root" "$@"
   chmod 0600 "$configuration_backup"
   rollback_point="$commit_backup,$configuration_backup"
 

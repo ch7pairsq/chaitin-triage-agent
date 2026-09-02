@@ -20,6 +20,25 @@ for (const relativePath of ["scheduler/wazuh-intake.js", "scheduler/triage-sched
   }
 }
 
+const readme = readFileSync(path.join(root, "README.md"), "utf8");
+for (const stale of ["hourly-security-triage", "wazuh-alert-poll", "scheduler trigger wazuh-intake", "minimum_rule_level: 3"]) {
+  if (readme.includes(stale)) throw new Error(`README.md contains obsolete text: ${stale}`);
+}
+for (const required of [
+  "wazuh-intake",
+  "RequeueStalledAlerts",
+  "claimToken",
+  "trigger_outbox",
+  "manual_tickets",
+  "delivery_outbox",
+  "/bin/sh deploy/update-stacks.sh",
+  "Portainer",
+  "X-Hub-Signature-256",
+  "Wazuh Dashboard 仅用于可视化"
+]) {
+  if (!readme.includes(required)) throw new Error(`README.md is missing current design text: ${required}`);
+}
+
 const packages = [
   ["knowledge-authoring", ["check", "test"]],
   ["services/security-ops", ["check", "test", "validate:package", "validate:deployment", "pack:check"]],

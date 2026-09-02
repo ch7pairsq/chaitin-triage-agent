@@ -110,6 +110,20 @@ test("creates timestamped commit, configuration, and SQLite backups before updat
   assert.ok(backups.some((name) => /^sqlite-backup-\d{8}-\d{6}\.tar\.gz$/.test(name)));
 });
 
+test("first deployment succeeds before generated configuration directories exist", (t) => {
+  const fixture = makeFixture();
+  t.after(() => rmSync(fixture, { recursive: true, force: true }));
+  for (const relative of [
+    "deploy/stacks/wazuh/generated",
+    "deploy/stacks/triage-platform/generated",
+    "deploy/stacks/release-webhook/generated"
+  ]) rmSync(path.join(fixture, relative), { recursive: true, force: true });
+  const result = execute(fixture);
+  if (result.skipped) return t.skip("POSIX shell unavailable");
+  assert.equal(result.status, 0, result.stderr || result.stdout);
+  assert.ok(readdirSync(path.join(fixture, "backups")).some((name) => /^configuration-backup-\d{8}-\d{6}\.tar\.gz$/.test(name)));
+});
+
 test("validates every compose file before creating a backup or starting an update", (t) => {
   const fixture = makeFixture();
   t.after(() => rmSync(fixture, { recursive: true, force: true }));

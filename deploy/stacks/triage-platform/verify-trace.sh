@@ -3,7 +3,12 @@ set -eu
 
 trace_id=${1:-}
 case "$trace_id" in
-  ""|*[!A-Za-z0-9._:-]*) echo "usage: $0 TRACE_ID" >&2; exit 64 ;;
+  ""|*[!A-Za-z0-9._:-]*) echo "usage: $0 TRACE_ID [completed|manual]" >&2; exit 64 ;;
+esac
+expected_state=${2:-completed}
+case "$expected_state" in
+  completed|manual) ;;
+  *) echo "usage: $0 TRACE_ID [completed|manual]" >&2; exit 64 ;;
 esac
 
 script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
@@ -12,6 +17,7 @@ host_repo_root=${TRIAGE_HOST_REPO_ROOT:-$repo_root}
 
 docker run --rm --network chaitin-net \
   --env "TRACE_ID=$trace_id" \
+  --env "TRACE_EXPECTED_STATE=$expected_state" \
   --volume "$host_repo_root/deploy/stacks/triage-platform/tools/verify-trace.mjs:/app/verify-trace.mjs:ro" \
   --volume "$host_repo_root/deploy/stacks/triage-platform/generated/triage-ops-token:/run/secrets/triage-ops-token:ro" \
   node:22.23.2-alpine3.24 \

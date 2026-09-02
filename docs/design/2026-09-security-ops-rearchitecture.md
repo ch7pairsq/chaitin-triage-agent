@@ -95,7 +95,8 @@ SecurityOps 是业务事实源，独占：
 - 领取租约、恢复次数、步骤状态和 trace；
 - 证据富化、知识匹配和确定性策略；
 - 研判结果、人工工单和飞书投递 outbox；
-- 授权记录的有效期、范围和撤销状态。
+- 授权记录的有效期、范围和撤销状态；
+- 投递 backlog、manual 数、最老待处理时长、当前批次和最近错误等 readiness 状态。
 
 SecurityOps 不运行 LLM，不直接承担 agent-compose 的触发和编排职责。
 
@@ -183,7 +184,7 @@ webhook 返回 HTTP 202 只表示 agent-compose 控制面接受了事件，不�
 
 ### 3.5 飞书与工单
 
-所有正常和降级路径都创建人工工单。飞书失败不能回滚已经保存的研判结果和工单；投递采用独立 outbox、有限重试和最终人工投递状态。所有 worker 错误必须输出结构化日志，禁止静默吞错。进程关闭时停止领取新批次，并等待当前批次在宽限期内完成。
+所有正常和降级路径都创建人工工单。飞书失败不能回滚已经保存的研判结果和工单；业务终态与外部投递确认是两个独立状态。投递采用独立 outbox、有限重试和最终人工投递状态。所有 worker 错误必须输出结构化日志，禁止静默吞错。进程关闭时停止领取新批次，并在最长 10 秒宽限期内等待当前批次完成。
 
 ## 4. 能力契约与 capset
 
@@ -218,8 +219,9 @@ webhook 返回 HTTP 202 只表示 agent-compose 控制面接受了事件，不�
 - `SecurityOps.GetTriageTrace`
 - `SecurityOps.RecoverDelivery`
 - `SecurityOps.PutAuthorizationRecord`
+- `SecurityOps.GetWorkerReadiness`
 
-`PutAuthorizationRecord` 写入或撤销带有效期和作用域的授权记录。Agent 无权创建或修改授权。
+`PutAuthorizationRecord` 写入或撤销带有效期和作用域的授权记录。`GetWorkerReadiness` 只返回队列运行状态，不暴露业务载荷或密钥。Agent 无权调用这两类运维方法。
 
 ### 4.4 关键返回结构
 
@@ -300,7 +302,7 @@ webhook 返回 HTTP 202 只表示 agent-compose 控制面接受了事件，不�
 | Agent 超时或崩溃 | 3 分钟停滞后恢复，旋转 token | 最多 3 次后转人工态 |
 | 旧 Agent 迟到写入 | claim token 围栏拒绝 | 新运行状态不被覆盖 |
 | 知识或证据不足 | 确定性安全门控 | 人工复核并补充证据 |
-| 飞书失败 | 独立 outbox 重试 | 研判和工单不回滚 |
+| 飞书失败 | 独立 outbox 有界重试，第 9 次或不可重试错误转人工 | 研判和工单不回滚，delivery 状态可见 |
 | SQLite 迁移失败 | 启动失败并保留备份 | 不运行半迁移版本 |
 | 进程终止 | 停止新领取，等待当前批次 | 降低重复和中间态 |
 
