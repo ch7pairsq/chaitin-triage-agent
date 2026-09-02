@@ -17,17 +17,18 @@ function loadScheduler({ resultSuccess = true } = {}) {
     },
     agent(prompt, options) {
       calls.push({ prompt, options });
+      const result = {
+        mode: prompt.includes("Mode: poll") ? "poll" : prompt.includes("Mode: hourly") ? "hourly" : prompt.includes("Mode: manual") ? "manual" : "event",
+        success: resultSuccess,
+        polled: 0,
+        ingested: 0,
+        processed: 1,
+        traceIds: ["trace-1"],
+        terminalStates: ["COMPLETED"],
+      };
       return {
         success: true,
-        json: {
-          mode: prompt.includes("Mode: poll") ? "poll" : prompt.includes("Mode: hourly") ? "hourly" : prompt.includes("Mode: manual") ? "manual" : "event",
-          success: resultSuccess,
-          polled: 0,
-          ingested: 0,
-          processed: 1,
-          traceIds: ["trace-1"],
-          terminalStates: ["COMPLETED"],
-        },
+        finalText: JSON.stringify(result),
       };
     },
     log() {},
@@ -73,7 +74,7 @@ test("event trigger reads only business ids from the webhook body", () => {
   assert.equal(Object.hasOwn(calls[0].options, "timeout"), false);
   assert.equal(Object.hasOwn(calls[0].options, "title"), false);
   assert.equal(calls[0].options.sandboxPolicy, "new");
-  assert.equal(calls[0].options.outputSchema.type, "object");
+  assert.equal(Object.hasOwn(calls[0].options, "outputSchema"), false);
 });
 
 test("hourly trigger launches pending-alert processing without operational recovery permission", () => {

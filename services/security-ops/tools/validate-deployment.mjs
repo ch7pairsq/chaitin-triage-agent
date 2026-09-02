@@ -188,6 +188,7 @@ try {
     LLM_API_ENDPOINT: "https://llm.invalid/v1",
     LLM_API_KEY: "llm-key-for-configuration-validation",
     LLM_MODEL: "validation-model",
+    LLM_API_PROTOCOL: "chat_completions",
     AUTH_USERNAME: "admin",
     AUTH_PASSWORD: "ui-password-000001",
     AUTH_SECRET: "ui-auth-secret-0000000000000000000001",

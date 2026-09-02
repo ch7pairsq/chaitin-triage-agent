@@ -55,7 +55,8 @@ const values = {
   AGENT_COMPOSE_GUEST_IMAGE: required("AGENT_COMPOSE_GUEST_IMAGE"),
   LLM_API_ENDPOINT: required("LLM_API_ENDPOINT"),
   LLM_API_KEY: required("LLM_API_KEY"),
-  LLM_MODEL: required("LLM_MODEL")
+  LLM_MODEL: required("LLM_MODEL"),
+  LLM_API_PROTOCOL: required("LLM_API_PROTOCOL", { pattern: /^(responses|chat_completions)$/ })
 };
 
 fs.mkdirSync(outputDir, { recursive: true, mode: 0o700 });
@@ -89,7 +90,7 @@ writePrivate("security-ops.secret.json", `${JSON.stringify({
 }, null, 2)}\n`);
 
 const daemonEnvNames = [
-  "LLM_API_ENDPOINT", "LLM_API_KEY", "LLM_MODEL", "AGENT_COMPOSE_GUEST_IMAGE",
+  "LLM_API_ENDPOINT", "LLM_API_KEY", "LLM_MODEL", "LLM_API_PROTOCOL", "AGENT_COMPOSE_GUEST_IMAGE",
   "SCRIPT_SERVICE_TOKEN", "WAZUH_INGRESS_TOKEN", "TRIAGE_RUNNER_TOKEN"
 ];
 writePrivate("agent-compose.env", `${daemonEnvNames.map((name) => `${name}=${shellValue(values[name])}`).join("\n")}\nOCTOBUS_BASE_URL='http://octobus:9000'\n`);

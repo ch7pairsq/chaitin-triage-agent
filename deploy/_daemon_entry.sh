@@ -26,6 +26,7 @@ require_non_empty() {
     WAZUH_INGRESS_TOKEN) value="${WAZUH_INGRESS_TOKEN:-}" ;;
     TRIAGE_RUNNER_TOKEN) value="${TRIAGE_RUNNER_TOKEN:-}" ;;
     AGENT_COMPOSE_GUEST_IMAGE) value="${AGENT_COMPOSE_GUEST_IMAGE:-}" ;;
+    LLM_API_PROTOCOL) value="${LLM_API_PROTOCOL:-}" ;;
     *) echo "agent-compose: unsupported required variable: ${name}" >&2; exit 78 ;;
   esac
   if [ -z "$value" ]; then
@@ -34,7 +35,7 @@ require_non_empty() {
   fi
 }
 
-for name in WAZUH_INGRESS_TOKEN TRIAGE_RUNNER_TOKEN AGENT_COMPOSE_GUEST_IMAGE; do
+for name in WAZUH_INGRESS_TOKEN TRIAGE_RUNNER_TOKEN AGENT_COMPOSE_GUEST_IMAGE LLM_API_PROTOCOL; do
   require_non_empty "$name"
 done
 

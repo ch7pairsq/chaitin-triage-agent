@@ -1,17 +1,4 @@
-const triageOutputSchema = {
-  type: "object",
-  additionalProperties: false,
-  required: ["mode", "success", "polled", "ingested", "processed", "traceIds", "terminalStates"],
-  properties: {
-    mode: { type: "string", enum: ["poll", "event", "hourly", "manual"] },
-    success: { type: "boolean" },
-    polled: { type: "integer", minimum: 0 },
-    ingested: { type: "integer", minimum: 0 },
-    processed: { type: "integer", minimum: 0 },
-    traceIds: { type: "array", items: { type: "string" } },
-    terminalStates: { type: "array", items: { type: "string" } },
-  },
-};
+const triageResultKeys = ["ingested", "mode", "polled", "processed", "success", "terminalStates", "traceIds"];
 
 function requireOpaqueId(value, field) {
   const normalized = String(value ?? "").trim();
@@ -25,6 +12,41 @@ function optionalOpaqueId(value, field) {
   return value === undefined || value === null || value === ""
     ? null
     : requireOpaqueId(value, field);
+}
+
+function parseTriageResult(reply, expectedMode) {
+  if (!reply || reply.success !== true) {
+    throw new Error("triage Agent did not return a successful result");
+  }
+  const raw = [reply.finalText, reply.output, reply.text]
+    .find((value) => typeof value === "string" && value.trim() !== "");
+  let result;
+  try {
+    result = JSON.parse(String(raw ?? ""));
+  } catch {
+    throw new Error("triage Agent final message is not valid JSON");
+  }
+  if (!result || Array.isArray(result) || typeof result !== "object") {
+    throw new Error("triage Agent result must be an object");
+  }
+  const keys = Object.keys(result).sort();
+  if (keys.length !== triageResultKeys.length || keys.some((key, index) => key !== triageResultKeys[index])) {
+    throw new Error("triage Agent result fields do not match the contract");
+  }
+  if (result.mode !== expectedMode || typeof result.success !== "boolean") {
+    throw new Error("triage Agent result mode or success is invalid");
+  }
+  for (const field of ["polled", "ingested", "processed"]) {
+    if (!Number.isInteger(result[field]) || result[field] < 0) {
+      throw new Error("triage Agent result counter is invalid: " + field);
+    }
+  }
+  for (const field of ["traceIds", "terminalStates"]) {
+    if (!Array.isArray(result[field]) || result[field].some((value) => typeof value !== "string")) {
+      throw new Error("triage Agent result list is invalid: " + field);
+    }
+  }
+  return result;
 }
 
 function buildPrompt(context) {
@@ -67,14 +89,9 @@ function buildPrompt(context) {
 function runTriage(context) {
   const reply = scheduler.agent(buildPrompt(context), {
     sandboxPolicy: "new",
-    outputSchema: triageOutputSchema,
   });
 
-  if (!reply || reply.success !== true || !reply.json) {
-    throw new Error("triage Agent did not return a successful structured result");
-  }
-
-  const result = reply.json;
+  const result = parseTriageResult(reply, context.mode);
   if (result.success !== true) {
     throw new Error("triage Agent reported an incomplete business run");
   }
