@@ -66,10 +66,7 @@ function buildPrompt(context) {
 
 function runTriage(context) {
   const reply = scheduler.agent(buildPrompt(context), {
-    agent: "triage-operator",
     sandboxPolicy: "new",
-    timeout: "20m",
-    title: "Security triage " + context.mode,
     outputSchema: triageOutputSchema,
   });
 

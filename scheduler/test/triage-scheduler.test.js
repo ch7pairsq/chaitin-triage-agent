@@ -69,7 +69,9 @@ test("event trigger reads only business ids from the webhook body", () => {
   assert.equal(result.mode, "event");
   assert.match(calls[0].prompt, /business-event-1/);
   assert.doesNotMatch(calls[0].prompt, /agent-compose-envelope-id/);
-  assert.equal(calls[0].options.agent, "triage-operator");
+  assert.equal(Object.hasOwn(calls[0].options, "agent"), false);
+  assert.equal(Object.hasOwn(calls[0].options, "timeout"), false);
+  assert.equal(Object.hasOwn(calls[0].options, "title"), false);
   assert.equal(calls[0].options.sandboxPolicy, "new");
   assert.equal(calls[0].options.outputSchema.type, "object");
 });
