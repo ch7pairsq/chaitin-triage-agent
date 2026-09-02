@@ -547,12 +547,13 @@ export class SecurityOpsStore {
   }
 
   markTriggerFailed(delivery, { error, retryable, maxAttempts = 9 } = {}) {
-    this.#markOutboxFailed({ delivery, error, retryable, maxAttempts, retry: this.statements.markTriggerRetry, manual: this.statements.markTriggerManual });
+    const outcome = this.#markOutboxFailed({ delivery, error, retryable, maxAttempts, retry: this.statements.markTriggerRetry, manual: this.statements.markTriggerManual });
     this.statements.releaseIngressReservation.run(this.now().toISOString(), delivery.eventId);
+    return outcome;
   }
 
   markFeishuFailed(delivery, { error, retryable, maxAttempts = 9 } = {}) {
-    this.#markOutboxFailed({ delivery, error, retryable, maxAttempts, retry: this.statements.markDeliveryRetry, manual: this.statements.markDeliveryManual });
+    return this.#markOutboxFailed({ delivery, error, retryable, maxAttempts, retry: this.statements.markDeliveryRetry, manual: this.statements.markDeliveryManual });
   }
 
   #claimOutbox({ select, claim, decode, limit, leaseMs }) {
@@ -575,10 +576,12 @@ export class SecurityOpsStore {
     const now = this.now();
     if (!retryable || attempts >= maxAttempts) {
       manual.run(safeError, now.toISOString(), delivery.deliveryId);
-      return;
+      return { status: "manual", attempts, nextAttemptAt: null };
     }
     const delayMs = Math.min(30_000 * (2 ** Math.max(0, attempts - 1)), 15 * 60_000);
-    retry.run(new Date(now.getTime() + delayMs).toISOString(), safeError, now.toISOString(), delivery.deliveryId);
+    const nextAttemptAt = new Date(now.getTime() + delayMs).toISOString();
+    retry.run(nextAttemptAt, safeError, now.toISOString(), delivery.deliveryId);
+    return { status: "pending", attempts, nextAttemptAt };
   }
 
   #manualizeExhaustedRecovery({ run, event, recoveryAttempt, now }) {

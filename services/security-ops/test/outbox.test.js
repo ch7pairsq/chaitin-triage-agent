@@ -83,6 +83,7 @@ test("trigger outbox is delivered once and not reclaimed", async () => {
 
 test("outbox worker preserves retryable failures for compensation", async () => {
   const calls = [];
+  const logs = [];
   const trigger = { deliveryId: "trigger-1", attempts: 0 };
   const delivery = { deliveryId: "feishu-1", attempts: 0 };
   const store = {
@@ -90,16 +91,32 @@ test("outbox worker preserves retryable failures for compensation", async () => 
     claimFeishuDeliveries: () => [delivery],
     markTriggerDelivered: () => calls.push("trigger-delivered"),
     markFeishuDelivered: () => calls.push("feishu-delivered"),
-    markTriggerFailed: (_entry, options) => calls.push(["trigger-failed", options.retryable]),
-    markFeishuFailed: (_entry, options) => calls.push(["feishu-failed", options.retryable])
+    markTriggerFailed: (_entry, options) => {
+      calls.push(["trigger-failed", options.retryable]);
+      return { status: "pending", attempts: 1, nextAttemptAt: "2026-09-01T00:00:30.000Z" };
+    },
+    markFeishuFailed: (_entry, options) => {
+      calls.push(["feishu-failed", options.retryable]);
+      return { status: "manual", attempts: 1, nextAttemptAt: null };
+    }
   };
   const worker = new OutboxWorker({
     store,
     agentWebhookClient: { send: async () => { throw new DeliveryError("temporary", { retryable: true }); } },
-    feishuWebhookClient: { send: async () => { throw new DeliveryError("bad request", { retryable: false }); } }
+    feishuWebhookClient: { send: async () => { throw new DeliveryError("bad request", { retryable: false }); } },
+    logger: { error: (entry) => logs.push(entry) }
   });
   assert.deepEqual(await worker.runOnce(), { triggerDelivered: 0, triggerFailed: 1, feishuDelivered: 0, feishuFailed: 1 });
   assert.deepEqual(calls, [["trigger-failed", true], ["feishu-failed", false]]);
+  assert.deepEqual(logs.map((entry) => ({
+    worker: entry.worker,
+    attempt: entry.attempt,
+    nextStatus: entry.nextStatus,
+    nextAttemptAt: entry.nextAttemptAt
+  })), [
+    { worker: "trigger_outbox", attempt: 1, nextStatus: "pending", nextAttemptAt: "2026-09-01T00:00:30.000Z" },
+    { worker: "delivery_outbox", attempt: 1, nextStatus: "manual", nextAttemptAt: null }
+  ]);
 });
 
 test("delivery recovery includes failed agent triggers and respects manual opt-in", () => {

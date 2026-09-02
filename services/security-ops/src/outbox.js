@@ -90,11 +90,12 @@ export class FeishuWebhookClient {
 }
 
 export class OutboxWorker {
-  constructor({ store, agentWebhookClient, feishuWebhookClient, limit = 20 }) {
+  constructor({ store, agentWebhookClient, feishuWebhookClient, limit = 20, logger = console }) {
     this.store = store;
     this.agentWebhookClient = agentWebhookClient;
     this.feishuWebhookClient = feishuWebhookClient;
     this.limit = limit;
+    this.logger = logger;
   }
 
   async runOnce() {
@@ -105,7 +106,8 @@ export class OutboxWorker {
         this.store.markTriggerDelivered(delivery.deliveryId);
         summary.triggerDelivered += 1;
       } catch (error) {
-        this.store.markTriggerFailed(delivery, { error: error.message, retryable: error.retryable === true });
+        const outcome = this.store.markTriggerFailed(delivery, { error: error.message, retryable: error.retryable === true });
+        this.#logFailure("trigger_outbox", delivery, error, outcome);
         summary.triggerFailed += 1;
       }
     }
@@ -115,11 +117,27 @@ export class OutboxWorker {
         this.store.markFeishuDelivered(delivery.deliveryId);
         summary.feishuDelivered += 1;
       } catch (error) {
-        this.store.markFeishuFailed(delivery, { error: error.message, retryable: error.retryable === true });
+        const outcome = this.store.markFeishuFailed(delivery, { error: error.message, retryable: error.retryable === true });
+        this.#logFailure("delivery_outbox", delivery, error, outcome);
         summary.feishuFailed += 1;
       }
     }
     return summary;
+  }
+
+  #logFailure(worker, delivery, error, outcome) {
+    this.logger.error({
+      message: "outbox delivery failed",
+      worker,
+      deliveryId: delivery.deliveryId,
+      eventId: delivery.eventId ?? null,
+      traceId: delivery.traceId ?? null,
+      attempt: outcome?.attempts ?? Number(delivery.attempts ?? 0) + 1,
+      errorCode: error?.code ?? error?.name ?? "Error",
+      retryable: error?.retryable === true,
+      nextStatus: outcome?.status ?? "unknown",
+      nextAttemptAt: outcome?.nextAttemptAt ?? null
+    });
   }
 }
 
