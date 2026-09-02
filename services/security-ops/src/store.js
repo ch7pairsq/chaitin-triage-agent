@@ -9,6 +9,9 @@ import { normalizeLimit } from "./validation.js";
 
 const MODULE_DIR = path.dirname(fileURLToPath(import.meta.url));
 const DEFAULT_MIGRATIONS_DIR = path.resolve(MODULE_DIR, "../migrations");
+const STALE_AFTER_MS = 180_000;
+const RECOVERY_BATCH_LIMIT = 5;
+const MANUALIZE_ON_RECOVERY = 3;
 
 function configureDatabase(database) {
   database.exec("PRAGMA journal_mode = WAL");
@@ -157,6 +160,36 @@ export class SecurityOpsStore {
       const existingRun = this.statements.findRunByEvent.get(eventId);
       if (existingRun) {
         const existingClaim = this.statements.findClaimByEvent.get(eventId);
+        if (existingRun.state === "requeued") {
+          if (Number(this.statements.countActiveIngressExcluding.get(eventId).count) >= this.maxActiveTriage) {
+            this.database.exec("COMMIT");
+            return decodeClaim(existingClaim, existingRun, { status: "busy", duplicate: true });
+          }
+          const claimToken = this.tokenFactory();
+          if (!/^[A-Za-z0-9_-]{43,128}$/.test(claimToken)) throw new TypeError("tokenFactory returned an invalid claim token");
+          const leaseUntil = new Date(nowDate.getTime() + this.claimLeaseMs).toISOString();
+          this.statements.reacquireRun.run(
+            schedulerRunId,
+            sandboxId,
+            hashClaimToken(claimToken),
+            leaseUntil,
+            now,
+            now,
+            existingRun.trace_id
+          );
+          this.statements.updateClaim.run(schedulerRunId, sandboxId, now, eventId);
+          this.statements.updateIngressStatus.run("processing", now, eventId);
+          this.database.exec("COMMIT");
+          return {
+            ...decodeClaim(
+              { ...existingClaim, scheduler_run_id: schedulerRunId, sandbox_id: sandboxId, claimed_at: now },
+              { ...existingRun, scheduler_run_id: schedulerRunId, sandbox_id: sandboxId, lease_until: leaseUntil },
+              { status: "acquired", duplicate: false }
+            ),
+            claimToken,
+            leaseUntil
+          };
+        }
         this.database.exec("COMMIT");
         return decodeClaim(existingClaim, existingRun, {
           status: ["completed", "manual"].includes(existingRun.state) ? existingRun.state : "busy",
@@ -166,7 +199,7 @@ export class SecurityOpsStore {
       if (!["pending", "claimed", "processing"].includes(alert.status)) {
         throw failedPrecondition("alert event is not claimable", { eventId, status: alert.status });
       }
-      if (Number(this.statements.countActiveRuns.get().count) >= this.maxActiveTriage) {
+      if (Number(this.statements.countActiveIngressExcluding.get(eventId).count) >= this.maxActiveTriage) {
         this.database.exec("COMMIT");
         return { eventId, status: "busy", duplicate: true };
       }
@@ -377,14 +410,91 @@ export class SecurityOpsStore {
     };
   }
 
+  requeueStalledAlerts() {
+    const nowDate = this.now();
+    const now = nowDate.toISOString();
+    const staleBefore = new Date(nowDate.getTime() - STALE_AFTER_MS).toISOString();
+    const rows = this.statements.selectStalledRuns.all(staleBefore, RECOVERY_BATCH_LIMIT);
+    const eventIds = [];
+    let requeued = 0;
+    let manualized = 0;
+    for (const selected of rows) {
+      this.database.exec("BEGIN IMMEDIATE");
+      try {
+        const run = this.statements.findRun.get(selected.trace_id);
+        const event = this.statements.findIngressByEvent.get(selected.event_id);
+        const activity = run?.last_activity_at ?? run?.started_at;
+        if (!run || !event || run.state !== "processing" || !activity || activity > staleBefore) {
+          this.database.exec("COMMIT");
+          continue;
+        }
+        const recoveryAttempt = Number(event.recovery_count ?? 0) + 1;
+        if (recoveryAttempt < MANUALIZE_ON_RECOVERY) {
+          const deliveryId = this.idFactory();
+          const idempotencyKey = `triage:${event.event_id}:recovery:${recoveryAttempt}`;
+          const payload = JSON.stringify({
+            eventId: event.event_id,
+            correlationId: event.correlation_id,
+            recoveryAttempt
+          });
+          this.statements.prepareRunRecovery.run(Number(run.attempt) + 1, now, run.trace_id);
+          this.statements.prepareIngressRecovery.run(recoveryAttempt, now, event.event_id);
+          this.statements.insertRecoveryTrigger.run(
+            deliveryId,
+            event.event_id,
+            recoveryAttempt,
+            idempotencyKey,
+            payload,
+            now,
+            now,
+            now
+          );
+          requeued += 1;
+        } else {
+          this.#manualizeExhaustedRecovery({ run, event, recoveryAttempt, now });
+          manualized += 1;
+        }
+        eventIds.push(event.event_id);
+        this.database.exec("COMMIT");
+      } catch (error) {
+        this.database.exec("ROLLBACK");
+        throw error;
+      }
+    }
+    return { scanned: rows.length, requeued, manualized, eventIds };
+  }
+
   claimTriggerDeliveries({ limit = 20, leaseMs = 30_000 } = {}) {
-    return this.#claimOutbox({
-      select: this.statements.selectDueTriggers,
-      claim: this.statements.claimTrigger,
-      decode: decodeTriggerDelivery,
-      limit,
-      leaseMs
-    });
+    const boundedLimit = normalizeLimit(limit);
+    const nowDate = this.now();
+    const now = nowDate.toISOString();
+    const leaseUntil = new Date(nowDate.getTime() + leaseMs).toISOString();
+    this.database.exec("BEGIN IMMEDIATE");
+    try {
+      const reserved = Number(this.statements.countReservedIngress.get().count);
+      const available = Math.max(0, this.maxActiveTriage - reserved);
+      if (available === 0) {
+        this.database.exec("COMMIT");
+        return [];
+      }
+      const rows = this.statements.selectDueTriggers.all(now, now, Math.min(boundedLimit, available));
+      const claimed = [];
+      for (const row of rows) {
+        const reservedEvent = this.statements.reserveIngress.run(now, row.event_id);
+        if (reservedEvent.changes !== 1) continue;
+        const changed = this.statements.claimTrigger.run(leaseUntil, now, row.delivery_id, now, now);
+        if (changed.changes !== 1) {
+          this.statements.releaseIngressReservation.run(now, row.event_id);
+          continue;
+        }
+        claimed.push(decodeTriggerDelivery({ ...row, status: "processing", lease_until: leaseUntil }, false));
+      }
+      this.database.exec("COMMIT");
+      return claimed;
+    } catch (error) {
+      this.database.exec("ROLLBACK");
+      throw error;
+    }
   }
 
   claimFeishuDeliveries({ limit = 20, leaseMs = 30_000 } = {}) {
@@ -407,6 +517,7 @@ export class SecurityOpsStore {
 
   markTriggerFailed(delivery, { error, retryable, maxAttempts = 9 } = {}) {
     this.#markOutboxFailed({ delivery, error, retryable, maxAttempts, retry: this.statements.markTriggerRetry, manual: this.statements.markTriggerManual });
+    this.statements.releaseIngressReservation.run(this.now().toISOString(), delivery.eventId);
   }
 
   markFeishuFailed(delivery, { error, retryable, maxAttempts = 9 } = {}) {
@@ -437,6 +548,59 @@ export class SecurityOpsStore {
     }
     const delayMs = Math.min(30_000 * (2 ** Math.max(0, attempts - 1)), 15 * 60_000);
     retry.run(new Date(now.getTime() + delayMs).toISOString(), safeError, now.toISOString(), delivery.deliveryId);
+  }
+
+  #manualizeExhaustedRecovery({ run, event, recoveryAttempt, now }) {
+    const evidenceRefs = [`event:${event.event_id}`, `trace:${run.trace_id}:recovery-exhausted`];
+    const evidenceJson = JSON.stringify(evidenceRefs);
+    const internalToken = `internal-recovery:${run.trace_id}:${recoveryAttempt}`;
+    const internalTokenHash = createHash("sha256").update(internalToken).digest("hex");
+    const resultId = this.idFactory();
+    const ticketId = this.idFactory();
+    const deliveryId = this.idFactory();
+    const stepId = this.idFactory();
+    this.statements.upsertManualPolicy.run(
+      run.trace_id,
+      evidenceJson,
+      internalToken,
+      internalTokenHash,
+      now
+    );
+    this.statements.upsertManualResult.run(
+      resultId,
+      run.trace_id,
+      evidenceJson,
+      "研判运行连续停滞，已安全转入人工复核并请求补充证据。",
+      internalTokenHash,
+      now
+    );
+    const result = this.statements.findResultByTrace.get(run.trace_id);
+    this.statements.insertTicketIfMissing.run(ticketId, run.trace_id, result.result_id, now, now);
+    const ticket = this.statements.findTicketByTrace.get(run.trace_id);
+    const payload = JSON.stringify({
+      msg_type: "interactive",
+      card: {
+        header: { title: { tag: "plain_text", content: "安全告警需人工复核" } },
+        elements: [{
+          tag: "div",
+          text: { tag: "lark_md", content: `事件 ${event.event_id}\n工单 ${ticket.ticket_id}\n动作 request_additional_evidence` }
+        }]
+      }
+    });
+    this.statements.insertDeliveryIfMissing.run(
+      deliveryId,
+      run.trace_id,
+      ticket.ticket_id,
+      `feishu:${ticket.ticket_id}`,
+      payload,
+      now,
+      now,
+      now
+    );
+    const sequence = Number(this.statements.nextStepSequence.get(run.trace_id).sequence);
+    this.statements.insertStep.run(stepId, run.trace_id, sequence, "FailSafeManualization", "completed", evidenceJson, now);
+    this.statements.manualizeRun.run(now, run.trace_id);
+    this.statements.manualizeIngress.run(recoveryAttempt, "recovery attempts exhausted", now, event.event_id);
   }
 
   getAlertContext(eventId) {
@@ -500,7 +664,8 @@ function prepareStatements(database) {
     countTrigger: database.prepare("SELECT COUNT(*) AS count FROM trigger_outbox"),
     findClaimByEvent: database.prepare("SELECT * FROM alert_claims WHERE event_id = ?"),
     findRunByEvent: database.prepare("SELECT * FROM triage_runs WHERE event_id = ?"),
-    countActiveRuns: database.prepare("SELECT COUNT(*) AS count FROM triage_runs WHERE state = 'processing'"),
+    countActiveIngressExcluding: database.prepare("SELECT COUNT(*) AS count FROM ingress_events WHERE status IN ('claimed', 'processing') AND event_id <> ?"),
+    countReservedIngress: database.prepare("SELECT COUNT(*) AS count FROM ingress_events WHERE status IN ('claimed', 'processing')"),
     insertClaim: database.prepare(`INSERT INTO alert_claims (claim_id, event_id, trace_id, scheduler_run_id, sandbox_id, claimed_at) VALUES (?, ?, ?, ?, ?, ?)`),
     insertRun: database.prepare(`
       INSERT INTO triage_runs
@@ -508,9 +673,40 @@ function prepareStatements(database) {
       VALUES (?, ?, ?, ?, 'processing', ?, 1, ?, ?, ?)
     `),
     findRun: database.prepare("SELECT * FROM triage_runs WHERE trace_id = ?"),
+    reacquireRun: database.prepare(`
+      UPDATE triage_runs
+      SET scheduler_run_id = ?, sandbox_id = ?, state = 'processing', claim_token_hash = ?,
+          lease_until = ?, last_activity_at = ?, started_at = ?
+      WHERE trace_id = ? AND state = 'requeued'
+    `),
+    updateClaim: database.prepare("UPDATE alert_claims SET scheduler_run_id = ?, sandbox_id = ?, claimed_at = ? WHERE event_id = ?"),
     refreshRunLease: database.prepare(`
       UPDATE triage_runs SET lease_until = ?, last_activity_at = ?
       WHERE trace_id = ? AND claim_token_hash = ? AND state = 'processing'
+    `),
+    selectStalledRuns: database.prepare(`
+      SELECT trace_id, event_id
+      FROM triage_runs
+      WHERE state = 'processing' AND COALESCE(last_activity_at, started_at) <= ?
+      ORDER BY COALESCE(last_activity_at, started_at), trace_id
+      LIMIT ?
+    `),
+    prepareRunRecovery: database.prepare(`
+      UPDATE triage_runs
+      SET state = 'requeued', claim_token_hash = NULL, attempt = ?, lease_until = NULL, last_activity_at = ?
+      WHERE trace_id = ? AND state = 'processing'
+    `),
+    prepareIngressRecovery: database.prepare(`
+      UPDATE ingress_events
+      SET status = 'pending', recovery_count = ?, next_recovery_at = NULL,
+          last_recovery_error = 'triage lease expired', updated_at = ?
+      WHERE event_id = ?
+    `),
+    insertRecoveryTrigger: database.prepare(`
+      INSERT INTO trigger_outbox
+        (delivery_id, event_id, delivery_kind, recovery_attempt, idempotency_key,
+         payload_json, status, attempts, next_attempt_at, created_at, updated_at)
+      VALUES (?, ?, 'recovery', ?, ?, ?, 'pending', 0, ?, ?, ?)
     `),
     updateIngressStatus: database.prepare("UPDATE ingress_events SET status = ?, updated_at = ? WHERE event_id = ?"),
     nextStepSequence: database.prepare("SELECT COALESCE(MAX(sequence), 0) + 1 AS sequence FROM triage_steps WHERE trace_id = ?"),
@@ -524,7 +720,42 @@ function prepareStatements(database) {
     insertTicket: database.prepare(`INSERT INTO manual_tickets (ticket_id, trace_id, result_id, status, created_at, updated_at) VALUES (?, ?, ?, 'open', ?, ?)`),
     findDeliveryByTicket: database.prepare("SELECT * FROM delivery_outbox WHERE ticket_id = ?"),
     insertDelivery: database.prepare(`INSERT INTO delivery_outbox (delivery_id, trace_id, ticket_id, idempotency_key, payload_json, status, attempts, next_attempt_at, created_at, updated_at) VALUES (?, ?, ?, ?, ?, 'pending', 0, ?, ?, ?)`),
+    upsertManualPolicy: database.prepare(`
+      INSERT INTO policy_decisions
+        (trace_id, decision, action, evidence_json, knowledge_json, policy_status,
+         ticket_required, auto_close_allowed, decision_token, decision_token_hash, created_at)
+      VALUES (?, 'manual_review', 'request_additional_evidence', ?, '[]', 'recovery_fallback', 1, 0, ?, ?, ?)
+      ON CONFLICT(trace_id) DO UPDATE SET
+        decision = 'manual_review', action = 'request_additional_evidence', evidence_json = excluded.evidence_json,
+        knowledge_json = '[]', policy_status = 'recovery_fallback', ticket_required = 1,
+        auto_close_allowed = 0, decision_token = excluded.decision_token,
+        decision_token_hash = excluded.decision_token_hash
+    `),
+    upsertManualResult: database.prepare(`
+      INSERT INTO triage_results
+        (result_id, trace_id, decision, action, evidence_json, knowledge_json, narrative, decision_token_hash, created_at)
+      VALUES (?, ?, 'manual_review', 'request_additional_evidence', ?, '[]', ?, ?, ?)
+      ON CONFLICT(trace_id) DO UPDATE SET
+        decision = 'manual_review', action = 'request_additional_evidence', evidence_json = excluded.evidence_json,
+        knowledge_json = '[]', narrative = excluded.narrative, decision_token_hash = excluded.decision_token_hash
+    `),
+    insertTicketIfMissing: database.prepare(`
+      INSERT OR IGNORE INTO manual_tickets
+        (ticket_id, trace_id, result_id, status, created_at, updated_at)
+      VALUES (?, ?, ?, 'open', ?, ?)
+    `),
+    insertDeliveryIfMissing: database.prepare(`
+      INSERT OR IGNORE INTO delivery_outbox
+        (delivery_id, trace_id, ticket_id, idempotency_key, payload_json, status, attempts, next_attempt_at, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, 'pending', 0, ?, ?, ?)
+    `),
     finalizeRun: database.prepare("UPDATE triage_runs SET state = 'completed', finalized_at = ? WHERE trace_id = ?"),
+    manualizeRun: database.prepare("UPDATE triage_runs SET state = 'manual', claim_token_hash = NULL, lease_until = NULL, finalized_at = ? WHERE trace_id = ?"),
+    manualizeIngress: database.prepare(`
+      UPDATE ingress_events
+      SET status = 'manual', recovery_count = ?, next_recovery_at = NULL, last_recovery_error = ?, updated_at = ?
+      WHERE event_id = ?
+    `),
     recoverManualTriggers: database.prepare(`
       UPDATE trigger_outbox
       SET status = 'pending', next_attempt_at = ?, updated_at = ?, lease_until = NULL
@@ -561,6 +792,8 @@ function prepareStatements(database) {
       UPDATE trigger_outbox SET status = 'processing', lease_until = ?, updated_at = ?
       WHERE delivery_id = ? AND ((status = 'pending' AND next_attempt_at <= ?) OR (status = 'processing' AND lease_until <= ?))
     `),
+    reserveIngress: database.prepare("UPDATE ingress_events SET status = 'claimed', updated_at = ? WHERE event_id = ? AND status = 'pending'"),
+    releaseIngressReservation: database.prepare("UPDATE ingress_events SET status = 'pending', updated_at = ? WHERE event_id = ? AND status = 'claimed'"),
     markTriggerDelivered: database.prepare("UPDATE trigger_outbox SET status = 'delivered', lease_until = NULL, last_error = NULL, updated_at = ? WHERE delivery_id = ?"),
     markTriggerRetry: database.prepare("UPDATE trigger_outbox SET status = 'pending', attempts = attempts + 1, next_attempt_at = ?, lease_until = NULL, last_error = ?, updated_at = ? WHERE delivery_id = ?"),
     markTriggerManual: database.prepare("UPDATE trigger_outbox SET status = 'manual', attempts = attempts + 1, lease_until = NULL, last_error = ?, updated_at = ? WHERE delivery_id = ?"),

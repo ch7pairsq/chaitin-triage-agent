@@ -127,3 +127,34 @@ test("delivery recovery includes failed agent triggers and respects manual opt-i
     rmSync(directory, { recursive: true, force: true });
   }
 });
+
+test("trigger dispatch reserves only the two available triage slots", () => {
+  const directory = mkdtempSync(path.join(os.tmpdir(), "security-ops-slots-"));
+  let sequence = 0;
+  const store = new SecurityOpsStore({
+    databasePath: path.join(directory, "triage.db"),
+    now: () => new Date("2026-09-01T00:00:00.000Z"),
+    idFactory: () => `id-${++sequence}`
+  });
+  try {
+    const service = new SecurityOpsService({ store });
+    for (let index = 1; index <= 3; index += 1) {
+      service.ingestAlertEvent({
+        eventId: `event-${index}`,
+        wazuhAlertId: `wazuh-${index}`,
+        occurredAt: "2026-09-01T00:00:00Z",
+        alertJson: { rule: { id: "5710" } }
+      });
+    }
+    const firstBatch = store.claimTriggerDeliveries({ limit: 20 });
+    assert.equal(firstBatch.length, 2);
+    assert.equal(store.database.prepare("SELECT COUNT(*) AS count FROM ingress_events WHERE status = 'claimed'").get().count, 2);
+    assert.equal(store.claimTriggerDeliveries({ limit: 20 }).length, 0);
+
+    store.markTriggerFailed(firstBatch[0], { error: "temporary", retryable: true });
+    assert.equal(store.database.prepare("SELECT COUNT(*) AS count FROM ingress_events WHERE status = 'claimed'").get().count, 1);
+  } finally {
+    store.close();
+    rmSync(directory, { recursive: true, force: true });
+  }
+});

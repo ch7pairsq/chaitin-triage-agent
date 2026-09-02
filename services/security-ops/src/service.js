@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import { hashDecisionToken, issueDecisionToken, verifyDecisionToken } from "./decision-token.js";
 import { failedPrecondition, invalidArgument } from "./errors.js";
 import { normalizeStringArray, parseContextJson } from "./knowledge-repository.js";
-import { normalizeClaimToken, normalizeIngestAlertEvent, normalizeLimit } from "./validation.js";
+import { normalizeClaimToken, normalizeIngestAlertEvent, normalizeLimit, normalizeRequeueStalledAlerts } from "./validation.js";
 
 export class SecurityOpsService {
   constructor({ store, knowledgeRepository = null, decisionTokenSecret = "", eventIdFactory = randomUUID, now = () => new Date() }) {
@@ -25,6 +25,11 @@ export class SecurityOpsService {
 
   listPendingAlerts(request = {}) {
     return { alerts: this.store.listPendingAlerts(request) };
+  }
+
+  requeueStalledAlerts(request = {}) {
+    normalizeRequeueStalledAlerts(request);
+    return this.store.requeueStalledAlerts();
   }
 
   getAlertContext(request) {

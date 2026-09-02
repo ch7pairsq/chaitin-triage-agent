@@ -80,6 +80,11 @@ export const octobusService = defineService({
       return result;
     }),
     [`${FULL_SERVICE}/ListPendingAlerts`]: unary((service, request) => service.listPendingAlerts(request)),
+    [`${FULL_SERVICE}/RequeueStalledAlerts`]: unary((service, request, _context, backend) => {
+      const result = service.requeueStalledAlerts(request);
+      backend.kick();
+      return result;
+    }),
     [`${FULL_SERVICE}/ClaimAlert`]: unary((service, request) => service.claimAlert(request)),
     [`${FULL_SERVICE}/GetAlertContext`]: unary((service, request) => {
       const result = service.getAlertContext(request);
