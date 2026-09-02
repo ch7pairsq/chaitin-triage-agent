@@ -95,6 +95,8 @@ sequenceDiagram
 
 轮询 Agent 只读取和接入，不在同一运行中继续研判。接入事务提交后由 SecurityOps outbox 发布 agent-compose 事件，避免“告警已写入但事件丢失”。重复 Wazuh alert 使用稳定 `eventId=wazuh:<alertId>`，不会生成第二条业务记录。
 
+`POST webhook.wazuh.alert` 是 agent-compose 官方事件入口，属于触发面，不包装成 OctoBus 业务方法。它只携带 `eventId` 和 `correlationId` 等不透明标识；事件 Agent 随后的告警上下文读取、状态推进、人工工单和通知入队全部通过 OctoBus `triage-runner`。因此简化数据流仍是 `Wazuh -> OctoBus -> agent-compose Agent -> OctoBus -> SecurityOps -> SQLite/飞书`，同时避免把 OctoBus 误用为事件总线。
+
 Webhook 返回 `202` 或 agent-compose 事件状态变为 `published_to_bus` 只表示事件层已接收，不表示研判完成。业务完成必须以 SecurityOps 终态 trace 为准；事件运行中断后，小时任务会重新取得 `pending` 或仍处于 `processing` 的未完成事件，并沿同一幂等链继续执行。领域、攻击类型、上下文和证据均由 SecurityOps 从 Wazuh 告警提取；缺少可信分类时固定进入 `unclassified/other_attack` 人工分类路径，Agent 不得自行补全。
 
 ### 3.2 小时级补偿
@@ -282,6 +284,7 @@ docker compose --env-file .env \
 
 ```sh
 test -s deploy/stacks/wazuh/config/wazuh_indexer_ssl_certs/root-ca.pem
+test "$(stat -c '%a' deploy/stacks/wazuh/config/wazuh_indexer_ssl_certs/root-ca.pem)" = 444
 test -s deploy/stacks/wazuh/generated/internal_users.yml
 test -s deploy/stacks/triage-platform/generated/security-ops.secret.json
 docker compose --env-file .env -f deploy/stacks/wazuh/docker-compose.yml config --quiet
@@ -299,7 +302,7 @@ docker wait wazuh-role-bootstrap
 test "$(docker inspect --format '{{.State.ExitCode}}' wazuh-role-bootstrap)" = 0
 ```
 
-Portainer 方式：新建 `chaitin-wazuh` Stack，使用本仓库 `deploy/stacks/wazuh/docker-compose.yml`，把 `.env` 中对应变量配置到 Stack environment。`REPO_ROOT` 必须指向本机 clone。启动后确认 manager、indexer、dashboard 正常，`wazuh-role-bootstrap` 以 0 退出。
+Portainer 方式：新建 `chaitin-wazuh` Stack，使用本仓库 `deploy/stacks/wazuh/docker-compose.yml`，把 `.env` 中对应变量配置到 Stack environment。`REPO_ROOT` 必须指向本机 clone。启动后确认 manager、indexer、dashboard 正常，`wazuh-role-bootstrap` 以 0 退出。`root-ca.pem` 是公开验证材料，`prepare-config.sh` 将其设为 `0444`，以同时供 uid 1000 的 Wazuh 组件和 uid 999 的 OctoBus 能力进程只读使用；任何私钥权限都不会因此放宽。
 
 ### 7.8 启动 triage-platform Stack 并导入能力
 

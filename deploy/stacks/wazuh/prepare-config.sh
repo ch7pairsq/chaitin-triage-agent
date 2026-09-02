@@ -59,9 +59,10 @@ docker run --rm \
   node:22.23.2-alpine3.24 \
   node deploy/stacks/wazuh/tools/render-config.mjs
 
-# Wazuh indexer, dashboard and the role bootstrap run as uid 1000. Keep the
-# generated credential-bearing files private while making them readable by
-# their actual runtime identity. No private key permissions are changed here.
+# Wazuh indexer, dashboard and the role bootstrap run as uid 1000, while the
+# OctoBus Wazuh connector runs as uid 999. The root CA is public verification
+# material and must be readable by both identities. Credential-bearing files
+# remain private and no private key permissions are changed here.
 docker run --rm \
   --volume "$host_repo_root:/repo" \
   --workdir /repo \
@@ -71,7 +72,7 @@ docker run --rm \
       deploy/stacks/wazuh/config/wazuh_indexer_ssl_certs/root-ca.pem \
       deploy/stacks/wazuh/generated/internal_users.yml \
       deploy/stacks/wazuh/generated/wazuh.yml
-    chmod 0400 deploy/stacks/wazuh/config/wazuh_indexer_ssl_certs/root-ca.pem
+    chmod 0444 deploy/stacks/wazuh/config/wazuh_indexer_ssl_certs/root-ca.pem
     chmod 0600 \
       deploy/stacks/wazuh/generated/internal_users.yml \
       deploy/stacks/wazuh/generated/wazuh.yml

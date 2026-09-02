@@ -139,7 +139,7 @@ assert(/hash\.sh[\s\\]*\n[\s-]*-env WAZUH_HASH_PASSWORD/.test(wazuhPrepare), "Wa
 assert(/--env-file "\$password_env"/.test(wazuhPrepare), "Wazuh password hashing must read a private environment file");
 assert(!/hash\.sh[\s\\]*\n[\s|]*\|/.test(wazuhPrepare), "Wazuh password hashing must not rely on console stdin");
 assert(/chown 1000:1000[\s\\]*\n[\s\S]*root-ca\.pem[\s\\]*\n[\s\S]*internal_users\.yml[\s\\]*\n[\s\S]*wazuh\.yml/.test(wazuhPrepare), "Wazuh runtime files must belong to the uid 1000 service identity");
-assert(/chmod 0400 deploy\/stacks\/wazuh\/config\/wazuh_indexer_ssl_certs\/root-ca\.pem/.test(wazuhPrepare), "Wazuh public CA must remain owner-readable only");
+assert(/chmod 0444 deploy\/stacks\/wazuh\/config\/wazuh_indexer_ssl_certs\/root-ca\.pem/.test(wazuhPrepare), "Wazuh public CA must be readable by both Wazuh and OctoBus runtime identities");
 assert(/chmod 0600[\s\\]*\n[\s\S]*internal_users\.yml[\s\\]*\n[\s\S]*wazuh\.yml/.test(wazuhPrepare), "Wazuh generated credential files must remain owner-readable only");
 assert(!/chmod[^\n]*(?:-key\.pem|admin\.pem)/.test(wazuhPrepare), "Wazuh private key permissions must not be relaxed by prepare-config");
 

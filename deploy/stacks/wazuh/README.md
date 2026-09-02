@@ -17,6 +17,8 @@ docker compose --env-file .env \
   -f deploy/stacks/wazuh/docker-compose.yml up -d --build
 ```
 
+`prepare-config.sh` 会把公开的 `root-ca.pem` 设为 `0444`，供 uid 1000 的 Wazuh 组件和 uid 999 的 OctoBus Wazuh connector 共同只读使用。生成配置仍为 `0600`，私钥权限不会放宽。
+
 `wazuh-role-bootstrap` 会等待 Indexer 可用，然后幂等创建 `triage_alert_reader`：集群权限仅为 `cluster_composite_ops_ro`，索引权限仅为 `wazuh-alerts-*` 的 `read`，并映射到 `triage_reader`。该容器应以 0 退出。
 
 ```sh

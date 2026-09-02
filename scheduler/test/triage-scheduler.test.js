@@ -5,7 +5,7 @@ import test from "node:test";
 
 const script = readFileSync(new URL("../triage-scheduler.js", import.meta.url), "utf8");
 
-function loadScheduler({ resultSuccess = true } = {}) {
+function loadScheduler({ resultSuccess = true, formatResult = JSON.stringify } = {}) {
   const registrations = { events: new Map(), crons: new Map() };
   const calls = [];
   const scheduler = {
@@ -28,7 +28,7 @@ function loadScheduler({ resultSuccess = true } = {}) {
       };
       return {
         success: true,
-        finalText: JSON.stringify(result),
+        finalText: formatResult(result),
       };
     },
     log() {},
@@ -101,5 +101,28 @@ test("an incomplete Agent business result fails the outer scheduler run", () => 
   assert.throws(
     () => registrations.crons.get("hourly-security-triage").callback(),
     /incomplete business run/
+  );
+});
+
+test("extracts one fenced result from model metadata and keeps strict contract validation", () => {
+  const { registrations } = loadScheduler({
+    formatResult(result) {
+      return "Model metadata warning\nResult follows:\n```json\n" + JSON.stringify(result) + "\n```\nNo further data.";
+    },
+  });
+  const result = registrations.crons.get("wazuh-alert-poll").callback();
+  assert.equal(result.mode, "poll");
+  assert.equal(result.success, true);
+});
+
+test("rejects an ambiguous model response containing multiple business results", () => {
+  const { registrations } = loadScheduler({
+    formatResult(result) {
+      return JSON.stringify(result) + "\n" + JSON.stringify(result);
+    },
+  });
+  assert.throws(
+    () => registrations.crons.get("wazuh-alert-poll").callback(),
+    /ambiguous JSON results/
   );
 });

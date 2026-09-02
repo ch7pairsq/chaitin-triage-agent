@@ -14,18 +14,81 @@ function optionalOpaqueId(value, field) {
     : requireOpaqueId(value, field);
 }
 
+function parseObject(value) {
+  try {
+    const parsed = JSON.parse(value);
+    return parsed && !Array.isArray(parsed) && typeof parsed === "object" ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+function extractJsonObjects(text) {
+  const objects = [];
+  let start = -1;
+  let depth = 0;
+  let inString = false;
+  let escaped = false;
+  for (let index = 0; index < text.length; index += 1) {
+    const character = text[index];
+    if (start < 0) {
+      if (character === "{") {
+        start = index;
+        depth = 1;
+        inString = false;
+        escaped = false;
+      }
+      continue;
+    }
+    if (inString) {
+      if (escaped) escaped = false;
+      else if (character === "\\") escaped = true;
+      else if (character === '"') inString = false;
+      continue;
+    }
+    if (character === '"') inString = true;
+    else if (character === "{") depth += 1;
+    else if (character === "}") {
+      depth -= 1;
+      if (depth === 0) {
+        const parsed = parseObject(text.slice(start, index + 1));
+        if (parsed) objects.push(parsed);
+        start = -1;
+      }
+    }
+  }
+  return objects;
+}
+
+function extractTriageObject(raw, expectedMode) {
+  const text = String(raw ?? "").trim();
+  const direct = parseObject(text);
+  if (direct) return direct;
+
+  const fenced = [];
+  const fencePattern = /```(?:json)?\s*([\s\S]*?)```/gi;
+  for (const match of text.matchAll(fencePattern)) {
+    const parsed = parseObject(match[1].trim());
+    if (parsed) fenced.push(parsed);
+  }
+  if (fenced.length === 1) return fenced[0];
+
+  const candidates = fenced.length > 1 ? fenced : extractJsonObjects(text);
+  const matching = candidates.filter((candidate) =>
+    candidate.mode === expectedMode && typeof candidate.success === "boolean"
+  );
+  if (matching.length === 1) return matching[0];
+  if (matching.length > 1) throw new Error("triage Agent final message contains ambiguous JSON results");
+  throw new Error("triage Agent final message does not contain a JSON result");
+}
+
 function parseTriageResult(reply, expectedMode) {
   if (!reply || reply.success !== true) {
     throw new Error("triage Agent did not return a successful result");
   }
   const raw = [reply.finalText, reply.output, reply.text]
     .find((value) => typeof value === "string" && value.trim() !== "");
-  let result;
-  try {
-    result = JSON.parse(String(raw ?? ""));
-  } catch {
-    throw new Error("triage Agent final message is not valid JSON");
-  }
+  const result = extractTriageObject(raw, expectedMode);
   if (!result || Array.isArray(result) || typeof result !== "object") {
     throw new Error("triage Agent result must be an object");
   }
@@ -76,12 +139,12 @@ function buildPrompt(context) {
     context.mode === "poll"
       ? "All Wazuh reads and ingress writes MUST use the OctoBus MCP tools exposed by the wazuh-ingress capset."
       : "All triage reads and writes MUST use the OctoBus MCP tools exposed by the triage-runner capset.",
-    "Do not use shell, exec, HTTP, filesystem, SQLite, Wazuh, Feishu, or any direct backend client.",
+    "Use shell only to run grpcurl against CAP_GRPC_TARGET exactly as described by the injected MPI catalog. Do not inspect the filesystem or environment and do not use exec, HTTP, SQLite, Wazuh, Feishu, or any direct backend client.",
     eventLine,
     context.correlationId ? "Expected correlationId: " + context.correlationId + "." : "",
     triageSequence,
     ...executionRules,
-    "Return only JSON matching the supplied output schema. polled is the number returned by Wazuh, ingested is the number accepted or already present, and processed is the number that reached a returned terminal state.",
+    "Return only one JSON object with exactly these keys: success, mode, polled, ingested, processed, traceIds, terminalStates. Do not use a Markdown fence or add explanation. polled is the number returned by Wazuh, ingested is the number accepted or already present, and processed is the number that reached a returned terminal state.",
     "Mode: " + context.mode,
   ].filter(Boolean).join("\n");
 }
