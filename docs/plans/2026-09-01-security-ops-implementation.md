@@ -1,5 +1,7 @@
 # SecurityOps 闭环重构实施计划
 
+> 状态：该计划记录首轮实现。2026-09-02 起，触发、租约恢复、并发和统一部署的后续工作由 [`2026-09-02-deterministic-intake-recovery.md`](./2026-09-02-deterministic-intake-recovery.md) 接续；若两份计划冲突，以新计划和对应 ADR 为准。
+
 **目标：** 在 `develop` 分支按设计文档完成可独立复现的 Wazuh、agent-compose、OctoBus、SecurityOps、人工工单与飞书闭环。
 
 **架构：** `wazuh-connector` 独立封装 Wazuh 只读查询；SecurityOps 独占业务状态、确定性策略、人工工单和飞书投递；agent-compose 只负责事件、调度和 Agent Runtime。Agent 只通过 OctoBus MCP 调用两类能力服务，三个控制/业务 SQLite 按所有权隔离。
