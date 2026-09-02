@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "bin": {
-    "wazuh-connector-service": "src/runtime.js"
+    "wazuh-connector": "src/runtime.js"
   },
   "files": [
     "src/",
