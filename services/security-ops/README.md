@@ -17,4 +17,4 @@ npm run pack:check
 
 授权降噪只认可通过 `triage-ops` capset 写入的授权记录。记录必须处于 active 状态、在有效期内、与告警资产/账号/规则/变更窗口精确匹配并包含证据引用。告警负载中的布尔标记不具备授权效力，缺失、过期、撤销或范围不匹配时按普通告警继续研判。
 
-`knowledge-rule-engine.js` 只执行白名单路径和有限操作符。`MatchKnowledge` 在同领域执行规则，事件类型只作提示；`EvaluatePolicy` 在服务端重新执行并把评估摘要写入 `policy_decisions.evaluation_json`。缺事实、排除命中、确认命中和事实完整但未匹配分别进入补证、带人工复核的降噪、升级和人工分类。`RecordTriageResult` 在当前 `claimToken + traceId` 租约围栏内直接绑定已持久化策略，不生成或记录需要 Agent 转抄的第二套决策令牌。
+`knowledge-rule-engine.js` 只执行白名单路径和有限操作符。`MatchKnowledge` 和 `EvaluatePolicy` 根据当前 `claimToken + traceId` 从已接入告警重建权威上下文，不接收 Agent 转抄的领域、事件类型、上下文或知识候选；前者在同领域执行规则且事件类型只作提示，后者再次执行并把评估摘要写入 `policy_decisions.evaluation_json`。缺事实、排除命中、确认命中和事实完整但未匹配分别进入补证、带人工复核的降噪、升级和人工分类。`RecordTriageResult` 在同一租约围栏内直接绑定已持久化策略，不生成或记录需要 Agent 转抄的第二套决策令牌。

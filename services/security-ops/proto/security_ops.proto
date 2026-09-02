@@ -87,9 +87,6 @@ message EnrichAlertResponse {
 
 message MatchKnowledgeRequest {
   string trace_id = 1;
-  string domain_id = 2;
-  string attack_type_id = 3;
-  string context_json = 4;
   string claim_token = 5;
 }
 
@@ -108,8 +105,6 @@ message MatchKnowledgeResponse {
 
 message EvaluatePolicyRequest {
   string trace_id = 1;
-  string context_json = 2;
-  repeated string knowledge_ids = 3;
   string claim_token = 4;
 }
 

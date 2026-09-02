@@ -1,5 +1,5 @@
 
-°1
+€0
 security_ops.protosecurity.ops.v1"Á
 IngestAlertEventRequest
 event_id (	ReventId$
@@ -57,12 +57,9 @@ claimToken"»
 context_json (	RcontextJson#
 evidence_refs (	RevidenceRefs
 	domain_id (	RdomainId$
-attack_type_id (	RattackTypeId"¹
+attack_type_id (	RattackTypeId"S
 MatchKnowledgeRequest
-trace_id (	RtraceId
-	domain_id (	RdomainId$
-attack_type_id (	RattackTypeId!
-context_json (	RcontextJson
+trace_id (	RtraceId
 claim_token (	R
 claimToken"Ò
 KnowledgeMatch!
@@ -73,11 +70,9 @@ claimToken"Ò
 evaluation_json (	RevaluationJson"n
 MatchKnowledgeResponse
 trace_id (	RtraceId9
-matches (2.security.ops.v1.KnowledgeMatchRmatches"›
+matches (2.security.ops.v1.KnowledgeMatchRmatches"S
 EvaluatePolicyRequest
-trace_id (	RtraceId!
-context_json (	RcontextJson#
-knowledge_ids (	RknowledgeIds
+trace_id (	RtraceId
 claim_token (	R
 claimToken"Þ
 EvaluatePolicyResponse

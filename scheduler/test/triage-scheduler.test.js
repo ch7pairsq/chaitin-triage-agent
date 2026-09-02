@@ -83,6 +83,9 @@ test("triage prompt passes the acquired claim token to all eight leased methods"
   assert.doesNotMatch(prompt, /GetTriageTrace|ListPendingAlerts|ListAlerts|IngestAlertEvent/);
   assert.match(prompt, /Do not call grpcurl list, describe, or any reflection method/);
   assert.match(prompt, /GetAlertContext \{eventId,claimToken\}/);
+  assert.match(prompt, /MatchKnowledge \{traceId,claimToken\}/);
+  assert.match(prompt, /EvaluatePolicy \{traceId,claimToken\}/);
+  assert.doesNotMatch(prompt, /MatchKnowledge \{traceId,domainId|EvaluatePolicy \{traceId,contextJson/);
   assert.match(prompt, /FinalizeTriage \{traceId,claimToken\}/);
   assert.match(prompt, /first character must be \{/);
   assert.match(prompt, /Do not use Markdown fences/);

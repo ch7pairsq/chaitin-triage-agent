@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 
 import { failedPrecondition, invalidArgument } from "./errors.js";
-import { normalizeStringArray, parseContextJson } from "./knowledge-repository.js";
+import { normalizeStringArray } from "./knowledge-repository.js";
 import { decideKnowledgePolicy } from "./knowledge-policy.js";
 import { evaluateKnowledgeRule } from "./knowledge-rule-engine.js";
 import {
@@ -65,23 +65,7 @@ export class SecurityOpsService {
   enrichAlert(request) {
     const traceId = requiredId(request?.traceId, "traceId");
     this.#assertClaim(traceId, request);
-    const trace = this.store.getTriageTrace(traceId);
-    const alert = this.store.getAlertContext(trace.eventId);
-    const evidenceRefs = [`wazuh-alert:${alert.wazuhAlertId}`, `event:${trace.eventId}`];
-    const alertData = alert.alert?.data && typeof alert.alert.data === "object" ? alert.alert.data : alert.alert;
-    const domainId = optionalKnowledgeId(alertData?.domain_id ?? alertData?.domainId) || "unclassified";
-    const attackTypeId = optionalKnowledgeId(alertData?.attack_type_id ?? alertData?.attackTypeId) || "other_attack";
-    const observedEvidence = normalizeStringArray(alertData?.observed_evidence ?? alertData?.observedEvidence);
-    const context = {
-      ...alert.alert,
-      eventId: trace.eventId,
-      traceId,
-      correlationId: trace.correlationId,
-      evidenceRefs,
-      domainId,
-      attackTypeId,
-      observedEvidence
-    };
+    const { context, evidenceRefs, domainId, attackTypeId } = this.#buildAuthoritativeContext(traceId);
     this.store.appendStep({ traceId, method: "EnrichAlert", evidenceRefs });
     return { traceId, context, contextJson: JSON.stringify(context), evidenceRefs, domainId, attackTypeId };
   }
@@ -90,9 +74,7 @@ export class SecurityOpsService {
     if (!this.knowledgeRepository) throw failedPrecondition("approved runtime knowledge is not configured");
     const traceId = requiredId(request?.traceId, "traceId");
     this.#assertClaim(traceId, request);
-    const domainId = requiredId(request?.domainId, "domainId");
-    const attackTypeId = requiredId(request?.attackTypeId, "attackTypeId");
-    const context = parseContextJson(request?.contextJson ?? request?.context);
+    const { context, domainId, attackTypeId } = this.#buildAuthoritativeContext(traceId);
     const matches = this.knowledgeRepository.match({ domainId, attackTypeId, context });
     const evidenceRefs = normalizeStringArray(matches.flatMap((match) => match.evidenceRefs));
     this.store.appendStep({ traceId, method: "MatchKnowledge", evidenceRefs });
@@ -103,9 +85,9 @@ export class SecurityOpsService {
     if (!this.knowledgeRepository) throw failedPrecondition("approved runtime knowledge is not configured");
     const traceId = requiredId(request?.traceId, "traceId");
     this.#assertClaim(traceId, request);
-    const context = parseContextJson(request?.contextJson ?? request?.context);
-    const knowledgeRefs = normalizeStringArray(request?.knowledgeIds ?? request?.knowledgeRefs);
-    const records = knowledgeRefs.map((knowledgeId) => this.knowledgeRepository.get(knowledgeId)).filter(Boolean);
+    const { context, domainId, attackTypeId } = this.#buildAuthoritativeContext(traceId);
+    const matches = this.knowledgeRepository.match({ domainId, attackTypeId, context });
+    const records = matches.map((match) => this.knowledgeRepository.get(match.knowledgeId)).filter(Boolean);
     const evaluation = records.map((record) => ({
       knowledgeId: record.knowledgeId,
       ...evaluateKnowledgeRule(record.executableRule, context)
@@ -219,6 +201,31 @@ export class SecurityOpsService {
     }
     const candidates = authorizationScopeCandidates(record.scopeType, context);
     return candidates.has(record.scopeValue) && record.evidenceRefs.length > 0 ? record : null;
+  }
+
+  #buildAuthoritativeContext(traceId) {
+    const trace = this.store.getTriageTrace(traceId);
+    const alert = this.store.getAlertContext(trace.eventId);
+    const evidenceRefs = [`wazuh-alert:${alert.wazuhAlertId}`, `event:${trace.eventId}`];
+    const alertData = alert.alert?.data && typeof alert.alert.data === "object" ? alert.alert.data : alert.alert;
+    const domainId = optionalKnowledgeId(alertData?.domain_id ?? alertData?.domainId) || "unclassified";
+    const attackTypeId = optionalKnowledgeId(alertData?.attack_type_id ?? alertData?.attackTypeId) || "other_attack";
+    const observedEvidence = normalizeStringArray(alertData?.observed_evidence ?? alertData?.observedEvidence);
+    return {
+      context: {
+        ...alert.alert,
+        eventId: trace.eventId,
+        traceId,
+        correlationId: trace.correlationId,
+        evidenceRefs,
+        domainId,
+        attackTypeId,
+        observedEvidence
+      },
+      evidenceRefs,
+      domainId,
+      attackTypeId
+    };
   }
 }
 

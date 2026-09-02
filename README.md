@@ -227,7 +227,7 @@ SecurityOps 的 `triage.db` 位于其 OctoBus instance workdir。主要表包括
 - `manual_tickets`：始终创建且保持 `open` 的人工工单；
 - `delivery_outbox`：飞书投递、重试和人工恢复状态。
 
-`EvaluatePolicy` 在服务端重新执行已批准规则，把权威 decision、action 和 `evaluation_json` 写入 `policy_decisions`。`RecordTriageResult` 只接收 narrative，并在当前 `claimToken + traceId` 围栏内直接读取和绑定已保存策略；不再生成、返回或持久化需要模型转抄的第二套决策令牌。调用方即使额外提交 decision 或 action 也不能覆盖服务端结果。所有路径都满足：
+`MatchKnowledge` 和 `EvaluatePolicy` 都根据当前 `claimToken + traceId` 从已接入的 Wazuh 告警重新构造权威上下文，不接收 Agent 转抄的领域、事件类型、上下文或知识候选。`EvaluatePolicy` 在服务端重新执行已批准规则，把权威 decision、action 和 `evaluation_json` 写入 `policy_decisions`。`RecordTriageResult` 只接收 narrative，并在同一租约围栏内直接读取和绑定已保存策略；不再生成、返回或持久化需要模型转抄的第二套决策令牌。调用方即使额外提交 decision 或 action 也不能覆盖服务端结果。所有路径都满足：
 
 - `ticketRequired=true`；
 - `autoCloseAllowed=false`；

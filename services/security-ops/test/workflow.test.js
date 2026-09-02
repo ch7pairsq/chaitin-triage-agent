@@ -53,7 +53,7 @@ function approvedKnowledge() {
   };
 }
 
-function fixture() {
+function fixture({ data = {} } = {}) {
   const directory = mkdtempSync(path.join(os.tmpdir(), "security-ops-workflow-"));
   let sequence = 0;
   const now = () => new Date("2026-09-01T00:00:00.000Z");
@@ -76,7 +76,15 @@ function fixture() {
     alertJson: {
       rule: { id: "5710", level: 10 },
       agent: { id: "001", name: "vehicle-platform-gateway" },
-      data: { srcip: "198.51.100.18", dstuser: "platform-admin", ...FACTS }
+      data: {
+        srcip: "198.51.100.18",
+        dstuser: "platform-admin",
+        domain_id: "vehicle_platform",
+        attack_type_id: "brute_force",
+        observed_evidence: EVIDENCE,
+        ...FACTS,
+        ...data
+      }
     }
   });
   return {
@@ -191,13 +199,41 @@ test("business writes are idempotent across Agent retries", () => {
   }
 });
 
-test("missing evidence and untrusted authorization flags never produce automatic closure", () => {
+test("knowledge matching and policy ignore Agent-transcribed context and candidate identifiers", () => {
   const context = fixture();
+  try {
+    const claim = context.service.claimAlert({ eventId: "event-vehicle-1" });
+    const matches = context.service.matchKnowledge({
+      traceId: claim.traceId,
+      domainId: "iot_platform",
+      attackTypeId: "xss",
+      context: { data: {}, evidenceRefs: [] },
+      claimToken: claim.claimToken
+    });
+    assert.deepEqual(matches.matches.map((match) => match.knowledgeId), ["kb-vehicle_platform-brute_force"]);
+    assert.equal(matches.matches[0].evaluation.outcome, "confirmed");
+
+    const policy = context.service.evaluatePolicy({
+      traceId: claim.traceId,
+      context: { data: {}, evidenceRefs: [] },
+      knowledgeIds: [],
+      claimToken: claim.claimToken
+    });
+    assert.equal(policy.action, "escalate_with_manual_review");
+    assert.deepEqual(policy.knowledgeRefs, ["kb-vehicle_platform-brute_force"]);
+    assert.ok(policy.evidenceRefs.includes("wazuh-alert:wazuh-9001"));
+  } finally {
+    context.close();
+  }
+});
+
+test("missing evidence and untrusted authorization flags never produce automatic closure", () => {
+  const context = fixture({ data: { distinct_accounts: undefined, observed_evidence: EVIDENCE.slice(0, 1) } });
   try {
     const claim = context.service.claimAlert({ eventId: "event-vehicle-1" });
     const missing = context.service.evaluatePolicy({
       traceId: claim.traceId,
-      context: { data: { auth_failures: 12, window_seconds: 180 }, observedEvidence: EVIDENCE.slice(0, 1), evidenceRefs: ["wazuh-alert:wazuh-9001"] },
+      context: { data: FACTS, observedEvidence: EVIDENCE, evidenceRefs: ["caller:untrusted"] },
       knowledgeIds: ["kb-vehicle_platform-brute_force"],
       claimToken: claim.claimToken
     });
@@ -271,7 +307,7 @@ test("only an active unexpired scope-matching authorization record can suppress"
       ["auth-mismatch", "escalate_with_manual_review"],
       ["auth-missing", "escalate_with_manual_review"]
     ]) {
-      const isolated = fixture();
+      const isolated = fixture({ data: { authorization_record_id: authorizationRecordId } });
       try {
         for (const record of context.store.database.prepare("SELECT * FROM authorization_records").all()) {
           isolated.store.database.prepare(`

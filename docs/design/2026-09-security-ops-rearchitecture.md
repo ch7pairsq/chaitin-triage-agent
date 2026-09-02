@@ -144,8 +144,8 @@ webhook 返回 HTTP 202 只表示 agent-compose 控制面接受了事件，不�
 1. `ClaimAlert` 获取 `claimToken`、`attempt` 和 `leaseUntil`；
 2. `GetAlertContext` 获取规范化上下文和证据引用；
 3. `EnrichAlert` 生成补充证据；
-4. `MatchKnowledge` 在同领域执行已批准知识，事件类型仅作候选提示；
-5. `EvaluatePolicy` 在服务端重新执行规则并持久化确定性门控；
+4. `MatchKnowledge` 按 `claimToken + traceId` 从已接入告警重建权威上下文，在同领域执行已批准知识，事件类型仅作候选提示；
+5. `EvaluatePolicy` 再次从同一 trace 重建上下文并在服务端执行规则，不接收 Agent 转抄的上下文或知识候选，随后持久化确定性门控；
 6. Agent 基于证据生成结构化叙事；
 7. `RecordTriageResult` 在 `claimToken + traceId` 围栏内把叙述绑定到已保存策略；
 8. `CreateManualTicket` 创建人工工单；
@@ -264,7 +264,7 @@ webhook 返回 HTTP 202 只表示 agent-compose 控制面接受了事件，不�
 - 新增 `authorization_records`，保存状态、作用域、起止时间和证据引用；
 - 为停滞扫描、可用槽位和投递重试建立必要索引。
 
-`003` 为 `policy_decisions` 增加 `evaluation_json`，保存规则版本、命中条件、失败条件、排除条件、缺失事实和阈值来源。策略与叙述在同一 SecurityOps 服务内按 `traceId` 和当前租约直接绑定，不再生成需要 LLM 原样转抄的第二套令牌。
+`003` 为 `policy_decisions` 增加 `evaluation_json`，保存规则版本、命中条件、失败条件、排除条件、缺失事实和阈值来源。知识匹配和策略执行都按 `traceId` 与当前租约从已接入告警重建权威上下文，不信任模型转抄的分类、上下文或候选知识；策略与叙述也在同一 SecurityOps 服务内直接绑定，不再生成需要 LLM 原样转抄的第二套令牌。
 
 部署前必须创建 SQLite 一致性备份；迁移失败时服务不得带着半迁移 schema 启动。
 

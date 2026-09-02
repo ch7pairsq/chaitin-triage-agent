@@ -28,6 +28,8 @@ test("Proto exposes lease, recovery and authorization contracts", () => {
   assert.match(PROTO, /message GetWorkerReadinessResponse \{[\s\S]*uint32 backlog = 2;[\s\S]*uint64 oldest_pending_age_ms = 4;[\s\S]*bool active_batch = 5;[\s\S]*string last_error_json = 7;/);
   assert.match(PROTO, /message KnowledgeMatch \{[\s\S]*string evaluation_json = 5;/);
   assert.match(PROTO, /message EvaluatePolicyResponse \{[\s\S]*string evaluation_json = 10;/);
+  assert.match(PROTO, /message MatchKnowledgeRequest \{\s*string trace_id = 1;\s*string claim_token = 5;\s*\}/);
+  assert.match(PROTO, /message EvaluatePolicyRequest \{\s*string trace_id = 1;\s*string claim_token = 4;\s*\}/);
   assert.doesNotMatch(PROTO, /decision_token/);
 });
 
