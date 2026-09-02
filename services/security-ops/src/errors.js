@@ -10,6 +10,13 @@ export const ERROR_CODES = Object.freeze({
   INTERNAL: "INTERNAL"
 });
 
+export const BUSINESS_REASONS = Object.freeze({
+  LEASE_BUSY: "LEASE_BUSY",
+  LEASE_EXPIRED: "LEASE_EXPIRED",
+  CLAIM_FENCED: "CLAIM_FENCED",
+  AUTHORIZATION_INVALID: "AUTHORIZATION_INVALID"
+});
+
 export class SecurityOpsError extends Error {
   constructor(code, message, details = {}) {
     if (!Object.hasOwn(ERROR_CODES, code)) {

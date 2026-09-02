@@ -1,7 +1,10 @@
 import { invalidArgument } from "./errors.js";
 
 const SAFE_IDENTIFIER = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/;
+const CLAIM_TOKEN = /^[A-Za-z0-9_-]{43,128}$/;
 const MAX_ALERT_BYTES = 512 * 1024;
+const AUTHORIZATION_STATUSES = new Set(["active", "revoked"]);
+const AUTHORIZATION_SCOPES = new Set(["asset", "account", "rule", "change_window"]);
 
 function requiredIdentifier(value, field) {
   const normalized = String(value ?? "").trim();
@@ -65,4 +68,54 @@ export function normalizeLimit(value, { fallback = 20, maximum = 100 } = {}) {
     throw invalidArgument(`limit must be an integer between 1 and ${maximum}`, { field: "limit" });
   }
   return limit;
+}
+
+export function normalizeClaimToken(value) {
+  const token = String(value ?? "").trim();
+  if (!CLAIM_TOKEN.test(token)) {
+    throw invalidArgument("claimToken must be a base64url value between 43 and 128 characters", { field: "claimToken" });
+  }
+  return token;
+}
+
+export function normalizeRequeueStalledAlerts(input = {}) {
+  if (!input || typeof input !== "object" || Array.isArray(input)) {
+    throw invalidArgument("RequeueStalledAlerts request must be an object");
+  }
+  if (Object.keys(input).length > 0) {
+    throw invalidArgument("RequeueStalledAlerts does not accept caller policy overrides");
+  }
+  return {};
+}
+
+export function normalizePutAuthorizationRecord(input) {
+  if (!input || typeof input !== "object" || Array.isArray(input)) {
+    throw invalidArgument("PutAuthorizationRecord request must be an object");
+  }
+  const authorizationId = requiredIdentifier(input.authorizationId, "authorizationId");
+  const status = String(input.status ?? "").trim();
+  if (!AUTHORIZATION_STATUSES.has(status)) {
+    throw invalidArgument("status must be active or revoked", { field: "status" });
+  }
+  const scopeType = String(input.scopeType ?? "").trim();
+  if (!AUTHORIZATION_SCOPES.has(scopeType)) {
+    throw invalidArgument("scopeType is invalid", { field: "scopeType" });
+  }
+  const scopeValue = String(input.scopeValue ?? "").trim();
+  if (!scopeValue || scopeValue.length > 256) {
+    throw invalidArgument("scopeValue must contain between 1 and 256 characters", { field: "scopeValue" });
+  }
+  const validFrom = requiredIsoTimestamp(input.validFrom, "validFrom");
+  const validUntil = requiredIsoTimestamp(input.validUntil, "validUntil");
+  if (Date.parse(validFrom) >= Date.parse(validUntil)) {
+    throw invalidArgument("validUntil must be later than validFrom", { field: "validUntil" });
+  }
+  if (!Array.isArray(input.evidenceRefs)) {
+    throw invalidArgument("evidenceRefs must be an array", { field: "evidenceRefs" });
+  }
+  const evidenceRefs = [...new Set(input.evidenceRefs.map((value) => String(value ?? "").trim()).filter(Boolean))];
+  if (evidenceRefs.length === 0 || evidenceRefs.length > 50 || evidenceRefs.some((value) => value.length > 256)) {
+    throw invalidArgument("evidenceRefs must contain between 1 and 50 bounded values", { field: "evidenceRefs" });
+  }
+  return { authorizationId, status, scopeType, scopeValue, validFrom, validUntil, evidenceRefs };
 }

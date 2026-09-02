@@ -5,6 +5,7 @@ package security.ops.v1;
 service SecurityOpsService {
   rpc IngestAlertEvent(IngestAlertEventRequest) returns (IngestAlertEventResponse);
   rpc ListPendingAlerts(ListPendingAlertsRequest) returns (ListPendingAlertsResponse);
+  rpc RequeueStalledAlerts(RequeueStalledAlertsRequest) returns (RequeueStalledAlertsResponse);
   rpc ClaimAlert(ClaimAlertRequest) returns (ClaimAlertResponse);
   rpc GetAlertContext(GetAlertContextRequest) returns (GetAlertContextResponse);
   rpc EnrichAlert(EnrichAlertRequest) returns (EnrichAlertResponse);
@@ -16,6 +17,7 @@ service SecurityOpsService {
   rpc FinalizeTriage(FinalizeTriageRequest) returns (FinalizeTriageResponse);
   rpc GetTriageTrace(GetTriageTraceRequest) returns (GetTriageTraceResponse);
   rpc RecoverDelivery(RecoverDeliveryRequest) returns (RecoverDeliveryResponse);
+  rpc PutAuthorizationRecord(PutAuthorizationRecordRequest) returns (PutAuthorizationRecordResponse);
 }
 
 message IngestAlertEventRequest {
@@ -54,9 +56,15 @@ message ClaimAlertResponse {
   string event_id = 2;
   string status = 3;
   bool duplicate = 4;
+  string claim_token = 5;
+  uint32 attempt = 6;
+  string lease_until = 7;
 }
 
-message GetAlertContextRequest { string event_id = 1; }
+message GetAlertContextRequest {
+  string event_id = 1;
+  string claim_token = 2;
+}
 message GetAlertContextResponse {
   string event_id = 1;
   string correlation_id = 2;
@@ -64,7 +72,10 @@ message GetAlertContextResponse {
   string alert_json = 4;
 }
 
-message EnrichAlertRequest { string trace_id = 1; }
+message EnrichAlertRequest {
+  string trace_id = 1;
+  string claim_token = 2;
+}
 message EnrichAlertResponse {
   string trace_id = 1;
   string context_json = 2;
@@ -78,6 +89,7 @@ message MatchKnowledgeRequest {
   string domain_id = 2;
   string attack_type_id = 3;
   string context_json = 4;
+  string claim_token = 5;
 }
 
 message KnowledgeMatch {
@@ -96,6 +108,7 @@ message EvaluatePolicyRequest {
   string trace_id = 1;
   string context_json = 2;
   repeated string knowledge_ids = 3;
+  string claim_token = 4;
 }
 
 message EvaluatePolicyResponse {
@@ -114,6 +127,7 @@ message RecordTriageResultRequest {
   string trace_id = 1;
   string decision_token = 2;
   string narrative = 3;
+  string claim_token = 4;
 }
 
 message RecordTriageResultResponse {
@@ -125,6 +139,7 @@ message RecordTriageResultResponse {
 message CreateManualTicketRequest {
   string trace_id = 1;
   string result_id = 2;
+  string claim_token = 3;
 }
 
 message CreateManualTicketResponse {
@@ -135,6 +150,7 @@ message CreateManualTicketResponse {
 message QueueFeishuNotificationRequest {
   string trace_id = 1;
   string ticket_id = 2;
+  string claim_token = 3;
 }
 
 message QueueFeishuNotificationResponse {
@@ -143,7 +159,10 @@ message QueueFeishuNotificationResponse {
   bool duplicate = 3;
 }
 
-message FinalizeTriageRequest { string trace_id = 1; }
+message FinalizeTriageRequest {
+  string trace_id = 1;
+  string claim_token = 2;
+}
 message FinalizeTriageResponse {
   string trace_id = 1;
   string state = 2;
@@ -164,4 +183,28 @@ message RecoverDeliveryResponse {
   uint32 recovered = 1;
   uint32 pending = 2;
   uint32 manual = 3;
+}
+
+message RequeueStalledAlertsRequest {}
+message RequeueStalledAlertsResponse {
+  uint32 scanned = 1;
+  uint32 requeued = 2;
+  uint32 manualized = 3;
+  repeated string event_ids = 4;
+}
+
+message PutAuthorizationRecordRequest {
+  string authorization_id = 1;
+  string status = 2;
+  string scope_type = 3;
+  string scope_value = 4;
+  string valid_from = 5;
+  string valid_until = 6;
+  repeated string evidence_refs = 7;
+}
+
+message PutAuthorizationRecordResponse {
+  string authorization_id = 1;
+  string status = 2;
+  string updated_at = 3;
 }

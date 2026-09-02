@@ -1,5 +1,5 @@
 
-ñ$
+‰.
 security_ops.protosecurity.ops.v1"Á
 IngestAlertEventRequest
 event_id (	ReventId$
@@ -27,33 +27,44 @@ alert_json (	R	alertJson"’
 event_id (	ReventId(
 scheduler_run_id (	RschedulerRunId
 
-sandbox_id (	R	sandboxId"€
+sandbox_id (	R	sandboxId"Ü
 ClaimAlertResponse
 trace_id (	RtraceId
 event_id (	ReventId
 status (	Rstatus
-	duplicate (R	duplicate"3
+	duplicate (R	duplicate
+claim_token (	R
+claimToken
+attempt (Rattempt
+lease_until (	R
+leaseUntil"T
 GetAlertContextRequest
-event_id (	ReventId" 
+event_id (	ReventId
+claim_token (	R
+claimToken" 
 GetAlertContextResponse
 event_id (	ReventId%
 correlation_id (	RcorrelationId$
 wazuh_alert_id (	RwazuhAlertId
 
-alert_json (	R	alertJson"/
+alert_json (	R	alertJson"P
 EnrichAlertRequest
-trace_id (	RtraceId"»
+trace_id (	RtraceId
+claim_token (	R
+claimToken"»
 EnrichAlertResponse
 trace_id (	RtraceId!
 context_json (	RcontextJson#
 evidence_refs (	RevidenceRefs
 	domain_id (	RdomainId$
-attack_type_id (	RattackTypeId"˜
+attack_type_id (	RattackTypeId"¹
 MatchKnowledgeRequest
 trace_id (	RtraceId
 	domain_id (	RdomainId$
 attack_type_id (	RattackTypeId!
-context_json (	RcontextJson"©
+context_json (	RcontextJson
+claim_token (	R
+claimToken"©
 KnowledgeMatch!
 knowledge_id (	RknowledgeId$
 applicability (	Rapplicability#
@@ -61,11 +72,13 @@ alert_json (	R	alertJson"/
 missing_evidence (	RmissingEvidence"n
 MatchKnowledgeResponse
 trace_id (	RtraceId9
-matches (2.security.ops.v1.KnowledgeMatchRmatches"z
+matches (2.security.ops.v1.KnowledgeMatchRmatches"›
 EvaluatePolicyRequest
 trace_id (	RtraceId!
 context_json (	RcontextJson#
-knowledge_ids (	RknowledgeIds"Ö
+knowledge_ids (	RknowledgeIds
+claim_token (	R
+claimToken"Ö
 EvaluatePolicyResponse
 trace_id (	RtraceId
 decision (	Rdecision
@@ -75,31 +88,39 @@ alert_json (	R	alertJson"/
 ticket_required (RticketRequired#
 policy_status (	RpolicyStatus,
 auto_close_allowed (RautoCloseAllowed%
-decision_token	 (	RdecisionToken"{
+decision_token	 (	RdecisionToken"œ
 RecordTriageResultRequest
 trace_id (	RtraceId%
 decision_token (	RdecisionToken
-	narrative (	R	narrative"r
+	narrative (	R	narrative
+claim_token (	R
+claimToken"r
 RecordTriageResultResponse
 	result_id (	RresultId
 trace_id (	RtraceId
-	duplicate (R	duplicate"S
+	duplicate (R	duplicate"t
 CreateManualTicketRequest
 trace_id (	RtraceId
-	result_id (	RresultId"W
+	result_id (	RresultId
+claim_token (	R
+claimToken"W
 CreateManualTicketResponse
 	ticket_id (	RticketId
-	duplicate (R	duplicate"X
+	duplicate (R	duplicate"y
 QueueFeishuNotificationRequest
 trace_id (	RtraceId
-	ticket_id (	RticketId"x
+	ticket_id (	RticketId
+claim_token (	R
+claimToken"x
 QueueFeishuNotificationResponse
 delivery_id (	R
 deliveryId
 status (	Rstatus
-	duplicate (R	duplicate"2
+	duplicate (R	duplicate"S
 FinalizeTriageRequest
-trace_id (	RtraceId"I
+trace_id (	RtraceId
+claim_token (	R
+claimToken"I
 FinalizeTriageResponse
 trace_id (	RtraceId
 state (	Rstate"2
@@ -115,11 +136,36 @@ trace_json (	R	traceJson"U
 RecoverDeliveryResponse
 	recovered (R	recovered
 pending (Rpending
-manual (Rmanual2Î
+manual (Rmanual"
+RequeueStalledAlertsRequest"‘
+RequeueStalledAlertsResponse
+scanned (Rscanned
+requeued (Rrequeued
 
+manualized (R
+manualized
+	event_ids (	ReventIds"‡
+PutAuthorizationRecordRequest)
+authorization_id (	RauthorizationId
+status (	Rstatus
+
+scope_type (	R	scopeType
+scope_value (	R
+scopeValue
+
+valid_from (	R	validFrom
+valid_until (	R
+validUntil#
+evidence_refs (	RevidenceRefs"‚
+PutAuthorizationRecordResponse)
+authorization_id (	RauthorizationId
+status (	Rstatus
+
+updated_at (	R	updatedAt2¾
 SecurityOpsServiceg
 IngestAlertEvent(.security.ops.v1.IngestAlertEventRequest).security.ops.v1.IngestAlertEventResponsej
-ListPendingAlerts).security.ops.v1.ListPendingAlertsRequest*.security.ops.v1.ListPendingAlertsResponseU
+ListPendingAlerts).security.ops.v1.ListPendingAlertsRequest*.security.ops.v1.ListPendingAlertsResponses
+RequeueStalledAlerts,.security.ops.v1.RequeueStalledAlertsRequest-.security.ops.v1.RequeueStalledAlertsResponseU
 
 ClaimAlert".security.ops.v1.ClaimAlertRequest#.security.ops.v1.ClaimAlertResponsed
 GetAlertContext'.security.ops.v1.GetAlertContextRequest(.security.ops.v1.GetAlertContextResponseX
@@ -131,4 +177,5 @@ ClaimAlert".security.ops.v1.ClaimAlertRequest#.security.ops.v1.ClaimAlertRespo
 QueueFeishuNotification/.security.ops.v1.QueueFeishuNotificationRequest0.security.ops.v1.QueueFeishuNotificationResponsea
 FinalizeTriage&.security.ops.v1.FinalizeTriageRequest'.security.ops.v1.FinalizeTriageResponsea
 GetTriageTrace&.security.ops.v1.GetTriageTraceRequest'.security.ops.v1.GetTriageTraceResponsed
-RecoverDelivery'.security.ops.v1.RecoverDeliveryRequest(.security.ops.v1.RecoverDeliveryResponsebproto3
+RecoverDelivery'.security.ops.v1.RecoverDeliveryRequest(.security.ops.v1.RecoverDeliveryResponsey
+PutAuthorizationRecord..security.ops.v1.PutAuthorizationRecordRequest/.security.ops.v1.PutAuthorizationRecordResponsebproto3
