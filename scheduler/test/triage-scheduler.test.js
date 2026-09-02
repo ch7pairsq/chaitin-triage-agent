@@ -112,7 +112,7 @@ test("uses scheduler-validated structured JSON and rejects an incomplete result"
   );
 });
 
-test("accepts one fenced JSON result from chat-completions providers but rejects ambiguity", () => {
+test("extracts one contract-shaped JSON result from chat-completions text but rejects ambiguity", () => {
   const fenced = loadScheduler({
     finalTextOnly: true,
     finalText: "Done.\n```json\n{\"success\":true,\"mode\":\"event\",\"polled\":0,\"ingested\":0,\"processed\":1,\"traceIds\":[\"trace-1\"],\"terminalStates\":[\"completed\"]}\n```\nSummary.",
@@ -121,13 +121,21 @@ test("accepts one fenced JSON result from chat-completions providers but rejects
     payload: { body: { eventId: "business-event-6" } },
   }).success, true);
 
+  const trailing = loadScheduler({
+    finalTextOnly: true,
+    finalText: "RPC complete. {\"success\":true,\"mode\":\"event\",\"polled\":0,\"ingested\":0,\"processed\":1,\"traceIds\":[\"trace-2\"],\"terminalStates\":[\"completed\"]}",
+  });
+  assert.deepEqual(Array.from(trailing.registrations.events.get("wazuh-alert").callback({
+    payload: { body: { eventId: "business-event-7" } },
+  }).traceIds), ["trace-2"]);
+
   const ambiguous = loadScheduler({
     finalTextOnly: true,
-    finalText: "```json\n{}\n```\n```json\n{}\n```",
+    finalText: "{\"success\":true,\"mode\":\"event\",\"polled\":0,\"ingested\":0,\"processed\":1,\"traceIds\":[\"trace-1\"],\"terminalStates\":[\"completed\"]}\n{\"success\":true,\"mode\":\"event\",\"polled\":0,\"ingested\":0,\"processed\":1,\"traceIds\":[\"trace-2\"],\"terminalStates\":[\"completed\"]}",
   });
   assert.throws(
     () => ambiguous.registrations.events.get("wazuh-alert").callback({
-      payload: { body: { eventId: "business-event-7" } },
+      payload: { body: { eventId: "business-event-8" } },
     }),
     /not valid structured JSON/
   );

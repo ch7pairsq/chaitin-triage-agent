@@ -29,21 +29,49 @@ function optionalOpaqueId(value, field) {
     : requireOpaqueId(value, field);
 }
 
+function hasTriageResultKeys(value) {
+  if (!value || Array.isArray(value) || typeof value !== "object") return false;
+  const keys = Object.keys(value).sort();
+  return keys.length === triageResultKeys.length && keys.every((key, index) => key === triageResultKeys[index]);
+}
+
+function findStructuredCandidates(raw) {
+  const decoded = [];
+  for (let start = 0; start < raw.length; start += 1) {
+    if (raw[start] !== "{") continue;
+    let depth = 0;
+    let inString = false;
+    let escaped = false;
+    for (let end = start; end < raw.length; end += 1) {
+      const character = raw[end];
+      if (inString) {
+        if (escaped) escaped = false;
+        else if (character === "\\") escaped = true;
+        else if (character === '"') inString = false;
+        continue;
+      }
+      if (character === '"') inString = true;
+      else if (character === "{") depth += 1;
+      else if (character === "}") {
+        depth -= 1;
+        if (depth !== 0) continue;
+        try {
+          const value = JSON.parse(raw.slice(start, end + 1));
+          if (hasTriageResultKeys(value)) decoded.push(value);
+        } catch {}
+        break;
+      }
+    }
+  }
+  return decoded;
+}
+
 function decodeStructuredResult(reply) {
-  if (reply?.json && !Array.isArray(reply.json) && typeof reply.json === "object") return reply.json;
+  if (hasTriageResultKeys(reply?.json)) return reply.json;
   const raw = [reply?.finalText, reply?.output, reply?.text]
     .find((value) => typeof value === "string" && value.trim() !== "");
   if (!raw) throw new Error("triage Agent result is not valid structured JSON");
-  const candidates = [raw.trim()];
-  const fenced = [...raw.matchAll(/```(?:json)?\s*([\s\S]*?)\s*```/gi)].map((match) => match[1].trim());
-  candidates.push(...fenced);
-  const decoded = [];
-  for (const candidate of candidates) {
-    try {
-      const value = JSON.parse(candidate);
-      if (value && !Array.isArray(value) && typeof value === "object") decoded.push(value);
-    } catch {}
-  }
+  const decoded = findStructuredCandidates(raw);
   if (decoded.length !== 1) throw new Error("triage Agent result is not valid structured JSON");
   return decoded[0];
 }
@@ -53,10 +81,7 @@ function parseTriageResult(reply, expectedMode) {
     throw new Error("triage Agent did not return a successful runtime result");
   }
   const result = decodeStructuredResult(reply);
-  const keys = Object.keys(result).sort();
-  if (keys.length !== triageResultKeys.length || keys.some((key, index) => key !== triageResultKeys[index])) {
-    throw new Error("triage Agent result fields do not match the contract");
-  }
+  if (!hasTriageResultKeys(result)) throw new Error("triage Agent result fields do not match the contract");
   if (result.mode !== expectedMode || typeof result.success !== "boolean") {
     throw new Error("triage Agent result mode or success is invalid");
   }
