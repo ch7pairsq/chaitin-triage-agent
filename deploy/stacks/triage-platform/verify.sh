@@ -27,6 +27,8 @@ octobus service get wazuh-connector
 octobus service get security-ops
 octobus instance get wazuh-indexer
 octobus instance get security-ops-main
+octobus admin-token get agent-wazuh
+octobus admin-token get agent-triage
 octobus catalog wazuh-ingress --mcp --json
 octobus catalog triage-runner --mcp --json
 octobus catalog triage-ops --mcp --json

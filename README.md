@@ -141,6 +141,8 @@ sequenceDiagram
 
 初始化脚本会先移除旧 instance binding，再用 `--no-all-methods` 和逐一 `select-method` 重建授权。service 后续新增方法不会自动暴露。
 
+agent-compose 的每个 `octobus_servers` 条目只有一个服务端 token：它既用该 token 读取受保护的 OctoBus admin catalog 生成沙箱 MPI 能力说明，也用它代理对应 capset 的业务调用。因此初始化会把 `WAZUH_INGRESS_TOKEN` 和 `TRIAGE_RUNNER_TOKEN` 分别登记为同名 capset token 与 agent-compose 专用 admin token；二者仍彼此独立，也不同于 bootstrap 管理 token。它们只保存在 daemon 私有配置中，不进入 Agent 沙箱。`TRIAGE_OPS_TOKEN` 仅用于人工运维数据面，不登记为 admin token。
+
 业务调用统一遵循：
 
 ```text
@@ -228,7 +230,7 @@ chmod 0600 .env
 
 - `REPO_ROOT=/data/chaitin/chaitin-triage-agent`；
 - 模型 endpoint/key/model；
-- OctoBus admin、三个 capset、agent webhook、UI script token 使用互不相同且不少于 24 字符的随机值；
+- OctoBus bootstrap admin、三个 capset、agent webhook、UI script token 使用互不相同且不少于 24 字符的随机值；其中初始化会按上一节所述为两个 agent-compose 项目 token 增加目录读取所需的服务端 admin 登记；
 - decision secret、UI auth secret、GitHub webhook secret 不少于 32 字符；
 - 四个 Wazuh 密码；
 - 飞书自定义机器人 webhook 和可选签名 secret；
@@ -311,7 +313,7 @@ docker compose --env-file .env -f deploy/stacks/triage-platform/docker-compose.y
 /bin/sh deploy/stacks/triage-platform/verify.sh
 ```
 
-Portainer 方式：新建 `chaitin-triage-platform` Stack，使用 `deploy/stacks/triage-platform/docker-compose.yml`。每次同步新提交后都要重新部署 Stack，确保 agent-compose 的单文件只读挂载指向新文件；Stack 正常后仍需在宿主机执行一次 `bootstrap.sh`。脚本可重复执行，会更新两个 service、两个 instance、三个 capset、token、agent-compose webhook source 和项目定义。
+Portainer 方式：新建 `chaitin-triage-platform` Stack，使用 `deploy/stacks/triage-platform/docker-compose.yml`。每次同步新提交后都要重新部署 Stack，确保 agent-compose 的单文件只读挂载指向新文件；Stack 正常后仍需在宿主机执行一次 `bootstrap.sh`。脚本可重复执行，会更新两个 service、两个 instance、三个 capset、capset token、agent-compose 目录 token、agent-compose webhook source 和项目定义。
 
 ### 7.9 启动 release-webhook Stack
 
@@ -334,7 +336,7 @@ Portainer 使用 `deploy/stacks/release-webhook/docker-compose.yml` 新建 `chai
 /bin/sh deploy/stacks/triage-platform/verify.sh
 ```
 
-该命令检查容器、Wazuh 最小权限角色初始化、agent-compose 版本与项目、三个 scheduler trigger、两个 OctoBus service、两个 instance 和三个 MCP catalog。
+该命令检查容器、Wazuh 最小权限角色初始化、agent-compose 版本与项目、三个 scheduler trigger、两个 OctoBus service、两个 instance、两个 agent-compose 目录 token 登记和三个 MCP catalog。
 
 ### 8.2 验证两次分钟级真实告警闭环
 

@@ -114,6 +114,22 @@ replace_token wazuh-ingress "$generated/wazuh-ingress-token"
 replace_token triage-runner "$generated/triage-runner-token"
 replace_token triage-ops "$generated/triage-ops-token"
 
+# agent-compose has one server-side token per OctoBus endpoint. It uses that
+# token both to read the protected admin catalog that becomes the sandbox MPI
+# guide and to invoke the selected capset through the data-plane proxy. Register
+# the two project-scoped tokens in both roles; they never enter the guest.
+replace_agent_catalog_token() {
+  token_id="$1"
+  token_name="$2"
+  token_file="$3"
+  octobus admin-token delete "$token_id" >/dev/null 2>&1 || true
+  docker exec -i --env-file "$generated/octobus-admin.env" octobus \
+    octobus admin-token add "$token_id" --name "$token_name" --token-stdin \
+    < "$token_file"
+}
+replace_agent_catalog_token agent-wazuh "agent-compose wazuh catalog" "$generated/wazuh-ingress-token"
+replace_agent_catalog_token agent-triage "agent-compose triage catalog" "$generated/triage-runner-token"
+
 docker run --rm --network chaitin-net \
   --volume "$host_repo_root/deploy/stacks/triage-platform/tools/configure-agent-webhook.mjs:/app/configure-agent-webhook.mjs:ro" \
   --volume "$host_repo_root/deploy/stacks/triage-platform/generated/agent-webhook-token:/run/secrets/agent-webhook-token:ro" \
