@@ -13,6 +13,7 @@ import {
 
 const TEST_DIR = path.dirname(fileURLToPath(import.meta.url));
 const PROTO = readFileSync(path.resolve(TEST_DIR, "../proto/security_ops.proto"), "utf8");
+const RUNTIME = readFileSync(path.resolve(TEST_DIR, "../src/runtime.js"), "utf8");
 
 test("Proto exposes lease, recovery and authorization contracts", () => {
   assert.match(PROTO, /rpc RequeueStalledAlerts\(/);
@@ -57,6 +58,7 @@ test("authorization records require ordered timestamps and evidence", () => {
 
 test("stalled-alert recovery accepts no caller policy overrides", () => {
   assert.deepEqual(normalizeRequeueStalledAlerts({}), {});
+  assert.match(RUNTIME, /RequeueStalledAlerts`\]: unary\(\(service,[^)]*\) => \{[\s\S]*?service\.requeueStalledAlerts\(\{\}\)/);
   for (const request of [{ limit: 10 }, { staleAfter: 1 }, { maxAttempts: 99 }]) {
     assert.throws(
       () => normalizeRequeueStalledAlerts(request),
