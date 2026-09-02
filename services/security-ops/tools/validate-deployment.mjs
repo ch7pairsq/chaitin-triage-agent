@@ -16,6 +16,10 @@ function assert(condition, message) {
   if (!condition) throw new Error(message);
 }
 
+function assertEqualArrays(actual, expected, message) {
+  assert(JSON.stringify(actual) === JSON.stringify(expected), `${message}: ${JSON.stringify(actual)}`);
+}
+
 function parseYaml(relativePath) {
   const document = parseDocument(read(relativePath), { prettyErrors: true });
   if (document.errors.length > 0) {
@@ -76,11 +80,20 @@ assert(!String(agentCompose?.env_file).includes("${"), "agent-compose project en
 assert(agentCompose?.octobus_servers?.wazuh, "agent-compose.yml must declare the Wazuh OctoBus server");
 assert(agentCompose?.octobus_servers?.triage, "agent-compose.yml must declare the triage OctoBus server");
 assert(
-  JSON.stringify(agentCompose?.agents?.["triage-operator"]?.capset_ids) === JSON.stringify([
-    "wazuh/wazuh-ingress",
-    "triage/triage-runner"
-  ]),
-  "triage-operator must use only the two declared OctoBus capsets"
+  JSON.stringify(agentCompose?.agents?.["wazuh-intake"]?.capset_ids) === JSON.stringify(["wazuh/wazuh-ingress"]),
+  "wazuh-intake must use only the Wazuh ingress capset"
+);
+assert(
+  JSON.stringify(agentCompose?.agents?.["triage-operator"]?.capset_ids) === JSON.stringify(["triage/triage-runner"]),
+  "triage-operator must use only the triage runner capset"
+);
+assert(agentCompose.agents["wazuh-intake"].scheduler?.sandbox_policy === "sticky", "wazuh-intake must use a sticky scheduler sandbox");
+assert(agentCompose.agents["wazuh-intake"].scheduler?.concurrency_policy === "skip", "wazuh-intake must skip overlapping scheduler runs");
+assert(agentCompose.agents["triage-operator"].scheduler?.sandbox_policy === "new", "triage-operator must use a new sandbox per run");
+assert(agentCompose.agents["triage-operator"].scheduler?.concurrency_policy === "parallel", "triage-operator must allow parallel event runs");
+assert(
+  agentCompose?.agents?.["wazuh-intake"]?.image === "chaitin/agent-compose-guest@sha256:1c18be6907ad7d0ad4f13d95aa89530615412c0a016a01a0f9548503112b2ee0",
+  "wazuh-intake image must be pinned explicitly because the deployed agent-compose version does not interpolate this field"
 );
 assert(
   agentCompose?.agents?.["triage-operator"]?.image === "chaitin/agent-compose-guest@sha256:1c18be6907ad7d0ad4f13d95aa89530615412c0a016a01a0f9548503112b2ee0",
@@ -166,6 +179,41 @@ assert(
   /set -a[\s\S]*\. \/run\/secrets\/agent-compose\.env[\s\S]*set \+a[\s\S]*agent-compose -f agent-compose\.yml project up/.test(platformBootstrap),
   "agent-compose project apply must load interpolation values into the CLI process"
 );
+
+function selectedMethods(capsetId) {
+  return [...platformBootstrap.matchAll(new RegExp(`^select_method ${capsetId} [^ ]+ (/[^ ]+) [^\\s]+$`, "gm"))]
+    .map((match) => match[1]);
+}
+
+assertEqualArrays(selectedMethods("wazuh-ingress"), [
+  "/wazuh.connector.v1.WazuhConnectorService/ListAlerts",
+  "/security.ops.v1.SecurityOpsService/IngestAlertEvent",
+  "/security.ops.v1.SecurityOpsService/RequeueStalledAlerts"
+], "wazuh-ingress methods must be exact");
+assertEqualArrays(selectedMethods("triage-runner"), [
+  "/security.ops.v1.SecurityOpsService/ClaimAlert",
+  "/security.ops.v1.SecurityOpsService/GetAlertContext",
+  "/security.ops.v1.SecurityOpsService/EnrichAlert",
+  "/security.ops.v1.SecurityOpsService/MatchKnowledge",
+  "/security.ops.v1.SecurityOpsService/EvaluatePolicy",
+  "/security.ops.v1.SecurityOpsService/RecordTriageResult",
+  "/security.ops.v1.SecurityOpsService/CreateManualTicket",
+  "/security.ops.v1.SecurityOpsService/QueueFeishuNotification",
+  "/security.ops.v1.SecurityOpsService/FinalizeTriage"
+], "triage-runner methods must be exact");
+assertEqualArrays(selectedMethods("triage-ops"), [
+  "/security.ops.v1.SecurityOpsService/GetTriageTrace",
+  "/security.ops.v1.SecurityOpsService/RecoverDelivery",
+  "/security.ops.v1.SecurityOpsService/PutAuthorizationRecord"
+], "triage-ops methods must be exact");
+
+const intakeScheduler = read("scheduler/wazuh-intake.js");
+const triageScheduler = read("scheduler/triage-scheduler.js");
+for (const [name, source] of [["wazuh-intake", intakeScheduler], ["triage-operator", triageScheduler]]) {
+  assert(!/\bfetch\s*\(|node:sqlite|better-sqlite3|open\.feishu\.cn|wazuh\.indexer:9200/i.test(source), `${name} must not call a business backend directly`);
+  assert(source.includes("CAP_GRPC_TARGET"), `${name} must call business capabilities through the agent-compose gateway`);
+}
+assert(!triageScheduler.includes("ListPendingAlerts"), "triage Agent must not receive the pending-alert operational method");
 
 const releasePrepare = read("deploy/stacks/release-webhook/prepare-config.sh");
 assert(

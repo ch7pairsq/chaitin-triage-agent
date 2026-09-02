@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { spawnSync } from "node:child_process";
-import { mkdirSync } from "node:fs";
+import { mkdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -9,6 +9,16 @@ const npmCache = path.join(root, ".tmp", "npm-cache");
 mkdirSync(npmCache, { recursive: true });
 const mode = process.argv[2] ?? "--all";
 if (!["--check", "--test", "--all"].includes(mode)) throw new Error("use --check, --test or --all");
+
+for (const relativePath of ["scheduler/wazuh-intake.js", "scheduler/triage-scheduler.js"]) {
+  const source = readFileSync(path.join(root, relativePath), "utf8");
+  if (/\bfetch\s*\(|node:sqlite|better-sqlite3|open\.feishu\.cn|wazuh\.indexer:9200/i.test(source)) {
+    throw new Error(`${relativePath} contains a direct business-backend call`);
+  }
+  if (!source.includes("CAP_GRPC_TARGET")) {
+    throw new Error(`${relativePath} does not use the agent-compose capability gateway`);
+  }
+}
 
 const packages = [
   ["knowledge-authoring", ["check", "test"]],

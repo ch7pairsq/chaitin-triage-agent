@@ -24,7 +24,15 @@ const response = await fetch("http://agent-compose:7410/api/webhook-sources/wazu
 const body = await response.text();
 if (!response.ok) throw new Error(`agent-compose webhook source update failed: HTTP ${response.status}: ${body.slice(0, 512)}`);
 const result = JSON.parse(body);
-if (result?.source?.id !== "wazuh" || result?.source?.topic_prefix !== "webhook.wazuh." || !result?.source?.has_token) {
+if (
+  result?.source?.id !== "wazuh"
+  || result?.source?.enabled !== true
+  || result?.source?.provider !== "generic"
+  || result?.source?.topic_prefix !== "webhook.wazuh."
+  || result?.source?.signature_type !== "none"
+  || result?.source?.body_limit_bytes !== 16384
+  || !result?.source?.has_token
+) {
   throw new Error("agent-compose returned an unexpected webhook source");
 }
 console.log(JSON.stringify(result));

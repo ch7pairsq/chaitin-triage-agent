@@ -82,10 +82,10 @@ reset_instance wazuh-ingress wazuh-indexer
 reset_instance wazuh-ingress security-ops-main
 select_method wazuh-ingress wazuh-indexer /wazuh.connector.v1.WazuhConnectorService/ListAlerts wazuh__list_alerts
 select_method wazuh-ingress security-ops-main /security.ops.v1.SecurityOpsService/IngestAlertEvent security_ops__ingest_alert_event
+select_method wazuh-ingress security-ops-main /security.ops.v1.SecurityOpsService/RequeueStalledAlerts security_ops__requeue_stalled_alerts
 
 ensure_capset triage-runner "Security triage runner"
 reset_instance triage-runner security-ops-main
-select_method triage-runner security-ops-main /security.ops.v1.SecurityOpsService/ListPendingAlerts security_ops__list_pending_alerts
 select_method triage-runner security-ops-main /security.ops.v1.SecurityOpsService/ClaimAlert security_ops__claim_alert
 select_method triage-runner security-ops-main /security.ops.v1.SecurityOpsService/GetAlertContext security_ops__get_alert_context
 select_method triage-runner security-ops-main /security.ops.v1.SecurityOpsService/EnrichAlert security_ops__enrich_alert
@@ -95,12 +95,12 @@ select_method triage-runner security-ops-main /security.ops.v1.SecurityOpsServic
 select_method triage-runner security-ops-main /security.ops.v1.SecurityOpsService/CreateManualTicket security_ops__create_manual_ticket
 select_method triage-runner security-ops-main /security.ops.v1.SecurityOpsService/QueueFeishuNotification security_ops__queue_feishu_notification
 select_method triage-runner security-ops-main /security.ops.v1.SecurityOpsService/FinalizeTriage security_ops__finalize_triage
-select_method triage-runner security-ops-main /security.ops.v1.SecurityOpsService/GetTriageTrace security_ops__get_triage_trace
 
 ensure_capset triage-ops "Security triage operations"
 reset_instance triage-ops security-ops-main
 select_method triage-ops security-ops-main /security.ops.v1.SecurityOpsService/GetTriageTrace security_ops__get_triage_trace
 select_method triage-ops security-ops-main /security.ops.v1.SecurityOpsService/RecoverDelivery security_ops__recover_delivery
+select_method triage-ops security-ops-main /security.ops.v1.SecurityOpsService/PutAuthorizationRecord security_ops__put_authorization_record
 
 replace_token() {
   capset_id="$1"

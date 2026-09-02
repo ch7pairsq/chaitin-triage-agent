@@ -59,6 +59,11 @@ const values = {
   LLM_API_PROTOCOL: required("LLM_API_PROTOCOL", { pattern: /^(responses|chat_completions)$/ })
 };
 
+const scopedTokens = [values.WAZUH_INGRESS_TOKEN, values.TRIAGE_RUNNER_TOKEN, values.TRIAGE_OPS_TOKEN];
+if (new Set(scopedTokens).size !== scopedTokens.length) {
+  throw new Error("WAZUH_INGRESS_TOKEN, TRIAGE_RUNNER_TOKEN and TRIAGE_OPS_TOKEN must be distinct");
+}
+
 fs.mkdirSync(outputDir, { recursive: true, mode: 0o700 });
 fs.chmodSync(outputDir, 0o700);
 
