@@ -242,7 +242,7 @@ scheduler.on("webhook.wazuh.alert", "wazuh-alert", function onWazuhAlert(event) 
   return handleWazuhEvent(event);
 });
 
-scheduler.cron("wazuh-alert-poll", "* * * * *", function wazuhAlertPoll() {
+scheduler.cron("wazuh-alert-poll", "1-59 * * * *", function wazuhAlertPoll() {
   return runWazuhPoll();
 }, { timezone: "Asia/Shanghai" });
 

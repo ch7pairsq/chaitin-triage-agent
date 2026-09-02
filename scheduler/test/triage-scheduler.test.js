@@ -42,7 +42,7 @@ function loadScheduler({ resultSuccess = true, formatResult = JSON.stringify } =
 test("registers stable Wazuh event and hourly cron triggers", () => {
   const { registrations } = loadScheduler();
   assert.equal(registrations.events.get("wazuh-alert").topic, "webhook.wazuh.alert");
-  assert.equal(registrations.crons.get("wazuh-alert-poll").expression, "* * * * *");
+  assert.equal(registrations.crons.get("wazuh-alert-poll").expression, "1-59 * * * *");
   assert.equal(registrations.crons.get("wazuh-alert-poll").options.timezone, "Asia/Shanghai");
   assert.equal(registrations.crons.get("hourly-security-triage").expression, "0 * * * *");
   assert.equal(registrations.crons.get("hourly-security-triage").options.timezone, "Asia/Shanghai");

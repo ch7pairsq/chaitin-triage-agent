@@ -76,7 +76,7 @@ Wazuh 查询能力独立位于 `services/wazuh-connector/`，运行实例名为 
 
 ## 4. 入口、事件与补偿
 
-agent-compose 每分钟创建 poll Agent。该 Agent 先经 `wazuh-ingress` 调用 `ListAlerts`，再对返回告警调用 `IngestAlertEvent`。SecurityOps 在同一事务中写入 `ingress_events` 与 `trigger_outbox`，随后后台投递器仅向 agent-compose 发送 `{eventId, correlationId}`：
+agent-compose 在每小时第 1～59 分钟创建 poll Agent，整点专用于小时补偿，避免同一 scheduler 的互斥保护造成确定性冲突。poll Agent 先经 `wazuh-ingress` 调用 `ListAlerts`，再对返回告警调用 `IngestAlertEvent`。SecurityOps 在同一事务中写入 `ingress_events` 与 `trigger_outbox`，随后后台投递器仅向 agent-compose 发送 `{eventId, correlationId}`：
 
 ```text
 POST /api/webhooks/webhook.wazuh.alert

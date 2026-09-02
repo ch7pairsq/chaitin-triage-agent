@@ -32,7 +32,7 @@ flowchart LR
   W --> I[(Wazuh Indexer<br/>wazuh-alerts-*)]
 
   subgraph AC[agent-compose]
-    P[每分钟轮询]
+    P[分钟轮询<br/>整点除外]
     E[webhook.wazuh.alert]
     H[每小时补偿]
     A[triage-operator<br/>隔离 Agent]
@@ -71,6 +71,8 @@ flowchart LR
 ## 3. 两条业务触发路径
 
 ### 3.1 分钟轮询与事件驱动
+
+`wazuh-alert-poll` 在每小时第 1～59 分钟运行，整点留给 `hourly-security-triage`，避免同一 scheduler 的互斥保护让小时任务被跳过。
 
 ```mermaid
 sequenceDiagram
