@@ -140,12 +140,13 @@ test("updates Wazuh, triage, bootstrap, release, and verification in order", (t)
   if (result.skipped) return t.skip("POSIX shell unavailable");
   assert.equal(result.status, 0, result.stderr || result.stdout);
   const commands = String(result.stdout) + String(result.stderr) + readFileSync(path.join(fixture, "commands.log"), "utf8");
+  const runtimeOwner = commands.indexOf("chown 999:999");
   const wazuh = commands.indexOf("deploy/stacks/wazuh/docker-compose.yml up -d --build");
   const triage = commands.indexOf("deploy/stacks/triage-platform/docker-compose.yml up -d");
   const bootstrap = commands.indexOf("deploy/stacks/triage-platform/bootstrap.sh");
   const release = commands.indexOf("deploy/stacks/release-webhook/docker-compose.yml up -d --build");
   const verify = commands.indexOf("deploy/stacks/triage-platform/verify.sh");
-  assert.ok(wazuh >= 0 && wazuh < triage && triage < bootstrap && bootstrap < release && release < verify, commands);
+  assert.ok(runtimeOwner >= 0 && runtimeOwner < wazuh && wazuh < triage && triage < bootstrap && bootstrap < release && release < verify, commands);
 });
 
 test("restricted mode completes the platform before its release phase replaces the worker", (t) => {

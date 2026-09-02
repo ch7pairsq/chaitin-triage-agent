@@ -171,6 +171,13 @@ create_backups() {
 update_platform() {
   create_backups
 
+  current_stage=runtime-directories
+  mkdir -p \
+    "$state_root/octobus/data" \
+    "$state_root/agent-compose/data" \
+    "$state_root/agent-compose/ui"
+  run_external chown 999:999 "$state_root/octobus/data"
+
   current_stage=wazuh-configuration
   if [ ! -s "$repo_root/deploy/stacks/wazuh/config/wazuh_indexer_ssl_certs/root-ca.pem" ]; then
     run_external docker compose --env-file "$env_file" -f "$wazuh_certs_compose" run --rm generator
