@@ -109,6 +109,11 @@ assert(!receiverVolumes.some((item) => String(item).includes("/var/run/docker.so
 assert(!receiverVolumes.some((item) => String(item).includes(":/workspace")), "release receiver must not mount the repository");
 assert(workerVolumes.some((item) => String(item).includes("/var/run/docker.sock")), "release worker must mount the Docker socket");
 assert(workerVolumes.some((item) => String(item).includes(":/workspace")), "release worker must mount the repository");
+const releaseWorker = read("tools/release-webhook/src/worker.js");
+assert(
+  releaseWorker.includes('"--force-recreate", "agent-compose", "agent-compose-ui"'),
+  "release worker must recreate single-file bind mounts after fast-forward"
+);
 
 for (const file of [
   "deploy/stacks/wazuh/tools/configure-triage-role.mjs",

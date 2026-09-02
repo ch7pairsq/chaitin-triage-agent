@@ -305,11 +305,13 @@ Portainer 方式：新建 `chaitin-wazuh` Stack，使用本仓库 `deploy/stacks
 
 ```sh
 docker compose --env-file .env -f deploy/stacks/triage-platform/docker-compose.yml up -d
+docker compose --env-file .env -f deploy/stacks/triage-platform/docker-compose.yml \
+  up -d --force-recreate agent-compose agent-compose-ui
 /bin/sh deploy/stacks/triage-platform/bootstrap.sh
 /bin/sh deploy/stacks/triage-platform/verify.sh
 ```
 
-Portainer 方式：新建 `chaitin-triage-platform` Stack，使用 `deploy/stacks/triage-platform/docker-compose.yml`。Stack 正常后仍需在宿主机执行一次 `bootstrap.sh`；它可重复执行，会更新两个 service、两个 instance、三个 capset、token、agent-compose webhook source 和项目定义。
+Portainer 方式：新建 `chaitin-triage-platform` Stack，使用 `deploy/stacks/triage-platform/docker-compose.yml`。每次同步新提交后都要重新部署 Stack，确保 agent-compose 的单文件只读挂载指向新文件；Stack 正常后仍需在宿主机执行一次 `bootstrap.sh`。脚本可重复执行，会更新两个 service、两个 instance、三个 capset、token、agent-compose webhook source 和项目定义。
 
 ### 7.9 启动 release-webhook Stack
 
@@ -410,7 +412,7 @@ docker exec --env-file deploy/stacks/triage-platform/generated/octobus-admin.env
 3. 重新运行三个 Stack 的 `prepare-config.sh`；
 4. 更新 `chaitin-wazuh`；
 5. 更新 `chaitin-triage-platform`；
-6. 执行 `bootstrap.sh`；
+6. 确认 `agent-compose` 与 `agent-compose-ui` 已重新创建，再执行 `bootstrap.sh`；
 7. 更新 `chaitin-release-webhook`；
 8. 执行 `verify.sh`，再按第 8 章完成两轮业务验证。
 

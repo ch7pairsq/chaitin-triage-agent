@@ -70,6 +70,7 @@ export async function deploy(request, requestPath, config = loadWorkerConfig()) 
     await run("/bin/sh", [path.join(config.workspace, "deploy/stacks/wazuh/prepare-config.sh"), config.envFile], { timeoutMs: 1200000 });
     await compose(["-f", stack("wazuh", config), "up", "-d", "--build"], { timeoutMs: 1200000 }, config);
     await compose(["-f", stack("triage-platform", config), "up", "-d"], { timeoutMs: 1200000 }, config);
+    await compose(["-f", stack("triage-platform", config), "up", "-d", "--force-recreate", "agent-compose", "agent-compose-ui"], { timeoutMs: 1200000 }, config);
     await run("/bin/sh", [path.join(config.workspace, "deploy/stacks/triage-platform/bootstrap.sh")], { timeoutMs: 1200000 });
     request.phase = "platform-updated";
     atomicWrite(requestPath, request);
