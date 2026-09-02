@@ -1,0 +1,89 @@
+{
+  "version": "2026.09.02",
+  "sources": [
+    {
+      "sourceId": "src-repository-reviewed-rule-cases",
+      "name": "仓库内规则边界用例集",
+      "sourceType": "reviewed_validation_corpus",
+      "location": "test-fixtures/",
+      "usage": "保存每条知识的确认、排除、证据不足和复合场景，用于阈值边界与降级行为回归；不等同于生产准确率统计。"
+    },
+    {
+      "sourceId": "src-wazuh-rule-language",
+      "name": "Wazuh Rules Syntax",
+      "sourceType": "vendor_documentation",
+      "url": "https://documentation.wazuh.com/current/user-manual/ruleset/ruleset-xml-syntax/rules.html",
+      "usage": "告警字段、规则组和可观察性映射。"
+    },
+    {
+      "sourceId": "src-mitre-attack-enterprise",
+      "name": "MITRE ATT&CK Enterprise",
+      "sourceType": "public_knowledge_base",
+      "url": "https://attack.mitre.org/",
+      "usage": "攻击行为、执行、持久化、凭据访问和横向传播特征。"
+    },
+    {
+      "sourceId": "src-mitre-attack-ics",
+      "name": "MITRE ATT&CK for ICS",
+      "sourceType": "public_knowledge_base",
+      "url": "https://attack.mitre.org/matrices/ics/",
+      "usage": "工业控制资产、控制过程和工程操作场景特征。"
+    },
+    {
+      "sourceId": "src-capec",
+      "name": "MITRE CAPEC",
+      "sourceType": "public_knowledge_base",
+      "url": "https://capec.mitre.org/",
+      "usage": "攻击模式、先决条件与缓解边界。"
+    },
+    {
+      "sourceId": "src-cwe",
+      "name": "MITRE CWE",
+      "sourceType": "public_knowledge_base",
+      "url": "https://cwe.mitre.org/",
+      "usage": "注入、内存安全、访问控制和信息暴露弱点语义。"
+    },
+    {
+      "sourceId": "src-owasp-top10",
+      "name": "OWASP Top 10",
+      "sourceType": "public_standard",
+      "url": "https://owasp.org/www-project-top-ten/",
+      "usage": "Web 攻击与访问控制风险分类，不直接作为单一判定依据。"
+    },
+    {
+      "sourceId": "src-cisa-kev",
+      "name": "CISA Known Exploited Vulnerabilities Catalog",
+      "sourceType": "public_catalog",
+      "url": "https://www.cisa.gov/known-exploited-vulnerabilities-catalog",
+      "usage": "已知利用活动的外部核验入口。"
+    },
+    {
+      "sourceId": "src-cnvd-ics",
+      "name": "CNVD 工控安全",
+      "sourceType": "public_catalog",
+      "url": "https://ics.cnvd.org.cn/index",
+      "usage": "国内工业控制漏洞和事件背景核验入口。"
+    },
+    {
+      "sourceId": "src-cnnvd",
+      "name": "CNNVD",
+      "sourceType": "public_catalog",
+      "url": "https://www.cnnvd.org.cn/",
+      "usage": "漏洞影响与修复状态核验入口。"
+    },
+    {
+      "sourceId": "src-nist-iot-8259",
+      "name": "NISTIR 8259 Series",
+      "sourceType": "public_guidance",
+      "url": "https://www.nist.gov/itl/applied-cybersecurity/nist-cybersecurity-iot-program/nistir-8259-series",
+      "usage": "物联网设备身份、配置、数据保护和更新能力边界。"
+    },
+    {
+      "sourceId": "src-unece-r155",
+      "name": "UN Regulation No. 155",
+      "sourceType": "public_regulation",
+      "url": "https://unece.org/transport/road-transport/reference-documents",
+      "usage": "车辆网络安全管理、风险和证据留存背景。"
+    }
+  ]
+}

@@ -6,15 +6,21 @@
     "fixtureId": "kb-iot_platform-sql_injection-confirmed-attack",
     "scenarioType": "confirmed_attack",
     "input": {
-      "evidence": [
-        "规范化请求、数据库审计和应用调用链的参数对应关系",
-        "规范化请求字段",
-        "应用与数据层错误日志"
-      ],
-      "authorizationRecord": false,
-      "recurrence": 1
+      "context": {
+        "evidenceRefs": [
+          "wazuh-alert:fixture",
+          "event:fixture"
+        ],
+        "domainId": "iot_platform",
+        "data": {
+          "sql_control_token_count": 2,
+          "query_shape_changed": true,
+          "database_effect_observed": true
+        }
+      }
     },
     "expected": {
+      "outcome": "confirmed",
       "action": "escalate_with_manual_review",
       "ticketRequired": true,
       "autoCloseAllowed": false
@@ -27,15 +33,22 @@
     "fixtureId": "kb-iot_platform-sql_injection-authorized-or-benign",
     "scenarioType": "authorized_or_benign",
     "input": {
-      "evidence": [
-        "规范化请求、数据库审计和应用调用链的参数对应关系",
-        "规范化请求字段",
-        "应用与数据层错误日志"
-      ],
-      "authorizationRecord": true,
-      "recurrence": 1
+      "context": {
+        "evidenceRefs": [
+          "wazuh-alert:fixture",
+          "event:fixture"
+        ],
+        "domainId": "iot_platform",
+        "data": {
+          "sql_control_token_count": 2,
+          "query_shape_changed": true,
+          "database_effect_observed": true,
+          "authorized_security_test": true
+        }
+      }
     },
     "expected": {
+      "outcome": "excluded",
       "action": "suppress_with_manual_review",
       "ticketRequired": true,
       "autoCloseAllowed": false
@@ -48,13 +61,20 @@
     "fixtureId": "kb-iot_platform-sql_injection-insufficient-evidence",
     "scenarioType": "insufficient_evidence",
     "input": {
-      "evidence": [
-        "规范化请求、数据库审计和应用调用链的参数对应关系"
-      ],
-      "authorizationRecord": false,
-      "recurrence": 1
+      "context": {
+        "evidenceRefs": [
+          "wazuh-alert:fixture",
+          "event:fixture"
+        ],
+        "domainId": "iot_platform",
+        "data": {
+          "sql_control_token_count": 2,
+          "query_shape_changed": true
+        }
+      }
     },
     "expected": {
+      "outcome": "insufficient",
       "action": "request_additional_evidence",
       "ticketRequired": true,
       "autoCloseAllowed": false
@@ -67,18 +87,22 @@
     "fixtureId": "kb-iot_platform-sql_injection-compound-or-recurrent",
     "scenarioType": "compound_or_recurrent",
     "input": {
-      "evidence": [
-        "规范化请求、数据库审计和应用调用链的参数对应关系",
-        "规范化请求字段",
-        "应用与数据层错误日志"
-      ],
-      "authorizationRecord": false,
-      "recurrence": 3,
-      "relatedAttackTypes": [
-        "sql_injection"
-      ]
+      "context": {
+        "evidenceRefs": [
+          "wazuh-alert:fixture",
+          "event:fixture"
+        ],
+        "domainId": "iot_platform",
+        "data": {
+          "sql_control_token_count": 2,
+          "query_shape_changed": true,
+          "database_effect_observed": true,
+          "recurrence": 3
+        }
+      }
     },
     "expected": {
+      "outcome": "confirmed",
       "action": "escalate_with_manual_review",
       "ticketRequired": true,
       "autoCloseAllowed": false

@@ -6,15 +6,21 @@
     "fixtureId": "kb-vehicle_platform-privilege_escalation-confirmed-attack",
     "scenarioType": "confirmed_attack",
     "input": {
-      "evidence": [
-        "权限变更、身份上下文、父子进程和敏感动作记录",
-        "权限变更审计",
-        "父子进程和身份上下文"
-      ],
-      "authorizationRecord": false,
-      "recurrence": 1
+      "context": {
+        "evidenceRefs": [
+          "wazuh-alert:fixture",
+          "event:fixture"
+        ],
+        "domainId": "vehicle_platform",
+        "data": {
+          "privilege_before": "guest",
+          "privilege_after": "admin",
+          "sensitive_action_observed": true
+        }
+      }
     },
     "expected": {
+      "outcome": "confirmed",
       "action": "escalate_with_manual_review",
       "ticketRequired": true,
       "autoCloseAllowed": false
@@ -27,15 +33,22 @@
     "fixtureId": "kb-vehicle_platform-privilege_escalation-authorized-or-benign",
     "scenarioType": "authorized_or_benign",
     "input": {
-      "evidence": [
-        "权限变更、身份上下文、父子进程和敏感动作记录",
-        "权限变更审计",
-        "父子进程和身份上下文"
-      ],
-      "authorizationRecord": true,
-      "recurrence": 1
+      "context": {
+        "evidenceRefs": [
+          "wazuh-alert:fixture",
+          "event:fixture"
+        ],
+        "domainId": "vehicle_platform",
+        "data": {
+          "privilege_before": "guest",
+          "privilege_after": "admin",
+          "sensitive_action_observed": true,
+          "authorization_valid": true
+        }
+      }
     },
     "expected": {
+      "outcome": "excluded",
       "action": "suppress_with_manual_review",
       "ticketRequired": true,
       "autoCloseAllowed": false
@@ -48,13 +61,20 @@
     "fixtureId": "kb-vehicle_platform-privilege_escalation-insufficient-evidence",
     "scenarioType": "insufficient_evidence",
     "input": {
-      "evidence": [
-        "权限变更、身份上下文、父子进程和敏感动作记录"
-      ],
-      "authorizationRecord": false,
-      "recurrence": 1
+      "context": {
+        "evidenceRefs": [
+          "wazuh-alert:fixture",
+          "event:fixture"
+        ],
+        "domainId": "vehicle_platform",
+        "data": {
+          "privilege_before": "guest",
+          "privilege_after": "admin"
+        }
+      }
     },
     "expected": {
+      "outcome": "insufficient",
       "action": "request_additional_evidence",
       "ticketRequired": true,
       "autoCloseAllowed": false
@@ -67,18 +87,22 @@
     "fixtureId": "kb-vehicle_platform-privilege_escalation-compound-or-recurrent",
     "scenarioType": "compound_or_recurrent",
     "input": {
-      "evidence": [
-        "权限变更、身份上下文、父子进程和敏感动作记录",
-        "权限变更审计",
-        "父子进程和身份上下文"
-      ],
-      "authorizationRecord": false,
-      "recurrence": 3,
-      "relatedAttackTypes": [
-        "privilege_escalation"
-      ]
+      "context": {
+        "evidenceRefs": [
+          "wazuh-alert:fixture",
+          "event:fixture"
+        ],
+        "domainId": "vehicle_platform",
+        "data": {
+          "privilege_before": "guest",
+          "privilege_after": "admin",
+          "sensitive_action_observed": true,
+          "recurrence": 3
+        }
+      }
     },
     "expected": {
+      "outcome": "confirmed",
       "action": "escalate_with_manual_review",
       "ticketRequired": true,
       "autoCloseAllowed": false

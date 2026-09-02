@@ -60,9 +60,9 @@
   "evidencePolicy": {
     "kind": "minimum_independent_evidence",
     "minimumIndependentEvidence": 2,
-    "basis": "内部安全运营经验与边界验证记录共同确认",
+    "basis": "同一载荷经至少三个 P2P 节点自动扩散时确认；受控签名内容分发排除。",
     "statisticalThreshold": false,
-    "calibrationRule": "任何频率、比例或风险分数阈值必须引用已完成人工复核的 Wazuh 告警与工单记录"
+    "calibrationRule": "部署后按已完成人工复核的 Wazuh 告警与工单滚动校准；校准前所有结果均保留人工确认。"
   },
   "supportingEvidence": [
     "至少两类相互独立证据支持P2P-Worm判断",
@@ -74,16 +74,16 @@
     "批量资产管理任务"
   ],
   "falsePositiveConditions": [
-    "授权活动未与审批记录正确关联",
-    "资产或协议标签配置错误"
+    "排除条件 approved-p2p-distribution 未正确关联",
+    "资产、主体或授权时间窗映射错误"
   ],
   "falseNegativeConditions": [
-    "关键遥测未接入或采集间断",
-    "攻击行为变形且未触发现有规则"
+    "必需事实 domainId、data.p2p_peer_count、data.shared_payload_match、data.autonomous_spread 任一缺采时只能补证",
+    "攻击者将活动拆分到多个来源或时间窗口以低于单次阈值"
   ],
   "bypassPoints": [
-    "攻击者使用可信账号或合法工具隐藏行为",
-    "跨资产分阶段执行导致单点证据不足"
+    "围绕阈值边界分散 P2P-Worm 行为",
+    "使用可信账号、签名工具或合法协议隐藏恶意意图"
   ],
   "unusableFields": [
     {
@@ -102,7 +102,7 @@
     "unmatched": "manual_classification"
   },
   "recommendedAction": "记录研判结果，创建人工工单并发送飞书通知，等待人工确认后处置。",
-  "policyStatus": "operational_knowledge",
+  "policyStatus": "executable_operational_knowledge",
   "autoCloseAllowed": false,
   "ticketRequired": true,
   "knowledgeStatement": "在车联网平台安全中，P2P-Worm必须由告警、资产、身份或网络等多源证据共同支持；证据不足时不得自动定性或关闭。",
@@ -115,9 +115,75 @@
     "security.ops.v1.SecurityOpsService/MatchKnowledge",
     "security.ops.v1.SecurityOpsService/EvaluatePolicy"
   ],
-  "version": "2026.09.01",
+  "version": "2026.09.02",
   "reviewStatus": "approved",
   "reviewedBy": "zhangyuqiao",
   "reviewedAt": "2026-09-01T22:49:09.998Z",
-  "reviewMarker": "Reviewed_Approved"
+  "reviewMarker": "Reviewed_Approved",
+  "executableRule": {
+    "version": "1.0",
+    "requiredFacts": [
+      "domainId",
+      "data.p2p_peer_count",
+      "data.shared_payload_match",
+      "data.autonomous_spread"
+    ],
+    "confirmWhen": {
+      "all": [
+        {
+          "predicateId": "domain-vehicle-platform",
+          "path": "domainId",
+          "op": "equals",
+          "value": "vehicle_platform"
+        },
+        {
+          "predicateId": "p2p-peers",
+          "path": "data.p2p_peer_count",
+          "op": "gte",
+          "value": 3
+        },
+        {
+          "predicateId": "shared-payload",
+          "path": "data.shared_payload_match",
+          "op": "equals",
+          "value": true
+        }
+      ],
+      "any": [
+        {
+          "predicateId": "p2p-autonomous-spread",
+          "path": "data.autonomous_spread",
+          "op": "equals",
+          "value": true
+        }
+      ],
+      "minimumAny": 1
+    },
+    "excludeWhen": {
+      "any": [
+        {
+          "predicateId": "approved-p2p-distribution",
+          "path": "data.approved_distribution",
+          "op": "equals",
+          "value": true
+        }
+      ]
+    },
+    "thresholdBasis": {
+      "sourceIds": [
+        "src-repository-reviewed-rule-cases",
+        "src-wazuh-rule-language",
+        "src-unece-r155",
+        "src-mitre-attack-enterprise"
+      ],
+      "statement": "同一载荷经至少三个 P2P 节点自动扩散时确认；受控签名内容分发排除。",
+      "calibration": "部署后按已完成人工复核的 Wazuh 告警与工单滚动校准；校准前所有结果均保留人工确认。"
+    }
+  },
+  "sourceRefs": [
+    "src-repository-reviewed-rule-cases",
+    "src-wazuh-rule-language",
+    "src-unece-r155",
+    "src-mitre-attack-enterprise"
+  ]
 }

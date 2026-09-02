@@ -4,13 +4,18 @@ import { mkdtempSync, rmSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-import { SecurityOpsError } from "../src/errors.js";
 import { KnowledgeRepository } from "../src/knowledge-repository.js";
 import { SecurityOpsService } from "../src/service.js";
 import { SecurityOpsStore } from "../src/store.js";
 
 const SECRET = "security-ops-test-decision-secret-1234567890";
 const EVIDENCE = ["认证失败与成功日志", "来源地址与设备身份", "账号状态和授权变更记录"];
+const FACTS = {
+  auth_failures: 12,
+  window_seconds: 180,
+  distinct_accounts: 4,
+  authorization_valid: false
+};
 
 function approvedKnowledge() {
   return {
@@ -21,6 +26,25 @@ function approvedKnowledge() {
     applicability: "direct",
     evidenceRequired: EVIDENCE,
     evidencePolicy: { kind: "minimum_independent_evidence", minimumIndependentEvidence: 2, statisticalThreshold: false },
+    executableRule: {
+      version: "1.0",
+      requiredFacts: ["data.auth_failures", "data.window_seconds", "data.distinct_accounts"],
+      confirmWhen: {
+        all: [
+          { predicateId: "failure-burst", path: "data.auth_failures", op: "gte", value: 8 },
+          { predicateId: "short-window", path: "data.window_seconds", op: "lte", value: 300 }
+        ],
+        any: [{ predicateId: "account-spray", path: "data.distinct_accounts", op: "gte", value: 3 }],
+        minimumAny: 1
+      },
+      excludeWhen: {
+        any: [{ predicateId: "approved-change", path: "data.authorization_valid", op: "equals", value: true }]
+      },
+      thresholdBasis: {
+        sourceIds: ["src-wazuh-reviewed-ticket-history"],
+        statement: "复核记录确认的五分钟认证失败聚集边界。"
+      }
+    },
     wazuhMapping: { wazuhObservability: "full", additionalTelemetryRequired: [] },
     reviewStatus: "approved",
     reviewedBy: "security-operations-owner",
@@ -54,7 +78,7 @@ function fixture() {
     alertJson: {
       rule: { id: "5710", level: 10 },
       agent: { id: "001", name: "vehicle-platform-gateway" },
-      data: { srcip: "198.51.100.18", dstuser: "platform-admin" }
+      data: { srcip: "198.51.100.18", dstuser: "platform-admin", ...FACTS }
     }
   });
   return {
@@ -88,7 +112,8 @@ test("SecurityOps completes a trace with an authoritative decision, ticket and F
       claimToken: claim.claimToken
     });
     assert.equal(matches.matches.length, 1);
-    assert.deepEqual(matches.matches[0].missingEvidence, [EVIDENCE[2]]);
+    assert.deepEqual(matches.matches[0].missingEvidence, []);
+    assert.equal(matches.matches[0].evaluation.outcome, "confirmed");
 
     const policy = context.service.evaluatePolicy({
       traceId: claim.traceId,
@@ -99,11 +124,10 @@ test("SecurityOps completes a trace with an authoritative decision, ticket and F
     assert.equal(policy.action, "escalate_with_manual_review");
     assert.equal(policy.ticketRequired, true);
     assert.equal(policy.autoCloseAllowed, false);
-    assert.ok(policy.decisionToken);
+    assert.equal(policy.evaluation[0].outcome, "confirmed");
 
     const result = context.service.recordTriageResult({
       traceId: claim.traceId,
-      decisionToken: policy.decisionToken,
       narrative: "认证失败、来源身份和后续成功登录形成一致证据链，需人工复核。",
       claimToken: claim.claimToken
     });
@@ -141,20 +165,21 @@ test("business writes are idempotent across Agent retries", () => {
     const enrichment = context.service.enrichAlert({ traceId: firstClaim.traceId, claimToken: firstClaim.claimToken });
     const policy = context.service.evaluatePolicy({
       traceId: firstClaim.traceId,
-      context: { observedEvidence: EVIDENCE, evidenceRefs: enrichment.evidenceRefs },
+      context: { data: FACTS, observedEvidence: EVIDENCE, evidenceRefs: enrichment.evidenceRefs },
       knowledgeIds: ["kb-vehicle_platform-brute_force"],
       claimToken: firstClaim.claimToken
     });
     const duplicatePolicy = context.service.evaluatePolicy({
       traceId: firstClaim.traceId,
-      context: { observedEvidence: EVIDENCE, evidenceRefs: enrichment.evidenceRefs },
+      context: { data: { ...FACTS, auth_failures: 1 }, observedEvidence: EVIDENCE, evidenceRefs: enrichment.evidenceRefs },
       knowledgeIds: ["kb-vehicle_platform-brute_force"],
       claimToken: firstClaim.claimToken
     });
-    assert.equal(duplicatePolicy.decisionToken, policy.decisionToken);
     assert.equal(duplicatePolicy.duplicate, true);
-    const result = context.service.recordTriageResult({ traceId: firstClaim.traceId, decisionToken: policy.decisionToken, narrative: "需要人工复核。", claimToken: firstClaim.claimToken });
-    const duplicateResult = context.service.recordTriageResult({ traceId: firstClaim.traceId, decisionToken: policy.decisionToken, narrative: "重试说明不会覆盖首次记录。", claimToken: firstClaim.claimToken });
+    assert.equal(duplicatePolicy.action, policy.action);
+    assert.equal(duplicatePolicy.evaluation[0].outcome, "confirmed");
+    const result = context.service.recordTriageResult({ traceId: firstClaim.traceId, narrative: "需要人工复核。", claimToken: firstClaim.claimToken });
+    const duplicateResult = context.service.recordTriageResult({ traceId: firstClaim.traceId, narrative: "重试说明不会覆盖首次记录。", claimToken: firstClaim.claimToken });
     assert.equal(duplicateResult.resultId, result.resultId);
     assert.equal(duplicateResult.duplicate, true);
     const ticket = context.service.createManualTicket({ traceId: firstClaim.traceId, resultId: result.resultId, claimToken: firstClaim.claimToken });
@@ -174,7 +199,7 @@ test("missing evidence and untrusted authorization flags never produce automatic
     const claim = context.service.claimAlert({ eventId: "event-vehicle-1" });
     const missing = context.service.evaluatePolicy({
       traceId: claim.traceId,
-      context: { observedEvidence: EVIDENCE.slice(0, 1), evidenceRefs: ["wazuh-alert:wazuh-9001"] },
+      context: { data: { auth_failures: 12, window_seconds: 180 }, observedEvidence: EVIDENCE.slice(0, 1), evidenceRefs: ["wazuh-alert:wazuh-9001"] },
       knowledgeIds: ["kb-vehicle_platform-brute_force"],
       claimToken: claim.claimToken
     });
@@ -189,7 +214,7 @@ test("missing evidence and untrusted authorization flags never produce automatic
     const claim = authorized.service.claimAlert({ eventId: "event-vehicle-1" });
     const policy = authorized.service.evaluatePolicy({
       traceId: claim.traceId,
-      context: { observedEvidence: EVIDENCE, evidenceRefs: ["wazuh-alert:wazuh-9001"], authorizationRecord: true },
+      context: { data: FACTS, observedEvidence: EVIDENCE, evidenceRefs: ["wazuh-alert:wazuh-9001"], authorizationRecord: true },
       knowledgeIds: ["kb-vehicle_platform-brute_force"],
       claimToken: claim.claimToken
     });
@@ -261,6 +286,7 @@ test("only an active unexpired scope-matching authorization record can suppress"
         const policy = isolated.service.evaluatePolicy({
           traceId: claim.traceId,
           context: {
+            data: FACTS,
             agent: { name: "vehicle-platform-gateway" },
             observedEvidence: EVIDENCE,
             evidenceRefs: ["wazuh-alert:wazuh-9001"],
@@ -283,21 +309,25 @@ test("only an active unexpired scope-matching authorization record can suppress"
   }
 });
 
-test("RecordTriageResult rejects a modified decision token", () => {
+test("RecordTriageResult ignores caller decision fields and uses the stored policy", () => {
   const context = fixture();
   try {
     const claim = context.service.claimAlert({ eventId: "event-vehicle-1" });
     const policy = context.service.evaluatePolicy({
       traceId: claim.traceId,
-      context: { observedEvidence: EVIDENCE, evidenceRefs: ["wazuh-alert:wazuh-9001"] },
+      context: { data: FACTS, observedEvidence: EVIDENCE, evidenceRefs: ["wazuh-alert:wazuh-9001"] },
       knowledgeIds: ["kb-vehicle_platform-brute_force"],
       claimToken: claim.claimToken
     });
-    const tampered = `${policy.decisionToken.slice(0, -1)}${policy.decisionToken.endsWith("A") ? "B" : "A"}`;
-    assert.throws(
-      () => context.service.recordTriageResult({ traceId: claim.traceId, decisionToken: tampered, narrative: "非法改写。", claimToken: claim.claimToken }),
-      (error) => error instanceof SecurityOpsError && error.code === "FAILED_PRECONDITION"
-    );
+    const result = context.service.recordTriageResult({
+      traceId: claim.traceId,
+      decision: "suppress",
+      action: "auto_close",
+      narrative: "调用方字段不得覆盖服务端策略。",
+      claimToken: claim.claimToken
+    });
+    assert.equal(result.decision, policy.decision);
+    assert.equal(result.action, policy.action);
   } finally {
     context.close();
   }

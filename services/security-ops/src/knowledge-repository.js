@@ -1,11 +1,19 @@
 import { readFileSync } from "node:fs";
 
 import { invalidArgument } from "./errors.js";
+import { evaluateKnowledgeRule, validateKnowledgeRule } from "./knowledge-rule-engine.js";
 
 export class KnowledgeRepository {
   constructor(records) {
     if (!Array.isArray(records)) throw new TypeError("knowledge records must be an array");
     this.records = records.filter((record) => record.reviewStatus === "approved");
+    for (const record of this.records) {
+      try {
+        validateKnowledgeRule(record.executableRule);
+      } catch (error) {
+        throw new TypeError(`${record.knowledgeId ?? "unknown knowledge"}: ${error.message}`, { cause: error });
+      }
+    }
     this.byId = new Map(this.records.map((record) => [record.knowledgeId, record]));
     if (this.byId.size !== this.records.length) throw new TypeError("knowledgeId values must be unique");
   }
@@ -27,19 +35,25 @@ export class KnowledgeRepository {
   }
 
   match({ domainId, attackTypeId, context = {} }) {
-    const candidates = this.records.filter((record) =>
-      record.domainId === domainId &&
-      (record.attackTypeId === attackTypeId || record.aliases?.includes(attackTypeId))
-    );
-    const observed = new Set(normalizeStringArray(context.observedEvidence));
-    return candidates.map((record) => {
-      const missingEvidence = record.evidenceRequired.filter((item) => !observed.has(item));
+    const candidates = this.records.filter((record) => record.domainId === domainId);
+    const evaluated = candidates.map((record) => ({
+      record,
+      hinted: record.attackTypeId === attackTypeId || record.aliases?.includes(attackTypeId),
+      evaluation: evaluateKnowledgeRule(record.executableRule, context)
+    }));
+    const confirmed = evaluated.filter((item) => item.evaluation.outcome === "confirmed");
+    const selected = confirmed.length > 0 ? confirmed : evaluated.filter((item) => item.hinted);
+    return selected
+      .sort((left, right) => Number(right.hinted) - Number(left.hinted) || left.record.knowledgeId.localeCompare(right.record.knowledgeId))
+      .map(({ record, evaluation }) => {
       const evidenceRefs = normalizeStringArray(context.evidenceRefs);
       return {
         knowledgeId: record.knowledgeId,
         applicability: record.applicability,
         evidenceRefs,
-        missingEvidence,
+        missingEvidence: evaluation.missingFacts,
+        evaluation,
+        evaluationJson: JSON.stringify(evaluation),
         wazuhObservability: record.wazuhMapping?.wazuhObservability ?? "partial",
         additionalTelemetryRequired: record.wazuhMapping?.additionalTelemetryRequired ?? [],
         ticketRequired: true,

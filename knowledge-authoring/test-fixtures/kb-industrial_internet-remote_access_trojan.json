@@ -6,15 +6,21 @@
     "fixtureId": "kb-industrial_internet-remote_access_trojan-confirmed-attack",
     "scenarioType": "confirmed_attack",
     "input": {
-      "evidence": [
-        "控制通道、执行命令、会话主体和持久化记录",
-        "文件哈希与签名",
-        "进程树、持久化和网络证据"
-      ],
-      "authorizationRecord": false,
-      "recurrence": 1
+      "context": {
+        "evidenceRefs": [
+          "wazuh-alert:fixture",
+          "event:fixture"
+        ],
+        "domainId": "industrial_internet",
+        "data": {
+          "interactive_remote_control": true,
+          "remote_command_count": 1,
+          "authorization_valid": false
+        }
+      }
     },
     "expected": {
+      "outcome": "confirmed",
       "action": "escalate_with_manual_review",
       "ticketRequired": true,
       "autoCloseAllowed": false
@@ -27,15 +33,22 @@
     "fixtureId": "kb-industrial_internet-remote_access_trojan-authorized-or-benign",
     "scenarioType": "authorized_or_benign",
     "input": {
-      "evidence": [
-        "控制通道、执行命令、会话主体和持久化记录",
-        "文件哈希与签名",
-        "进程树、持久化和网络证据"
-      ],
-      "authorizationRecord": true,
-      "recurrence": 1
+      "context": {
+        "evidenceRefs": [
+          "wazuh-alert:fixture",
+          "event:fixture"
+        ],
+        "domainId": "industrial_internet",
+        "data": {
+          "interactive_remote_control": true,
+          "remote_command_count": 1,
+          "authorization_valid": false,
+          "approved_remote_operations": true
+        }
+      }
     },
     "expected": {
+      "outcome": "excluded",
       "action": "suppress_with_manual_review",
       "ticketRequired": true,
       "autoCloseAllowed": false
@@ -48,13 +61,20 @@
     "fixtureId": "kb-industrial_internet-remote_access_trojan-insufficient-evidence",
     "scenarioType": "insufficient_evidence",
     "input": {
-      "evidence": [
-        "控制通道、执行命令、会话主体和持久化记录"
-      ],
-      "authorizationRecord": false,
-      "recurrence": 1
+      "context": {
+        "evidenceRefs": [
+          "wazuh-alert:fixture",
+          "event:fixture"
+        ],
+        "domainId": "industrial_internet",
+        "data": {
+          "interactive_remote_control": true,
+          "remote_command_count": 1
+        }
+      }
     },
     "expected": {
+      "outcome": "insufficient",
       "action": "request_additional_evidence",
       "ticketRequired": true,
       "autoCloseAllowed": false
@@ -67,18 +87,22 @@
     "fixtureId": "kb-industrial_internet-remote_access_trojan-compound-or-recurrent",
     "scenarioType": "compound_or_recurrent",
     "input": {
-      "evidence": [
-        "控制通道、执行命令、会话主体和持久化记录",
-        "文件哈希与签名",
-        "进程树、持久化和网络证据"
-      ],
-      "authorizationRecord": false,
-      "recurrence": 3,
-      "relatedAttackTypes": [
-        "remote_access_trojan"
-      ]
+      "context": {
+        "evidenceRefs": [
+          "wazuh-alert:fixture",
+          "event:fixture"
+        ],
+        "domainId": "industrial_internet",
+        "data": {
+          "interactive_remote_control": true,
+          "remote_command_count": 1,
+          "authorization_valid": false,
+          "recurrence": 3
+        }
+      }
     },
     "expected": {
+      "outcome": "confirmed",
       "action": "escalate_with_manual_review",
       "ticketRequired": true,
       "autoCloseAllowed": false

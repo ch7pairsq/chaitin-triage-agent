@@ -1,6 +1,6 @@
 # SecurityOps OctoBus Service
 
-该目录是独立的 OctoBus 业务服务包，负责 Wazuh 告警接入、业务 SQLite、确定性策略、人工工单、飞书投递和 trace 查询。它不导入 Agent 源码，Agent 也不得导入本目录源码。
+该目录是独立的 OctoBus 业务服务包，负责 Wazuh 告警接入、可执行知识、业务 SQLite、确定性策略、人工工单、飞书投递和 trace 查询。它不导入 Agent 源码，Agent 也不得导入本目录源码。
 
 ```powershell
 cd services/security-ops
@@ -16,3 +16,5 @@ npm run pack:check
 研判结果、人工工单和飞书 `delivery_outbox` 分开持久化：业务完成不等于通知已送达，飞书失败不会回滚结果或工单。可重试错误使用有界指数退避，第 9 次仍失败或不可重试错误进入 `manual`；readiness 返回 backlog、manual 数、oldest pending age、active batch 和 last error。进程收到停止信号后不再领取新投递，并在最长 10 秒内等待当前批次结束。
 
 授权降噪只认可通过 `triage-ops` capset 写入的授权记录。记录必须处于 active 状态、在有效期内、与告警资产/账号/规则/变更窗口精确匹配并包含证据引用。告警负载中的布尔标记不具备授权效力，缺失、过期、撤销或范围不匹配时按普通告警继续研判。
+
+`knowledge-rule-engine.js` 只执行白名单路径和有限操作符。`MatchKnowledge` 在同领域执行规则，事件类型只作提示；`EvaluatePolicy` 在服务端重新执行并把评估摘要写入 `policy_decisions.evaluation_json`。缺事实、排除命中、确认命中和事实完整但未匹配分别进入补证、带人工复核的降噪、升级和人工分类。策略完整性 token 仅在服务内部生成和核对，Agent 不再负责转抄。

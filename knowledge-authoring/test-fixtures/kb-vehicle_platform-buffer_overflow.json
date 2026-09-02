@@ -6,15 +6,21 @@
     "fixtureId": "kb-vehicle_platform-buffer_overflow-confirmed-attack",
     "scenarioType": "confirmed_attack",
     "input": {
-      "evidence": [
-        "触发输入、崩溃转储、组件版本和修复状态",
-        "崩溃转储或终端检测证据",
-        "触发请求与进程日志"
-      ],
-      "authorizationRecord": false,
-      "recurrence": 1
+      "context": {
+        "evidenceRefs": [
+          "wazuh-alert:fixture",
+          "event:fixture"
+        ],
+        "domainId": "vehicle_platform",
+        "data": {
+          "input_size_bytes": 4096,
+          "process_crashed": true,
+          "memory_violation_observed": true
+        }
+      }
     },
     "expected": {
+      "outcome": "confirmed",
       "action": "escalate_with_manual_review",
       "ticketRequired": true,
       "autoCloseAllowed": false
@@ -27,15 +33,22 @@
     "fixtureId": "kb-vehicle_platform-buffer_overflow-authorized-or-benign",
     "scenarioType": "authorized_or_benign",
     "input": {
-      "evidence": [
-        "触发输入、崩溃转储、组件版本和修复状态",
-        "崩溃转储或终端检测证据",
-        "触发请求与进程日志"
-      ],
-      "authorizationRecord": true,
-      "recurrence": 1
+      "context": {
+        "evidenceRefs": [
+          "wazuh-alert:fixture",
+          "event:fixture"
+        ],
+        "domainId": "vehicle_platform",
+        "data": {
+          "input_size_bytes": 4096,
+          "process_crashed": true,
+          "memory_violation_observed": true,
+          "known_nonsecurity_defect": true
+        }
+      }
     },
     "expected": {
+      "outcome": "excluded",
       "action": "suppress_with_manual_review",
       "ticketRequired": true,
       "autoCloseAllowed": false
@@ -48,13 +61,20 @@
     "fixtureId": "kb-vehicle_platform-buffer_overflow-insufficient-evidence",
     "scenarioType": "insufficient_evidence",
     "input": {
-      "evidence": [
-        "触发输入、崩溃转储、组件版本和修复状态"
-      ],
-      "authorizationRecord": false,
-      "recurrence": 1
+      "context": {
+        "evidenceRefs": [
+          "wazuh-alert:fixture",
+          "event:fixture"
+        ],
+        "domainId": "vehicle_platform",
+        "data": {
+          "input_size_bytes": 4096,
+          "process_crashed": true
+        }
+      }
     },
     "expected": {
+      "outcome": "insufficient",
       "action": "request_additional_evidence",
       "ticketRequired": true,
       "autoCloseAllowed": false
@@ -67,18 +87,22 @@
     "fixtureId": "kb-vehicle_platform-buffer_overflow-compound-or-recurrent",
     "scenarioType": "compound_or_recurrent",
     "input": {
-      "evidence": [
-        "触发输入、崩溃转储、组件版本和修复状态",
-        "崩溃转储或终端检测证据",
-        "触发请求与进程日志"
-      ],
-      "authorizationRecord": false,
-      "recurrence": 3,
-      "relatedAttackTypes": [
-        "buffer_overflow"
-      ]
+      "context": {
+        "evidenceRefs": [
+          "wazuh-alert:fixture",
+          "event:fixture"
+        ],
+        "domainId": "vehicle_platform",
+        "data": {
+          "input_size_bytes": 4096,
+          "process_crashed": true,
+          "memory_violation_observed": true,
+          "recurrence": 3
+        }
+      }
     },
     "expected": {
+      "outcome": "confirmed",
       "action": "escalate_with_manual_review",
       "ticketRequired": true,
       "autoCloseAllowed": false

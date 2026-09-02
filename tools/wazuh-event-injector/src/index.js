@@ -9,7 +9,12 @@ const profiles = Object.freeze([
     protocol: "HTTPS",
     srcip: "198.51.100.41",
     dstuser: "fleet-operator",
-    outcome: "failed"
+    outcome: "failed",
+    auth_failures: 12,
+    window_seconds: 180,
+    distinct_accounts: 4,
+    authorization_valid: false,
+    observed_evidence: ["认证失败与成功日志", "来源地址与设备身份", "账号状态和授权变更记录"]
   },
   {
     domain_id: "iot_platform",
@@ -18,7 +23,12 @@ const profiles = Object.freeze([
     protocol: "MQTT",
     srcip: "198.51.100.42",
     dstuser: "device-service",
-    outcome: "denied"
+    outcome: "allowed",
+    protected_resource: true,
+    authorization_valid: false,
+    protected_action_succeeded: true,
+    public_resource: false,
+    observed_evidence: ["身份认证与授权日志", "资源权限策略", "请求和响应状态"]
   },
   {
     domain_id: "industrial_internet",
@@ -27,7 +37,12 @@ const profiles = Object.freeze([
     protocol: "OPC-UA",
     srcip: "198.51.100.43",
     dstuser: "edge-runtime",
-    outcome: "blocked"
+    outcome: "executed",
+    untrusted_input_reached_shell: true,
+    shell_child_process: true,
+    execution_side_effect: true,
+    authorization_valid: false,
+    observed_evidence: ["进程树与命令行", "应用调用链和网络连接", "命令执行结果"]
   }
 ]);
 

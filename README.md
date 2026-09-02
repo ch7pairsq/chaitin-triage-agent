@@ -18,7 +18,7 @@ Agent 不直接访问 Wazuh、SQLite、飞书或任意业务 HTTP 服务。GitHu
 | Wazuh Connector | 使用只读账号和 TLS 查询 Wazuh Indexer API | 不写 Wazuh，不访问业务 SQLite |
 | OctoBus | 托管 service/instance，按 capset 和 method 做精确授权，记录能力访问 | 不承载长耗时编排 |
 | agent-compose | 运行分钟级确定性采集与 webhook 事件 Agent，并向隔离运行注入 MCP 工具 | 不保存业务终态，不直接调用外部业务服务 |
-| SecurityOps | 告警幂等接入、证据匹配、确定性策略、工单、飞书 outbox、trace | 不查询 Wazuh，不调用模型 |
+| SecurityOps | 告警幂等接入、可执行知识、确定性策略、工单、飞书 outbox、trace | 不查询 Wazuh，不调用模型 |
 | SQLite | 保存 SecurityOps 单实例业务状态和审计记录 | 不保存 agent-compose/OctoBus 控制面数据 |
 | release-webhook | 校验 GitHub HMAC，限定仓库/分支/SHA，持久化发布请求 | 不参与告警研判 |
 
@@ -72,7 +72,7 @@ flowchart LR
 
 ```mermaid
 flowchart TB
-  D[领域核心<br/>证据约束 / 决策令牌 / 知识匹配 / 状态规则]
+  D[领域核心<br/>白名单规则解释器 / 证据约束 / 知识匹配 / 状态规则]
   A[应用用例<br/>SecurityOpsService 十六个业务方法]
   C[端口与契约<br/>Proto / service.json / 配置与密钥 Schema]
   I[基础设施适配<br/>SQLite Store / Outbox / Wazuh TLS Client / OctoBus Runtime]
@@ -107,6 +107,8 @@ chaitin-triage-agent/
 │       ├── proto/                    # 入站能力契约
 │       ├── src/service.js            # 应用用例与状态推进
 │       ├── src/decision-token.js     # 决策完整性与防篡改
+│       ├── src/knowledge-rule-engine.js # 可执行知识的安全规则解释器
+│       ├── src/knowledge-policy.js      # 规则结果到安全动作的确定性映射
 │       ├── src/knowledge-repository.js
 │       ├── src/store.js              # SQLite 适配器与迁移
 │       ├── src/outbox.js             # Agent/飞书可靠投递适配器
@@ -153,14 +155,14 @@ sequenceDiagram
   Agent->>Bus: ClaimAlert(eventId)
   Bus-->>Agent: traceId + claimToken + leaseUntil
   Agent->>Bus: 携带 claimToken 顺序调用 8 个 leased 方法
-  Bus->>Ops: 研判、工单、飞书入队、终态
+  Bus->>Ops: 执行知识条件、保存策略、工单、飞书入队、终态
 ```
 
 固定采集程序只负责读取、接入和恢复检查，不在同一运行中执行研判。Wazuh Connector 只返回带 `triage_input` 规则组的安全运营告警，避免把 Wazuh 自身运维事件送入业务队列。接入事务提交后由 SecurityOps `trigger_outbox` 发布 agent-compose 事件，避免“告警已写入但事件丢失”。重复 Wazuh alert 使用稳定 `eventId=wazuh:<alertId>`，不会生成第二条业务记录；`status=pending` 或 `duplicate=true` 均表示本次接入调用成功。
 
 `POST webhook.wazuh.alert` 是 agent-compose 官方事件入口，属于触发面，不包装成 OctoBus 业务方法。它只携带 `eventId` 和 `correlationId` 等不透明标识；事件 Agent 随后的告警上下文读取、状态推进、人工工单和通知入队全部通过 OctoBus `triage-runner`。因此简化数据流仍是 `Wazuh -> OctoBus -> agent-compose Agent -> OctoBus -> SecurityOps -> SQLite/飞书`，同时避免把 OctoBus 误用为事件总线。
 
-Webhook 返回 `202` 或 agent-compose 事件状态变为 `published_to_bus` 只表示事件层已接收，不表示研判完成。业务完成必须以 SecurityOps 终态 trace 为准。领域、攻击类型、上下文和证据均由 SecurityOps 从 Wazuh 告警提取；缺少可信分类时固定进入 `unclassified/other_attack` 人工分类路径，Agent 不得自行补全。
+Webhook 返回 `202` 或 agent-compose 事件状态变为 `published_to_bus` 只表示事件层已接收，不表示研判完成。业务完成必须以 SecurityOps 终态 trace 为准。领域、攻击类型提示、上下文和证据均由 SecurityOps 从 Wazuh 告警提取；`attack_type_id` 只用于候选排序，SecurityOps 会执行同领域知识条件，事件事实命中可覆盖错误提示。缺少领域或关键事实时固定进入人工分类或补证路径，Agent 不得自行补全。
 
 ### 3.2 租约、围栏与分钟级恢复
 
@@ -226,7 +228,7 @@ SecurityOps 的 `triage.db` 位于其 OctoBus instance workdir。主要表包括
 - `manual_tickets`：始终创建且保持 `open` 的人工工单；
 - `delivery_outbox`：飞书投递、重试和人工恢复状态。
 
-`EvaluatePolicy` 返回带 HMAC 的 `decisionToken`。`RecordTriageResult` 必须原样提交该 token；修改 decision、action、evidence 或 trace 会被拒绝。所有路径都满足：
+`EvaluatePolicy` 在服务端重新执行已批准规则，把权威 decision、action 和 `evaluation_json` 写入 `policy_decisions`。内部完整性材料不再交给模型转抄；`RecordTriageResult` 只接收 narrative，并在当前 `claimToken + traceId` 围栏内绑定已保存策略。调用方即使额外提交 decision 或 action 也不能覆盖服务端结果。所有路径都满足：
 
 - `ticketRequired=true`；
 - `autoCloseAllowed=false`；
@@ -243,9 +245,18 @@ SecurityOps 的 `triage.db` 位于其 OctoBus instance workdir。主要表包括
 - 99 条领域知识；
 - 396 条边界测试记录，每条知识覆盖证据充分、授权或良性、证据不足、复合或重复活动四类输入。
 
-知识包含适用资产、协议、领域关注点、33 类攻击各自独立的可观测信号与证据、Wazuh 映射、所需遥测、反例、误报条件、漏报条件、绕过点和不可单独使用字段。单一 `rule.level` 或单一来源地址不得完成定性；当前使用多源证据门控，不把未经数据校准的风险分数包装成有效阈值。
+知识包含适用资产、协议、领域关注点、33 类攻击各自独立的可观测信号与证据、Wazuh 映射、所需遥测、反例、误报条件、漏报条件、绕过点和不可单独使用字段。每条记录还包含 `executableRule`：
 
-运行知识只接受 `reviewStatus=approved` 且填写 `reviewedBy`、`reviewMarker`、`reviewedAt` 的记录。396 条边界测试记录不进入运行知识包，也不作为历史事件数量。仓库不会自动替人工完成批准。
+- `requiredFacts`：缺失即转 `request_additional_evidence`；
+- `confirmWhen`：由白名单字段路径和 `equals/in/gte/lte/contains_any/starts_with/truthy/exists` 等有限操作组成；
+- `excludeWhen`：命中授权变更、受控测试、签名发布等反例时降噪，但仍创建人工工单；
+- `thresholdBasis`：列出来源 ID、明确边界和部署后以已复核 Wazuh 告警及工单校准的规则。
+
+例如车联网暴力破解要求五分钟内至少 8 次失败、影响至少 3 个账号；物联网为 10 次，工业互联网为 6 次。规则还要求领域和关键事实同时存在，有效换密授权优先排除。拒绝服务按领域容量基线分别使用每秒 800/500/300 次请求，并同时要求错误率至少 20% 和服务降级。这里的数值是保守初始边界，不宣称生产准确率；部署后必须依据人工复核记录滚动校准。单一 `rule.level`、来源地址、公开标准条目或事件类型提示都不能单独定性。
+
+`sources.json` 登记 Wazuh 文档、MITRE ATT&CK/ICS、CAPEC、CWE、OWASP、CISA KEV、CNVD 工控、CNNVD、NISTIR 8259 和 UNECE R155 等核验入口。公开知识只提供攻击语义、观察点和外部核验线索，最终结果来自事件事实对本仓库可执行条件的命中。
+
+运行知识只接受 `reviewStatus=approved` 且填写 `reviewedBy`、`reviewMarker`、`reviewedAt` 的记录。396 条边界用例用生产规则解释器逐条执行，并包含知识移除、排除条件移除和阈值边界消融测试；移除知识会使确认匹配消失。用例不进入运行知识包，也不作为历史事件数量或准确率。仓库不会自动替人工完成批准，也不提供批量模板生成器覆盖已复核知识。
 
 ## 7. 新服务器独立初始化
 
@@ -371,7 +382,6 @@ docker run --rm -v "$PWD:/repo" -w /repo node:22.23.2-alpine3.24 sh -ec '
 
 ```sh
 docker run --rm -v "$PWD:/repo" -w /repo/knowledge-authoring node:22.23.2-alpine3.24 sh -ec '
-  npm run generate
   npm run review:check
   npm run check
   npm test
@@ -616,7 +626,7 @@ docker compose --env-file .env -f deploy/stacks/release-webhook/docker-compose.y
 | 分钟轮询失败 | `wazuh-ingress` catalog、Wazuh Connector instance、CA 和 `triage_reader` 角色 |
 | 事件未触发 | SecurityOps `trigger_outbox` 状态、agent-compose `wazuh` webhook source、Token |
 | 研判方法不可用 | `triage-runner` method binding，不要扩大为全部方法 |
-| 决策写入被拒绝 | `decisionToken` 是否原样传递，trace 是否一致 |
+| 结果写入被拒绝 | `claimToken` 是否仍在租约内、trace 是否一致、是否已先完成 `EvaluatePolicy` |
 | 飞书未收到 | delivery 状态、Webhook 域名、签名 secret、429/5xx 重试；不要直接绕过 outbox 重发 |
 | 租约恢复异常 | `wazuh-intake` 输出中的 `requeued/manualized`、`RequeueStalledAlerts` 审计、claimToken attempt 与旧 token 拒绝记录 |
 | worker readiness 异常 | backlog、oldest pending age、active batch、last error；先恢复外部依赖，再通过 `triage-ops` 处理人工投递 |

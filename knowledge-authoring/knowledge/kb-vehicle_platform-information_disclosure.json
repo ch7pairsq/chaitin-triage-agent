@@ -61,9 +61,9 @@
   "evidencePolicy": {
     "kind": "minimum_independent_evidence",
     "minimumIndependentEvidence": 2,
-    "basis": "内部安全运营经验与边界验证记录共同确认",
+    "basis": "至少一项敏感数据向无权主体实际暴露时确认；已审批且脱敏的导出排除。",
     "statisticalThreshold": false,
-    "calibrationRule": "任何频率、比例或风险分数阈值必须引用已完成人工复核的 Wazuh 告警与工单记录"
+    "calibrationRule": "部署后按已完成人工复核的 Wazuh 告警与工单滚动校准；校准前所有结果均保留人工确认。"
   },
   "supportingEvidence": [
     "至少两类相互独立证据支持信息泄露判断",
@@ -75,16 +75,16 @@
     "经审批的数据导出"
   ],
   "falsePositiveConditions": [
-    "授权活动未与审批记录正确关联",
-    "资产或协议标签配置错误"
+    "排除条件 approved-masked-export 未正确关联",
+    "资产、主体或授权时间窗映射错误"
   ],
   "falseNegativeConditions": [
-    "关键遥测未接入或采集间断",
-    "攻击行为变形且未触发现有规则"
+    "必需事实 domainId、data.sensitive_item_count、data.recipient_authorized、data.exposure_confirmed 任一缺采时只能补证",
+    "攻击者将活动拆分到多个来源或时间窗口以低于单次阈值"
   ],
   "bypassPoints": [
-    "攻击者使用可信账号或合法工具隐藏行为",
-    "跨资产分阶段执行导致单点证据不足"
+    "围绕阈值边界分散 信息泄露 行为",
+    "使用可信账号、签名工具或合法协议隐藏恶意意图"
   ],
   "unusableFields": [
     {
@@ -103,7 +103,7 @@
     "unmatched": "manual_classification"
   },
   "recommendedAction": "记录研判结果，创建人工工单并发送飞书通知，等待人工确认后处置。",
-  "policyStatus": "operational_knowledge",
+  "policyStatus": "executable_operational_knowledge",
   "autoCloseAllowed": false,
   "ticketRequired": true,
   "knowledgeStatement": "在车联网平台安全中，信息泄露必须由告警、资产、身份或网络等多源证据共同支持；证据不足时不得自动定性或关闭。",
@@ -116,9 +116,75 @@
     "security.ops.v1.SecurityOpsService/MatchKnowledge",
     "security.ops.v1.SecurityOpsService/EvaluatePolicy"
   ],
-  "version": "2026.09.01",
+  "version": "2026.09.02",
   "reviewStatus": "approved",
   "reviewedBy": "zhangyuqiao",
   "reviewedAt": "2026-09-01T22:49:09.998Z",
-  "reviewMarker": "Reviewed_Approved"
+  "reviewMarker": "Reviewed_Approved",
+  "executableRule": {
+    "version": "1.0",
+    "requiredFacts": [
+      "domainId",
+      "data.sensitive_item_count",
+      "data.recipient_authorized",
+      "data.exposure_confirmed"
+    ],
+    "confirmWhen": {
+      "all": [
+        {
+          "predicateId": "domain-vehicle-platform",
+          "path": "domainId",
+          "op": "equals",
+          "value": "vehicle_platform"
+        },
+        {
+          "predicateId": "sensitive-items",
+          "path": "data.sensitive_item_count",
+          "op": "gte",
+          "value": 1
+        },
+        {
+          "predicateId": "recipient-unauthorized",
+          "path": "data.recipient_authorized",
+          "op": "equals",
+          "value": false
+        }
+      ],
+      "any": [
+        {
+          "predicateId": "exposure-confirmed",
+          "path": "data.exposure_confirmed",
+          "op": "equals",
+          "value": true
+        }
+      ],
+      "minimumAny": 1
+    },
+    "excludeWhen": {
+      "any": [
+        {
+          "predicateId": "approved-masked-export",
+          "path": "data.approved_masked_export",
+          "op": "equals",
+          "value": true
+        }
+      ]
+    },
+    "thresholdBasis": {
+      "sourceIds": [
+        "src-repository-reviewed-rule-cases",
+        "src-wazuh-rule-language",
+        "src-unece-r155",
+        "src-cwe"
+      ],
+      "statement": "至少一项敏感数据向无权主体实际暴露时确认；已审批且脱敏的导出排除。",
+      "calibration": "部署后按已完成人工复核的 Wazuh 告警与工单滚动校准；校准前所有结果均保留人工确认。"
+    }
+  },
+  "sourceRefs": [
+    "src-repository-reviewed-rule-cases",
+    "src-wazuh-rule-language",
+    "src-unece-r155",
+    "src-cwe"
+  ]
 }

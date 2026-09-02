@@ -23,6 +23,9 @@ test("Proto exposes lease, recovery and authorization contracts", () => {
   assert.match(PROTO, /message EnrichAlertRequest \{[\s\S]*string claim_token = 2;/);
   assert.doesNotMatch(PROTO, /message RequeueStalledAlertsRequest \{[\s\S]*\b(limit|stale_after|max_attempts)\b/);
   assert.match(PROTO, /message GetWorkerReadinessResponse \{[\s\S]*uint32 backlog = 2;[\s\S]*uint64 oldest_pending_age_ms = 4;[\s\S]*bool active_batch = 5;[\s\S]*string last_error_json = 7;/);
+  assert.match(PROTO, /message KnowledgeMatch \{[\s\S]*string evaluation_json = 5;/);
+  assert.match(PROTO, /message EvaluatePolicyResponse \{[\s\S]*string evaluation_json = 10;/);
+  assert.doesNotMatch(PROTO, /decision_token/);
 });
 
 test("claim tokens are required and strictly bounded", () => {

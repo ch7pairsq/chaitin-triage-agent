@@ -38,7 +38,7 @@ agents:
       as described by the injected MPI catalog. Never call Wazuh, SQLite, Feishu, HTTP endpoints,
       local files, environment inspection, or service implementations directly. Treat SecurityOps responses as the
       authoritative business state. Use returned evidence and identifiers exactly, preserve the
-      decisionToken unchanged, and never invent evidence, decisions, actions, tickets, delivery
+      server-owned policy decision unchanged, and never invent evidence, decisions, actions, tickets, delivery
       status, or terminal state. Every path requires a manual ticket and must not auto-close.
     scheduler:
       enabled: true

@@ -10,7 +10,7 @@ function readJson(file) {
 }
 
 function expectedComment(knowledge) {
-  return `结构、分类映射、Wazuh 可观察性和证据门检查完成；人工批准前重点确认：${knowledge.reviewFocus}；领域范围：${knowledge.domainFocus}。`;
+  return `结构、分类映射、Wazuh 可观察性、可执行条件、阈值来源、排除条件和证据门检查完成；人工批准前重点确认：${knowledge.reviewFocus}；领域范围：${knowledge.domainFocus}。`;
 }
 
 export function auditReviews({ write = false } = {}) {
@@ -37,6 +37,8 @@ export function auditReviews({ write = false } = {}) {
         "domain_and_attack_mapping",
         "asset_protocol_scope",
         "wazuh_observability",
+        "executable_predicates",
+        "threshold_source_refs",
         "independent_evidence_gate",
         "counterexample_and_failure_boundaries"
       ]

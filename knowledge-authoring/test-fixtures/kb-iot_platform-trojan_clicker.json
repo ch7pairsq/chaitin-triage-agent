@@ -6,15 +6,21 @@
     "fixtureId": "kb-iot_platform-trojan_clicker-confirmed-attack",
     "scenarioType": "confirmed_attack",
     "input": {
-      "evidence": [
-        "进程网络请求、点击标识、前台交互和收益目标",
-        "文件哈希与签名",
-        "进程树、持久化和网络证据"
-      ],
-      "authorizationRecord": false,
-      "recurrence": 1
+      "context": {
+        "evidenceRefs": [
+          "wazuh-alert:fixture",
+          "event:fixture"
+        ],
+        "domainId": "iot_platform",
+        "data": {
+          "click_requests": 20,
+          "user_interaction_present": false,
+          "background_process": true
+        }
+      }
     },
     "expected": {
+      "outcome": "confirmed",
       "action": "escalate_with_manual_review",
       "ticketRequired": true,
       "autoCloseAllowed": false
@@ -27,15 +33,22 @@
     "fixtureId": "kb-iot_platform-trojan_clicker-authorized-or-benign",
     "scenarioType": "authorized_or_benign",
     "input": {
-      "evidence": [
-        "进程网络请求、点击标识、前台交互和收益目标",
-        "文件哈希与签名",
-        "进程树、持久化和网络证据"
-      ],
-      "authorizationRecord": true,
-      "recurrence": 1
+      "context": {
+        "evidenceRefs": [
+          "wazuh-alert:fixture",
+          "event:fixture"
+        ],
+        "domainId": "iot_platform",
+        "data": {
+          "click_requests": 20,
+          "user_interaction_present": false,
+          "background_process": true,
+          "approved_ad_validation": true
+        }
+      }
     },
     "expected": {
+      "outcome": "excluded",
       "action": "suppress_with_manual_review",
       "ticketRequired": true,
       "autoCloseAllowed": false
@@ -48,13 +61,20 @@
     "fixtureId": "kb-iot_platform-trojan_clicker-insufficient-evidence",
     "scenarioType": "insufficient_evidence",
     "input": {
-      "evidence": [
-        "进程网络请求、点击标识、前台交互和收益目标"
-      ],
-      "authorizationRecord": false,
-      "recurrence": 1
+      "context": {
+        "evidenceRefs": [
+          "wazuh-alert:fixture",
+          "event:fixture"
+        ],
+        "domainId": "iot_platform",
+        "data": {
+          "click_requests": 20,
+          "user_interaction_present": false
+        }
+      }
     },
     "expected": {
+      "outcome": "insufficient",
       "action": "request_additional_evidence",
       "ticketRequired": true,
       "autoCloseAllowed": false
@@ -67,18 +87,22 @@
     "fixtureId": "kb-iot_platform-trojan_clicker-compound-or-recurrent",
     "scenarioType": "compound_or_recurrent",
     "input": {
-      "evidence": [
-        "进程网络请求、点击标识、前台交互和收益目标",
-        "文件哈希与签名",
-        "进程树、持久化和网络证据"
-      ],
-      "authorizationRecord": false,
-      "recurrence": 3,
-      "relatedAttackTypes": [
-        "trojan_clicker"
-      ]
+      "context": {
+        "evidenceRefs": [
+          "wazuh-alert:fixture",
+          "event:fixture"
+        ],
+        "domainId": "iot_platform",
+        "data": {
+          "click_requests": 20,
+          "user_interaction_present": false,
+          "background_process": true,
+          "recurrence": 3
+        }
+      }
     },
     "expected": {
+      "outcome": "confirmed",
       "action": "escalate_with_manual_review",
       "ticketRequired": true,
       "autoCloseAllowed": false

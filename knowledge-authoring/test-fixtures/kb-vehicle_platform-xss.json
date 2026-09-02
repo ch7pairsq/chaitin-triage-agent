@@ -6,15 +6,21 @@
     "fixtureId": "kb-vehicle_platform-xss-confirmed-attack",
     "scenarioType": "confirmed_attack",
     "input": {
-      "evidence": [
-        "原始请求、输出编码结果、响应内容和客户端执行证据",
-        "原始与规范化请求",
-        "响应安全上下文"
-      ],
-      "authorizationRecord": false,
-      "recurrence": 1
+      "context": {
+        "evidenceRefs": [
+          "wazuh-alert:fixture",
+          "event:fixture"
+        ],
+        "domainId": "vehicle_platform",
+        "data": {
+          "output_encoded": false,
+          "executable_browser_context": true,
+          "client_execution_observed": true
+        }
+      }
     },
     "expected": {
+      "outcome": "confirmed",
       "action": "escalate_with_manual_review",
       "ticketRequired": true,
       "autoCloseAllowed": false
@@ -27,15 +33,22 @@
     "fixtureId": "kb-vehicle_platform-xss-authorized-or-benign",
     "scenarioType": "authorized_or_benign",
     "input": {
-      "evidence": [
-        "原始请求、输出编码结果、响应内容和客户端执行证据",
-        "原始与规范化请求",
-        "响应安全上下文"
-      ],
-      "authorizationRecord": true,
-      "recurrence": 1
+      "context": {
+        "evidenceRefs": [
+          "wazuh-alert:fixture",
+          "event:fixture"
+        ],
+        "domainId": "vehicle_platform",
+        "data": {
+          "output_encoded": false,
+          "executable_browser_context": true,
+          "client_execution_observed": true,
+          "sanitizer_blocked": true
+        }
+      }
     },
     "expected": {
+      "outcome": "excluded",
       "action": "suppress_with_manual_review",
       "ticketRequired": true,
       "autoCloseAllowed": false
@@ -48,13 +61,20 @@
     "fixtureId": "kb-vehicle_platform-xss-insufficient-evidence",
     "scenarioType": "insufficient_evidence",
     "input": {
-      "evidence": [
-        "原始请求、输出编码结果、响应内容和客户端执行证据"
-      ],
-      "authorizationRecord": false,
-      "recurrence": 1
+      "context": {
+        "evidenceRefs": [
+          "wazuh-alert:fixture",
+          "event:fixture"
+        ],
+        "domainId": "vehicle_platform",
+        "data": {
+          "output_encoded": false,
+          "executable_browser_context": true
+        }
+      }
     },
     "expected": {
+      "outcome": "insufficient",
       "action": "request_additional_evidence",
       "ticketRequired": true,
       "autoCloseAllowed": false
@@ -67,18 +87,22 @@
     "fixtureId": "kb-vehicle_platform-xss-compound-or-recurrent",
     "scenarioType": "compound_or_recurrent",
     "input": {
-      "evidence": [
-        "原始请求、输出编码结果、响应内容和客户端执行证据",
-        "原始与规范化请求",
-        "响应安全上下文"
-      ],
-      "authorizationRecord": false,
-      "recurrence": 3,
-      "relatedAttackTypes": [
-        "xss"
-      ]
+      "context": {
+        "evidenceRefs": [
+          "wazuh-alert:fixture",
+          "event:fixture"
+        ],
+        "domainId": "vehicle_platform",
+        "data": {
+          "output_encoded": false,
+          "executable_browser_context": true,
+          "client_execution_observed": true,
+          "recurrence": 3
+        }
+      }
     },
     "expected": {
+      "outcome": "confirmed",
       "action": "escalate_with_manual_review",
       "ticketRequired": true,
       "autoCloseAllowed": false

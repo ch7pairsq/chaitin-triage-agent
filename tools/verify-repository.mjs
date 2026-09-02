@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { spawnSync } from "node:child_process";
-import { mkdirSync, readFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -31,12 +31,30 @@ for (const required of [
   "trigger_outbox",
   "manual_tickets",
   "delivery_outbox",
+  "executableRule",
+  "evaluation_json",
+  "移除知识会使确认匹配消失",
   "/bin/sh deploy/update-stacks.sh",
   "Portainer",
   "X-Hub-Signature-256",
   "Wazuh Dashboard 仅用于可视化"
 ]) {
   if (!readme.includes(required)) throw new Error(`README.md is missing current design text: ${required}`);
+}
+if (readme.includes("npm run generate") || readme.includes("decisionToken` 是否原样传递")) {
+  throw new Error("README.md contains a removed authoring or token-relay step");
+}
+if (existsSync(path.join(root, "knowledge-authoring/tools/generate.mjs"))) {
+  throw new Error("the removed bulk knowledge generator must not be restored");
+}
+const sourceRegistry = JSON.parse(readFileSync(path.join(root, "knowledge-authoring/sources.json"), "utf8"));
+if (!Array.isArray(sourceRegistry.sources) || sourceRegistry.sources.length < 10) {
+  throw new Error("knowledge source registry is incomplete");
+}
+const knowledgeEngine = readFileSync(path.join(root, "services/security-ops/src/knowledge-rule-engine.js"), "utf8");
+const securityOpsService = readFileSync(path.join(root, "services/security-ops/src/service.js"), "utf8");
+if (!knowledgeEngine.includes("ALLOWED_OPERATORS") || !securityOpsService.includes("evaluateKnowledgeRule")) {
+  throw new Error("executable knowledge is not consumed by SecurityOps");
 }
 
 const packages = [

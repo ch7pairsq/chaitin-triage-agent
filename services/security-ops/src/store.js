@@ -280,6 +280,7 @@ export class SecurityOpsStore {
       decision.action,
       JSON.stringify(decision.evidenceRefs),
       JSON.stringify(decision.knowledgeRefs),
+      JSON.stringify(decision.evaluation ?? []),
       decision.policyStatus,
       decision.decisionToken,
       decision.decisionTokenHash,
@@ -758,7 +759,7 @@ function prepareStatements(database) {
     insertStep: database.prepare(`INSERT INTO triage_steps (step_id, trace_id, sequence, method, status, evidence_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)`),
     listSteps: database.prepare("SELECT * FROM triage_steps WHERE trace_id = ? ORDER BY sequence"),
     findPolicyDecision: database.prepare("SELECT * FROM policy_decisions WHERE trace_id = ?"),
-    insertPolicyDecision: database.prepare(`INSERT INTO policy_decisions (trace_id, decision, action, evidence_json, knowledge_json, policy_status, ticket_required, auto_close_allowed, decision_token, decision_token_hash, created_at) VALUES (?, ?, ?, ?, ?, ?, 1, 0, ?, ?, ?)`),
+    insertPolicyDecision: database.prepare(`INSERT INTO policy_decisions (trace_id, decision, action, evidence_json, knowledge_json, evaluation_json, policy_status, ticket_required, auto_close_allowed, decision_token, decision_token_hash, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, 1, 0, ?, ?, ?)`),
     findResultByTrace: database.prepare("SELECT * FROM triage_results WHERE trace_id = ?"),
     insertResult: database.prepare(`INSERT INTO triage_results (result_id, trace_id, decision, action, evidence_json, knowledge_json, narrative, decision_token_hash, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`),
     findTicketByTrace: database.prepare("SELECT * FROM manual_tickets WHERE trace_id = ?"),
@@ -767,12 +768,12 @@ function prepareStatements(database) {
     insertDelivery: database.prepare(`INSERT INTO delivery_outbox (delivery_id, trace_id, ticket_id, idempotency_key, payload_json, status, attempts, next_attempt_at, created_at, updated_at) VALUES (?, ?, ?, ?, ?, 'pending', 0, ?, ?, ?)`),
     upsertManualPolicy: database.prepare(`
       INSERT INTO policy_decisions
-        (trace_id, decision, action, evidence_json, knowledge_json, policy_status,
+        (trace_id, decision, action, evidence_json, knowledge_json, evaluation_json, policy_status,
          ticket_required, auto_close_allowed, decision_token, decision_token_hash, created_at)
-      VALUES (?, 'manual_review', 'request_additional_evidence', ?, '[]', 'recovery_fallback', 1, 0, ?, ?, ?)
+      VALUES (?, 'manual_review', 'request_additional_evidence', ?, '[]', '[]', 'recovery_fallback', 1, 0, ?, ?, ?)
       ON CONFLICT(trace_id) DO UPDATE SET
         decision = 'manual_review', action = 'request_additional_evidence', evidence_json = excluded.evidence_json,
-        knowledge_json = '[]', policy_status = 'recovery_fallback', ticket_required = 1,
+        knowledge_json = '[]', evaluation_json = '[]', policy_status = 'recovery_fallback', ticket_required = 1,
         auto_close_allowed = 0, decision_token = excluded.decision_token,
         decision_token_hash = excluded.decision_token_hash
     `),
@@ -920,7 +921,7 @@ function secureHashEquals(left, right) {
 }
 
 function decodePolicyDecision(row, duplicate) {
-  return { traceId: row.trace_id, decision: row.decision, action: row.action, evidenceRefs: JSON.parse(row.evidence_json), knowledgeRefs: JSON.parse(row.knowledge_json), policyStatus: row.policy_status, ticketRequired: true, autoCloseAllowed: false, decisionToken: row.decision_token, decisionTokenHash: row.decision_token_hash, duplicate, createdAt: row.created_at };
+  return { traceId: row.trace_id, decision: row.decision, action: row.action, evidenceRefs: JSON.parse(row.evidence_json), knowledgeRefs: JSON.parse(row.knowledge_json), evaluation: JSON.parse(row.evaluation_json ?? "[]"), evaluationJson: row.evaluation_json ?? "[]", policyStatus: row.policy_status, ticketRequired: true, autoCloseAllowed: false, decisionToken: row.decision_token, decisionTokenHash: row.decision_token_hash, duplicate, createdAt: row.created_at };
 }
 
 function publicPolicyDecision(decision) {

@@ -6,15 +6,21 @@
     "fixtureId": "kb-vehicle_platform-trojan_psw-confirmed-attack",
     "scenarioType": "confirmed_attack",
     "input": {
-      "evidence": [
-        "凭据访问、进程树、文件哈希和外联目的地",
-        "文件哈希与签名",
-        "进程树、持久化和网络证据"
-      ],
-      "authorizationRecord": false,
-      "recurrence": 1
+      "context": {
+        "evidenceRefs": [
+          "wazuh-alert:fixture",
+          "event:fixture"
+        ],
+        "domainId": "vehicle_platform",
+        "data": {
+          "credential_store_access": true,
+          "process_trusted": false,
+          "exfiltration_observed": true
+        }
+      }
     },
     "expected": {
+      "outcome": "confirmed",
       "action": "escalate_with_manual_review",
       "ticketRequired": true,
       "autoCloseAllowed": false
@@ -27,15 +33,22 @@
     "fixtureId": "kb-vehicle_platform-trojan_psw-authorized-or-benign",
     "scenarioType": "authorized_or_benign",
     "input": {
-      "evidence": [
-        "凭据访问、进程树、文件哈希和外联目的地",
-        "文件哈希与签名",
-        "进程树、持久化和网络证据"
-      ],
-      "authorizationRecord": true,
-      "recurrence": 1
+      "context": {
+        "evidenceRefs": [
+          "wazuh-alert:fixture",
+          "event:fixture"
+        ],
+        "domainId": "vehicle_platform",
+        "data": {
+          "credential_store_access": true,
+          "process_trusted": false,
+          "exfiltration_observed": true,
+          "approved_credential_migration": true
+        }
+      }
     },
     "expected": {
+      "outcome": "excluded",
       "action": "suppress_with_manual_review",
       "ticketRequired": true,
       "autoCloseAllowed": false
@@ -48,13 +61,20 @@
     "fixtureId": "kb-vehicle_platform-trojan_psw-insufficient-evidence",
     "scenarioType": "insufficient_evidence",
     "input": {
-      "evidence": [
-        "凭据访问、进程树、文件哈希和外联目的地"
-      ],
-      "authorizationRecord": false,
-      "recurrence": 1
+      "context": {
+        "evidenceRefs": [
+          "wazuh-alert:fixture",
+          "event:fixture"
+        ],
+        "domainId": "vehicle_platform",
+        "data": {
+          "credential_store_access": true,
+          "process_trusted": false
+        }
+      }
     },
     "expected": {
+      "outcome": "insufficient",
       "action": "request_additional_evidence",
       "ticketRequired": true,
       "autoCloseAllowed": false
@@ -67,18 +87,22 @@
     "fixtureId": "kb-vehicle_platform-trojan_psw-compound-or-recurrent",
     "scenarioType": "compound_or_recurrent",
     "input": {
-      "evidence": [
-        "凭据访问、进程树、文件哈希和外联目的地",
-        "文件哈希与签名",
-        "进程树、持久化和网络证据"
-      ],
-      "authorizationRecord": false,
-      "recurrence": 3,
-      "relatedAttackTypes": [
-        "trojan_psw"
-      ]
+      "context": {
+        "evidenceRefs": [
+          "wazuh-alert:fixture",
+          "event:fixture"
+        ],
+        "domainId": "vehicle_platform",
+        "data": {
+          "credential_store_access": true,
+          "process_trusted": false,
+          "exfiltration_observed": true,
+          "recurrence": 3
+        }
+      }
     },
     "expected": {
+      "outcome": "confirmed",
       "action": "escalate_with_manual_review",
       "ticketRequired": true,
       "autoCloseAllowed": false

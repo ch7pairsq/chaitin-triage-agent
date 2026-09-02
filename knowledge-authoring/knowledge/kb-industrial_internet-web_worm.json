@@ -60,9 +60,9 @@
   "evidencePolicy": {
     "kind": "minimum_independent_evidence",
     "minimumIndependentEvidence": 2,
-    "basis": "内部安全运营经验与边界验证记录共同确认",
+    "basis": "脚本跨至少三个账号复制并继续自动传播时确认；已编码的正常分享功能排除。",
     "statisticalThreshold": false,
-    "calibrationRule": "任何频率、比例或风险分数阈值必须引用已完成人工复核的 Wazuh 告警与工单记录"
+    "calibrationRule": "部署后按已完成人工复核的 Wazuh 告警与工单滚动校准；校准前所有结果均保留人工确认。"
   },
   "supportingEvidence": [
     "至少两类相互独立证据支持WEB蠕虫判断",
@@ -74,16 +74,16 @@
     "批量资产管理任务"
   ],
   "falsePositiveConditions": [
-    "授权活动未与审批记录正确关联",
-    "资产或协议标签配置错误"
+    "排除条件 safe-share-feature 未正确关联",
+    "资产、主体或授权时间窗映射错误"
   ],
   "falseNegativeConditions": [
-    "关键遥测未接入或采集间断",
-    "攻击行为变形且未触发现有规则"
+    "必需事实 domainId、data.affected_accounts、data.script_replication、data.autonomous_spread 任一缺采时只能补证",
+    "攻击者将活动拆分到多个来源或时间窗口以低于单次阈值"
   ],
   "bypassPoints": [
-    "攻击者使用可信账号或合法工具隐藏行为",
-    "跨资产分阶段执行导致单点证据不足"
+    "围绕阈值边界分散 WEB蠕虫 行为",
+    "使用可信账号、签名工具或合法协议隐藏恶意意图"
   ],
   "unusableFields": [
     {
@@ -102,7 +102,7 @@
     "unmatched": "manual_classification"
   },
   "recommendedAction": "记录研判结果，创建人工工单并发送飞书通知，等待人工确认后处置。",
-  "policyStatus": "operational_knowledge",
+  "policyStatus": "executable_operational_knowledge",
   "autoCloseAllowed": false,
   "ticketRequired": true,
   "knowledgeStatement": "在工业互联网平台安全中，WEB蠕虫必须由告警、资产、身份或网络等多源证据共同支持；证据不足时不得自动定性或关闭。",
@@ -115,9 +115,77 @@
     "security.ops.v1.SecurityOpsService/MatchKnowledge",
     "security.ops.v1.SecurityOpsService/EvaluatePolicy"
   ],
-  "version": "2026.09.01",
+  "version": "2026.09.02",
   "reviewStatus": "approved",
   "reviewedBy": "zhangyuqiao",
   "reviewedAt": "2026-09-01T22:49:09.998Z",
-  "reviewMarker": "Reviewed_Approved"
+  "reviewMarker": "Reviewed_Approved",
+  "executableRule": {
+    "version": "1.0",
+    "requiredFacts": [
+      "domainId",
+      "data.affected_accounts",
+      "data.script_replication",
+      "data.autonomous_spread"
+    ],
+    "confirmWhen": {
+      "all": [
+        {
+          "predicateId": "domain-industrial-internet",
+          "path": "domainId",
+          "op": "equals",
+          "value": "industrial_internet"
+        },
+        {
+          "predicateId": "cross-account",
+          "path": "data.affected_accounts",
+          "op": "gte",
+          "value": 3
+        },
+        {
+          "predicateId": "script-replication",
+          "path": "data.script_replication",
+          "op": "equals",
+          "value": true
+        }
+      ],
+      "any": [
+        {
+          "predicateId": "web-autonomous-spread",
+          "path": "data.autonomous_spread",
+          "op": "equals",
+          "value": true
+        }
+      ],
+      "minimumAny": 1
+    },
+    "excludeWhen": {
+      "any": [
+        {
+          "predicateId": "safe-share-feature",
+          "path": "data.safe_share_feature",
+          "op": "equals",
+          "value": true
+        }
+      ]
+    },
+    "thresholdBasis": {
+      "sourceIds": [
+        "src-repository-reviewed-rule-cases",
+        "src-wazuh-rule-language",
+        "src-mitre-attack-ics",
+        "src-owasp-top10",
+        "src-cwe"
+      ],
+      "statement": "脚本跨至少三个账号复制并继续自动传播时确认；已编码的正常分享功能排除。",
+      "calibration": "部署后按已完成人工复核的 Wazuh 告警与工单滚动校准；校准前所有结果均保留人工确认。"
+    }
+  },
+  "sourceRefs": [
+    "src-repository-reviewed-rule-cases",
+    "src-wazuh-rule-language",
+    "src-mitre-attack-ics",
+    "src-owasp-top10",
+    "src-cwe"
+  ]
 }

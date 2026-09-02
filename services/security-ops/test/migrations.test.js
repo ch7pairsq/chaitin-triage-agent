@@ -22,6 +22,7 @@ function inspectSchema(databasePath) {
       versions: database.prepare("SELECT version FROM schema_migrations ORDER BY version").all().map((row) => Number(row.version)),
       tables: database.prepare("SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name").all().map((row) => row.name),
       runColumns: database.prepare("PRAGMA table_info(triage_runs)").all().map((row) => row.name),
+      policyColumns: database.prepare("PRAGMA table_info(policy_decisions)").all().map((row) => row.name),
       triggerColumns: database.prepare("PRAGMA table_info(trigger_outbox)").all().map((row) => row.name)
     };
   } finally {
@@ -46,9 +47,10 @@ test("fresh and version-one databases reach the same ordered schema", () => {
 
     const expected = inspectSchema(freshPath);
     assert.deepEqual(inspectSchema(upgradedPath), expected);
-    assert.deepEqual(expected.versions, [1, 2]);
+    assert.deepEqual(expected.versions, [1, 2, 3]);
     assert.ok(expected.runColumns.includes("claim_token_hash"));
     assert.ok(expected.runColumns.includes("lease_until"));
+    assert.ok(expected.policyColumns.includes("evaluation_json"));
     assert.ok(expected.tables.includes("authorization_records"));
     assert.ok(expected.triggerColumns.includes("delivery_kind"));
     assert.ok(expected.triggerColumns.includes("recovery_attempt"));

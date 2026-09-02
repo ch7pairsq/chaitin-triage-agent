@@ -13,7 +13,7 @@
 - 业务服务与 Agent 位于同一仓库，但可独立构建、测试、打包、升级和回滚；
 - 只使用 SQLite，不引入 PostgreSQL；控制面数据库与业务数据库按所有权分离；
 - 所有研判结论均需证据引用，所有处置路径均创建人工工单并进入飞书投递队列；
-- 知识按内部安全运营经验整理，不宣称历史发生数量、准确率或线上验证结果；
+- 知识记录可执行条件、反例、失效边界和可核验来源；仓库用例不宣称生产历史数量或准确率；
 - 不执行服务器重启验证。
 
 ## 2. 最终架构与组件所有权
@@ -93,7 +93,7 @@ SecurityOps 是业务事实源，独占：
 
 - 告警幂等入库与事件 outbox；
 - 领取租约、恢复次数、步骤状态和 trace；
-- 证据富化、知识匹配和确定性策略；
+- 证据富化、白名单规则解释、知识匹配和确定性策略；
 - 研判结果、人工工单和飞书投递 outbox；
 - 授权记录的有效期、范围和撤销状态；
 - 投递 backlog、manual 数、最老待处理时长、当前批次和最近错误等 readiness 状态。
@@ -144,10 +144,10 @@ webhook 返回 HTTP 202 只表示 agent-compose 控制面接受了事件，不�
 1. `ClaimAlert` 获取 `claimToken`、`attempt` 和 `leaseUntil`；
 2. `GetAlertContext` 获取规范化上下文和证据引用；
 3. `EnrichAlert` 生成补充证据；
-4. `MatchKnowledge` 匹配已批准知识；
-5. `EvaluatePolicy` 产生确定性门控和 decision token；
+4. `MatchKnowledge` 在同领域执行已批准知识，事件类型仅作候选提示；
+5. `EvaluatePolicy` 在服务端重新执行规则并持久化确定性门控；
 6. Agent 基于证据生成结构化叙事；
-7. `RecordTriageResult` 校验 decision token、证据和结构；
+7. `RecordTriageResult` 在 `claimToken + traceId` 围栏内把叙述绑定到已保存策略；
 8. `CreateManualTicket` 创建人工工单；
 9. `QueueFeishuNotification` 进入投递队列；
 10. `FinalizeTriage` 完成业务终态。
@@ -252,7 +252,7 @@ webhook 返回 HTTP 202 只表示 agent-compose 控制面接受了事件，不�
 
 ## 5. 数据迁移与幂等
 
-保留 `001_initial.sql`，新增 `002_recovery_and_leases.sql`，并把服务启动逻辑改为按文件名顺序执行所有尚未应用的迁移。
+保留 `001_initial.sql`，新增 `002_recovery_and_leases.sql` 与 `003_policy_rule_evaluation.sql`，服务启动逻辑按文件名顺序执行所有尚未应用的迁移。
 
 `002` 至少包括：
 
@@ -264,6 +264,8 @@ webhook 返回 HTTP 202 只表示 agent-compose 控制面接受了事件，不�
 - 新增 `authorization_records`，保存状态、作用域、起止时间和证据引用；
 - 为停滞扫描、可用槽位和投递重试建立必要索引。
 
+`003` 为 `policy_decisions` 增加 `evaluation_json`，保存规则版本、命中条件、失败条件、排除条件、缺失事实和阈值来源。内部策略完整性材料只在 SecurityOps 内部流转，不再要求 LLM 原样转抄长 token。
+
 部署前必须创建 SQLite 一致性备份；迁移失败时服务不得带着半迁移 schema 启动。
 
 ## 6. 事件研判、告警降噪与知识
@@ -273,11 +275,21 @@ webhook 返回 HTTP 202 只表示 agent-compose 控制面接受了事件，不�
 - 领域：车联网平台安全、物联网平台安全、工业互联网平台安全；
 - 类型：33 类攻击；
 - 每个“领域 × 攻击类型”一条知识，共 99 条；
-- 每条知识具有结构化条件、正向边界、反向边界、决策约束、所需证据、人工建议和来源说明；
+- 每条知识具有可执行条件、正向边界、反向边界、决策约束、所需证据、人工建议和来源说明；
 - 知识只有在审批记录完整、签名校验通过且状态为 approved 时才能进入运行包；
-- 运行包只包含运行所需字段，不携带草稿说明和编写过程记录。
+- 运行包只包含运行所需字段，不携带边界测试记录；
+- 不保留通用模板批量生成器，知识 JSON 是逐条复核的唯一编写源。
 
-至少两项相互独立证据是保守的安全门控，不是从历史统计得到的准确率阈值。若证据不足、来源冲突或缺少关键上下文，必须转为 `manual_review/request_additional_evidence`。
+SecurityOps 使用无动态代码执行的规则解释器，只允许限定字段路径和 `equals`、`in`、`gte`、`lte`、`contains_any`、`starts_with`、`truthy`、`exists` 操作。每条 `executableRule` 必须声明：
+
+- `requiredFacts`：缺少任一关键事实即进入补证；
+- `confirmWhen`：全部条件和最少任选条件；
+- `excludeWhen`：授权、受控测试、签名发布或良性活动条件；
+- `thresholdBasis`：来源 ID、明确边界和部署后校准方法。
+
+知识来源登记在 `sources.json`，覆盖 Wazuh 文档、MITRE ATT&CK/ICS、CAPEC、CWE、OWASP、CISA KEV、CNVD 工控、CNNVD、NISTIR 8259 与 UNECE R155。公开条目只用于语义、观察点和外部核验，不能单独触发结论。数值阈值是面向人工复核的保守初始边界，不是准确率或风险评分；部署后按已完成人工复核的 Wazuh 告警和工单滚动校准。
+
+396 条边界用例直接调用生产规则解释器，覆盖 `confirmed`、`excluded`、`insufficient` 和复合场景。测试还必须证明：删除知识后确认匹配消失；删除排除条件会使良性场景误入确认；阈值差一个单位时结果变化；声明字段均被实际消费。若证据不足、来源冲突、事实完整但未命中或缺少关键上下文，必须转为补证或人工分类。
 
 ### 6.1 授权降噪
 

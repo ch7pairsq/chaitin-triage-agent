@@ -6,15 +6,21 @@
     "fixtureId": "kb-industrial_internet-webshell-confirmed-attack",
     "scenarioType": "confirmed_attack",
     "input": {
-      "evidence": [
-        "Web 访问日志、文件哈希、进程树和发布基线",
-        "进程树与命令行",
-        "文件哈希及创建来源"
-      ],
-      "authorizationRecord": false,
-      "recurrence": 1
+      "context": {
+        "evidenceRefs": [
+          "wazuh-alert:fixture",
+          "event:fixture"
+        ],
+        "domainId": "industrial_internet",
+        "data": {
+          "new_script_file": true,
+          "web_process_child": true,
+          "release_artifact_match": false
+        }
+      }
     },
     "expected": {
+      "outcome": "confirmed",
       "action": "escalate_with_manual_review",
       "ticketRequired": true,
       "autoCloseAllowed": false
@@ -27,15 +33,22 @@
     "fixtureId": "kb-industrial_internet-webshell-authorized-or-benign",
     "scenarioType": "authorized_or_benign",
     "input": {
-      "evidence": [
-        "Web 访问日志、文件哈希、进程树和发布基线",
-        "进程树与命令行",
-        "文件哈希及创建来源"
-      ],
-      "authorizationRecord": true,
-      "recurrence": 1
+      "context": {
+        "evidenceRefs": [
+          "wazuh-alert:fixture",
+          "event:fixture"
+        ],
+        "domainId": "industrial_internet",
+        "data": {
+          "new_script_file": true,
+          "web_process_child": true,
+          "release_artifact_match": false,
+          "approved_release": true
+        }
+      }
     },
     "expected": {
+      "outcome": "excluded",
       "action": "suppress_with_manual_review",
       "ticketRequired": true,
       "autoCloseAllowed": false
@@ -48,13 +61,20 @@
     "fixtureId": "kb-industrial_internet-webshell-insufficient-evidence",
     "scenarioType": "insufficient_evidence",
     "input": {
-      "evidence": [
-        "Web 访问日志、文件哈希、进程树和发布基线"
-      ],
-      "authorizationRecord": false,
-      "recurrence": 1
+      "context": {
+        "evidenceRefs": [
+          "wazuh-alert:fixture",
+          "event:fixture"
+        ],
+        "domainId": "industrial_internet",
+        "data": {
+          "new_script_file": true,
+          "web_process_child": true
+        }
+      }
     },
     "expected": {
+      "outcome": "insufficient",
       "action": "request_additional_evidence",
       "ticketRequired": true,
       "autoCloseAllowed": false
@@ -67,18 +87,22 @@
     "fixtureId": "kb-industrial_internet-webshell-compound-or-recurrent",
     "scenarioType": "compound_or_recurrent",
     "input": {
-      "evidence": [
-        "Web 访问日志、文件哈希、进程树和发布基线",
-        "进程树与命令行",
-        "文件哈希及创建来源"
-      ],
-      "authorizationRecord": false,
-      "recurrence": 3,
-      "relatedAttackTypes": [
-        "webshell"
-      ]
+      "context": {
+        "evidenceRefs": [
+          "wazuh-alert:fixture",
+          "event:fixture"
+        ],
+        "domainId": "industrial_internet",
+        "data": {
+          "new_script_file": true,
+          "web_process_child": true,
+          "release_artifact_match": false,
+          "recurrence": 3
+        }
+      }
     },
     "expected": {
+      "outcome": "confirmed",
       "action": "escalate_with_manual_review",
       "ticketRequired": true,
       "autoCloseAllowed": false

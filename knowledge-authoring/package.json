@@ -4,7 +4,6 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "generate": "node tools/generate.mjs",
     "review:annotate": "node tools/review-audit.mjs --write",
     "review:check": "node tools/review-audit.mjs",
     "check": "node tools/validate.mjs && npm run review:check",

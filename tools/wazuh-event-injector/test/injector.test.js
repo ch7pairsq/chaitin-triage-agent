@@ -10,6 +10,15 @@ test("rotates deterministic events across all three security domains", () => {
   assert.equal(buildEvent({ sequence: 2, now }).domain_id, "industrial_internet");
   assert.equal(buildEvent({ sequence: 3, now }).domain_id, "vehicle_platform");
   assert.equal(buildEvent({ sequence: 0, now }).authorized, false);
+  assert.deepEqual(
+    {
+      authFailures: buildEvent({ sequence: 0, now }).auth_failures,
+      protectedAction: buildEvent({ sequence: 1, now }).protected_action_succeeded,
+      shellEffect: buildEvent({ sequence: 2, now }).execution_side_effect
+    },
+    { authFailures: 12, protectedAction: true, shellEffect: true }
+  );
+  assert.ok(buildEvent({ sequence: 0, now }).observed_evidence.length >= 3);
 });
 
 test("sends one-line JSON over the configured Wazuh syslog channel", async () => {

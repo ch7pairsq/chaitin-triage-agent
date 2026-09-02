@@ -98,6 +98,7 @@ message KnowledgeMatch {
   string applicability = 2;
   repeated string evidence_refs = 3;
   repeated string missing_evidence = 4;
+  string evaluation_json = 5;
 }
 
 message MatchKnowledgeResponse {
@@ -121,12 +122,11 @@ message EvaluatePolicyResponse {
   bool ticket_required = 6;
   string policy_status = 7;
   bool auto_close_allowed = 8;
-  string decision_token = 9;
+  string evaluation_json = 10;
 }
 
 message RecordTriageResultRequest {
   string trace_id = 1;
-  string decision_token = 2;
   string narrative = 3;
   string claim_token = 4;
 }

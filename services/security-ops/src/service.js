@@ -1,8 +1,10 @@
 import { randomUUID } from "node:crypto";
 
-import { hashDecisionToken, issueDecisionToken, verifyDecisionToken } from "./decision-token.js";
+import { hashDecisionToken, issueDecisionToken } from "./decision-token.js";
 import { failedPrecondition, invalidArgument } from "./errors.js";
 import { normalizeStringArray, parseContextJson } from "./knowledge-repository.js";
+import { decideKnowledgePolicy } from "./knowledge-policy.js";
+import { evaluateKnowledgeRule } from "./knowledge-rule-engine.js";
 import {
   normalizeClaimToken,
   normalizeIngestAlertEvent,
@@ -106,62 +108,58 @@ export class SecurityOpsService {
     const context = parseContextJson(request?.contextJson ?? request?.context);
     const knowledgeRefs = normalizeStringArray(request?.knowledgeIds ?? request?.knowledgeRefs);
     const records = knowledgeRefs.map((knowledgeId) => this.knowledgeRepository.get(knowledgeId)).filter(Boolean);
+    const evaluation = records.map((record) => ({
+      knowledgeId: record.knowledgeId,
+      ...evaluateKnowledgeRule(record.executableRule, context)
+    }));
     const evidenceRefs = normalizeStringArray(context.evidenceRefs);
     if (evidenceRefs.length === 0) evidenceRefs.push(`trace:${traceId}:alert-context`);
     const authorization = this.#resolveAuthorization(context);
     if (authorization) {
       evidenceRefs.push(`authorization:${authorization.authorizationId}`, ...authorization.evidenceRefs);
     }
-    const observed = new Set(normalizeStringArray(context.observedEvidence));
-    const insufficientIndependentEvidence = records.some((record) => {
-      const minimum = Number(record.evidencePolicy?.minimumIndependentEvidence ?? record.evidenceRequired.length);
-      const matched = record.evidenceRequired.filter((item) => observed.has(item)).length;
-      return matched < minimum;
+    const { decision, action } = decideKnowledgePolicy({
+      records,
+      evaluation,
+      authorization,
+      insufficientEvidence: context.insufficientEvidence === true
     });
-    const needsAdditionalTelemetry = records.some((record) =>
-      record.wazuhMapping?.wazuhObservability !== "full" &&
-      (record.wazuhMapping?.additionalTelemetryRequired?.length ?? 0) > 0
-    );
-    let decision;
-    let action;
-    if (records.length === 0 || records.some((record) => record.attackTypeId === "other_attack")) {
-      decision = "manual_review";
-      action = "manual_classification";
-    } else if (insufficientIndependentEvidence || needsAdditionalTelemetry || context.insufficientEvidence === true) {
-      decision = "manual_review";
-      action = "request_additional_evidence";
-    } else if (authorization) {
-      decision = "needs_review";
-      action = "suppress_with_manual_review";
-    } else {
-      decision = "escalate";
-      action = "escalate_with_manual_review";
-    }
     const authoritative = {
       traceId,
       decision,
       action,
       evidenceRefs,
       knowledgeRefs: records.map((record) => record.knowledgeId),
+      evaluation,
+      evaluationJson: JSON.stringify(evaluation),
       ticketRequired: true,
-      policyStatus: "operational_knowledge",
+      policyStatus: "executable_operational_knowledge",
       autoCloseAllowed: false
     };
-    const decisionToken = issueDecisionToken(authoritative, { secret: this.decisionTokenSecret, now: this.now });
+    const tokenClaims = {
+      traceId,
+      decision,
+      action,
+      evidenceRefs,
+      knowledgeRefs: authoritative.knowledgeRefs,
+      evaluationOutcomes: evaluation.map((item) => `${item.knowledgeId}:${item.outcome}`),
+      ticketRequired: true,
+      autoCloseAllowed: false
+    };
+    const decisionToken = issueDecisionToken(tokenClaims, { secret: this.decisionTokenSecret, now: this.now });
     const saved = this.store.savePolicyDecision({ ...authoritative, decisionToken, decisionTokenHash: hashDecisionToken(decisionToken) });
     if (!saved.duplicate) this.store.appendStep({ traceId, method: "EvaluatePolicy", evidenceRefs });
-    return { ...authoritative, duplicate: saved.duplicate, decisionToken: saved.decisionToken };
+    const { decisionToken: _decisionToken, decisionTokenHash: _decisionTokenHash, createdAt: _createdAt, ...publicDecision } = saved;
+    return publicDecision;
   }
 
   recordTriageResult(request) {
     const traceId = requiredId(request?.traceId, "traceId");
     this.#assertClaim(traceId, request);
-    const decisionToken = String(request?.decisionToken ?? "");
-    const tokenPayload = verifyDecisionToken(decisionToken, { secret: this.decisionTokenSecret, now: this.now });
-    if (tokenPayload.traceId !== traceId) throw failedPrecondition("decisionToken belongs to another trace", { traceId });
     const narrative = String(request?.narrative ?? "").trim();
     if (!narrative || narrative.length > 4000) throw invalidArgument("narrative must contain between 1 and 4000 characters", { field: "narrative" });
-    const result = this.store.recordTriageResult({ traceId, decisionTokenHash: hashDecisionToken(decisionToken), narrative });
+    const policy = this.store.getPolicyDecision(traceId);
+    const result = this.store.recordTriageResult({ traceId, decisionTokenHash: policy.decisionTokenHash, narrative });
     if (!result.duplicate) this.store.appendStep({ traceId, method: "RecordTriageResult", evidenceRefs: result.evidenceRefs });
     return result;
   }

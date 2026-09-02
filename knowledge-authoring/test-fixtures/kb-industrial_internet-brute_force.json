@@ -6,15 +6,21 @@
     "fixtureId": "kb-industrial_internet-brute_force-confirmed-attack",
     "scenarioType": "confirmed_attack",
     "input": {
-      "evidence": [
-        "认证失败序列、成功登录、设备身份和账号状态",
-        "认证失败与成功日志",
-        "来源地址与设备身份"
-      ],
-      "authorizationRecord": false,
-      "recurrence": 1
+      "context": {
+        "evidenceRefs": [
+          "wazuh-alert:fixture",
+          "event:fixture"
+        ],
+        "domainId": "industrial_internet",
+        "data": {
+          "auth_failures": 6,
+          "window_seconds": 300,
+          "distinct_accounts": 3
+        }
+      }
     },
     "expected": {
+      "outcome": "confirmed",
       "action": "escalate_with_manual_review",
       "ticketRequired": true,
       "autoCloseAllowed": false
@@ -27,15 +33,22 @@
     "fixtureId": "kb-industrial_internet-brute_force-authorized-or-benign",
     "scenarioType": "authorized_or_benign",
     "input": {
-      "evidence": [
-        "认证失败序列、成功登录、设备身份和账号状态",
-        "认证失败与成功日志",
-        "来源地址与设备身份"
-      ],
-      "authorizationRecord": true,
-      "recurrence": 1
+      "context": {
+        "evidenceRefs": [
+          "wazuh-alert:fixture",
+          "event:fixture"
+        ],
+        "domainId": "industrial_internet",
+        "data": {
+          "auth_failures": 6,
+          "window_seconds": 300,
+          "distinct_accounts": 3,
+          "authorization_valid": true
+        }
+      }
     },
     "expected": {
+      "outcome": "excluded",
       "action": "suppress_with_manual_review",
       "ticketRequired": true,
       "autoCloseAllowed": false
@@ -48,13 +61,20 @@
     "fixtureId": "kb-industrial_internet-brute_force-insufficient-evidence",
     "scenarioType": "insufficient_evidence",
     "input": {
-      "evidence": [
-        "认证失败序列、成功登录、设备身份和账号状态"
-      ],
-      "authorizationRecord": false,
-      "recurrence": 1
+      "context": {
+        "evidenceRefs": [
+          "wazuh-alert:fixture",
+          "event:fixture"
+        ],
+        "domainId": "industrial_internet",
+        "data": {
+          "auth_failures": 6,
+          "window_seconds": 300
+        }
+      }
     },
     "expected": {
+      "outcome": "insufficient",
       "action": "request_additional_evidence",
       "ticketRequired": true,
       "autoCloseAllowed": false
@@ -67,18 +87,22 @@
     "fixtureId": "kb-industrial_internet-brute_force-compound-or-recurrent",
     "scenarioType": "compound_or_recurrent",
     "input": {
-      "evidence": [
-        "认证失败序列、成功登录、设备身份和账号状态",
-        "认证失败与成功日志",
-        "来源地址与设备身份"
-      ],
-      "authorizationRecord": false,
-      "recurrence": 3,
-      "relatedAttackTypes": [
-        "brute_force"
-      ]
+      "context": {
+        "evidenceRefs": [
+          "wazuh-alert:fixture",
+          "event:fixture"
+        ],
+        "domainId": "industrial_internet",
+        "data": {
+          "auth_failures": 6,
+          "window_seconds": 300,
+          "distinct_accounts": 3,
+          "recurrence": 3
+        }
+      }
     },
     "expected": {
+      "outcome": "confirmed",
       "action": "escalate_with_manual_review",
       "ticketRequired": true,
       "autoCloseAllowed": false

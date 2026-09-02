@@ -1,5 +1,5 @@
 
-¡1
+¤1
 security_ops.protosecurity.ops.v1"Á
 IngestAlertEventRequest
 event_id (	ReventId$
@@ -64,12 +64,13 @@ claimToken"»
 attack_type_id (	RattackTypeId!
 context_json (	RcontextJson
 claim_token (	R
-claimToken"©
+claimToken"Ò
 KnowledgeMatch!
 knowledge_id (	RknowledgeId$
 applicability (	Rapplicability#
 evidence_refs (	RevidenceRefs)
-missing_evidence (	RmissingEvidence"n
+missing_evidence (	RmissingEvidence'
+evaluation_json (	RevaluationJson"n
 MatchKnowledgeResponse
 trace_id (	RtraceId9
 matches (2.security.ops.v1.KnowledgeMatchRmatches"›
@@ -78,7 +79,7 @@ claimToken"©
 context_json (	RcontextJson#
 knowledge_ids (	RknowledgeIds
 claim_token (	R
-claimToken"Ö
+claimToken"Ø
 EvaluatePolicyResponse
 trace_id (	RtraceId
 decision (	Rdecision
@@ -87,11 +88,11 @@ claimToken"Ö
 knowledge_refs (	RknowledgeRefs'
 ticket_required (RticketRequired#
 policy_status (	RpolicyStatus,
-auto_close_allowed (RautoCloseAllowed%
-decision_token	 (	RdecisionToken"œ
+auto_close_allowed (RautoCloseAllowed'
+evaluation_json
+ (	RevaluationJson"u
 RecordTriageResultRequest
-trace_id (	RtraceId%
-decision_token (	RdecisionToken
+trace_id (	RtraceId
 	narrative (	R	narrative
 claim_token (	R
 claimToken"r

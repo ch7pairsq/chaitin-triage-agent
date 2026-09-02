@@ -6,16 +6,22 @@
     "fixtureId": "kb-vehicle_platform-other_attack-confirmed-attack",
     "scenarioType": "confirmed_attack",
     "input": {
-      "evidence": [
-        "原始告警、资产上下文、负责人说明和补充遥测",
-        "原始告警与上下文",
-        "资产负责人说明"
-      ],
-      "authorizationRecord": false,
-      "recurrence": 1
+      "context": {
+        "evidenceRefs": [
+          "wazuh-alert:fixture",
+          "event:fixture"
+        ],
+        "domainId": "vehicle_platform",
+        "data": {
+          "anomaly_observed": true,
+          "classification_complete": false,
+          "manual_context_required": true
+        }
+      }
     },
     "expected": {
-      "action": "escalate_with_manual_review",
+      "outcome": "confirmed",
+      "action": "manual_classification",
       "ticketRequired": true,
       "autoCloseAllowed": false
     }
@@ -27,16 +33,23 @@
     "fixtureId": "kb-vehicle_platform-other_attack-authorized-or-benign",
     "scenarioType": "authorized_or_benign",
     "input": {
-      "evidence": [
-        "原始告警、资产上下文、负责人说明和补充遥测",
-        "原始告警与上下文",
-        "资产负责人说明"
-      ],
-      "authorizationRecord": true,
-      "recurrence": 1
+      "context": {
+        "evidenceRefs": [
+          "wazuh-alert:fixture",
+          "event:fixture"
+        ],
+        "domainId": "vehicle_platform",
+        "data": {
+          "anomaly_observed": true,
+          "classification_complete": false,
+          "manual_context_required": true,
+          "mapping_error": true
+        }
+      }
     },
     "expected": {
-      "action": "suppress_with_manual_review",
+      "outcome": "excluded",
+      "action": "manual_classification",
       "ticketRequired": true,
       "autoCloseAllowed": false
     }
@@ -48,13 +61,20 @@
     "fixtureId": "kb-vehicle_platform-other_attack-insufficient-evidence",
     "scenarioType": "insufficient_evidence",
     "input": {
-      "evidence": [
-        "原始告警、资产上下文、负责人说明和补充遥测"
-      ],
-      "authorizationRecord": false,
-      "recurrence": 1
+      "context": {
+        "evidenceRefs": [
+          "wazuh-alert:fixture",
+          "event:fixture"
+        ],
+        "domainId": "vehicle_platform",
+        "data": {
+          "anomaly_observed": true,
+          "classification_complete": false
+        }
+      }
     },
     "expected": {
+      "outcome": "insufficient",
       "action": "request_additional_evidence",
       "ticketRequired": true,
       "autoCloseAllowed": false
@@ -67,19 +87,23 @@
     "fixtureId": "kb-vehicle_platform-other_attack-compound-or-recurrent",
     "scenarioType": "compound_or_recurrent",
     "input": {
-      "evidence": [
-        "原始告警、资产上下文、负责人说明和补充遥测",
-        "原始告警与上下文",
-        "资产负责人说明"
-      ],
-      "authorizationRecord": false,
-      "recurrence": 3,
-      "relatedAttackTypes": [
-        "other_attack"
-      ]
+      "context": {
+        "evidenceRefs": [
+          "wazuh-alert:fixture",
+          "event:fixture"
+        ],
+        "domainId": "vehicle_platform",
+        "data": {
+          "anomaly_observed": true,
+          "classification_complete": false,
+          "manual_context_required": true,
+          "recurrence": 3
+        }
+      }
     },
     "expected": {
-      "action": "escalate_with_manual_review",
+      "outcome": "confirmed",
+      "action": "manual_classification",
       "ticketRequired": true,
       "autoCloseAllowed": false
     }
