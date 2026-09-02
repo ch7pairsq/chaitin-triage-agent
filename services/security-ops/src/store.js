@@ -1,10 +1,10 @@
 import { readFileSync, mkdirSync, readdirSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { randomUUID } from "node:crypto";
+import { createHash, randomBytes, randomUUID, timingSafeEqual } from "node:crypto";
 import { DatabaseSync } from "node:sqlite";
 
-import { failedPrecondition, notFound } from "./errors.js";
+import { BUSINESS_REASONS, failedPrecondition, notFound } from "./errors.js";
 import { normalizeLimit } from "./validation.js";
 
 const MODULE_DIR = path.dirname(fileURLToPath(import.meta.url));
@@ -49,10 +49,25 @@ function applyMigrations(database, migrationsDir, now) {
 }
 
 export class SecurityOpsStore {
-  constructor({ databasePath, migrationsDir = DEFAULT_MIGRATIONS_DIR, now = () => new Date(), idFactory = randomUUID }) {
+  constructor({
+    databasePath,
+    migrationsDir = DEFAULT_MIGRATIONS_DIR,
+    now = () => new Date(),
+    idFactory = randomUUID,
+    tokenFactory = () => randomBytes(32).toString("base64url"),
+    maxActiveTriage = 2,
+    claimLeaseMs = 180_000
+  }) {
     if (!databasePath) throw new TypeError("databasePath is required");
     this.now = now;
     this.idFactory = idFactory;
+    this.tokenFactory = tokenFactory;
+    this.maxActiveTriage = maxActiveTriage;
+    this.claimLeaseMs = claimLeaseMs;
+    if (maxActiveTriage !== 2) throw new TypeError("maxActiveTriage must be 2");
+    if (!Number.isInteger(claimLeaseMs) || claimLeaseMs < 30_000 || claimLeaseMs > 900_000) {
+      throw new TypeError("claimLeaseMs must be an integer between 30000 and 900000");
+    }
     mkdirSync(path.dirname(path.resolve(databasePath)), { recursive: true });
     this.database = new DatabaseSync(path.resolve(databasePath));
     try {
@@ -133,27 +148,84 @@ export class SecurityOpsStore {
   }
 
   claimAlert({ eventId, schedulerRunId = null, sandboxId = null }) {
-    const existing = this.statements.findClaimByEvent.get(eventId);
-    if (existing) return decodeClaim(existing, true);
     const alert = this.statements.findIngressByEvent.get(eventId);
     if (!alert) throw notFound("alert event was not found", { eventId });
-    if (!["pending", "claimed", "processing"].includes(alert.status)) {
-      throw failedPrecondition("alert event is not claimable", { eventId, status: alert.status });
-    }
-    const now = this.now().toISOString();
-    const claimId = this.idFactory();
-    const traceId = this.idFactory();
+    const nowDate = this.now();
+    const now = nowDate.toISOString();
     this.database.exec("BEGIN IMMEDIATE");
     try {
+      const existingRun = this.statements.findRunByEvent.get(eventId);
+      if (existingRun) {
+        const existingClaim = this.statements.findClaimByEvent.get(eventId);
+        this.database.exec("COMMIT");
+        return decodeClaim(existingClaim, existingRun, {
+          status: ["completed", "manual"].includes(existingRun.state) ? existingRun.state : "busy",
+          duplicate: true
+        });
+      }
+      if (!["pending", "claimed", "processing"].includes(alert.status)) {
+        throw failedPrecondition("alert event is not claimable", { eventId, status: alert.status });
+      }
+      if (Number(this.statements.countActiveRuns.get().count) >= this.maxActiveTriage) {
+        this.database.exec("COMMIT");
+        return { eventId, status: "busy", duplicate: true };
+      }
+      const claimId = this.idFactory();
+      const traceId = this.idFactory();
+      const claimToken = this.tokenFactory();
+      if (!/^[A-Za-z0-9_-]{43,128}$/.test(claimToken)) throw new TypeError("tokenFactory returned an invalid claim token");
+      const claimTokenHash = hashClaimToken(claimToken);
+      const leaseUntil = new Date(nowDate.getTime() + this.claimLeaseMs).toISOString();
       this.statements.insertClaim.run(claimId, eventId, traceId, schedulerRunId, sandboxId, now);
-      this.statements.insertRun.run(traceId, eventId, schedulerRunId, sandboxId, now);
+      this.statements.insertRun.run(traceId, eventId, schedulerRunId, sandboxId, claimTokenHash, leaseUntil, now, now);
       this.statements.updateIngressStatus.run("processing", now, eventId);
       this.database.exec("COMMIT");
+      return {
+        claimId,
+        traceId,
+        eventId,
+        schedulerRunId,
+        sandboxId,
+        status: "acquired",
+        duplicate: false,
+        claimToken,
+        attempt: 1,
+        leaseUntil,
+        claimedAt: now
+      };
     } catch (error) {
       this.database.exec("ROLLBACK");
       throw error;
     }
-    return { claimId, traceId, eventId, schedulerRunId, sandboxId, status: "processing", duplicate: false, claimedAt: now };
+  }
+
+  assertClaim({ traceId, claimToken }) {
+    const run = this.statements.findRun.get(traceId);
+    if (!run) throw notFound("triage run was not found", { traceId });
+    if (run.state !== "processing" || !secureHashEquals(run.claim_token_hash, hashClaimToken(claimToken))) {
+      throw failedPrecondition("claim token no longer owns this triage run", {
+        traceId,
+        reason: BUSINESS_REASONS.CLAIM_FENCED
+      });
+    }
+    const nowDate = this.now();
+    if (!run.lease_until || Date.parse(run.lease_until) <= nowDate.getTime()) {
+      throw failedPrecondition("claim lease has expired", {
+        traceId,
+        reason: BUSINESS_REASONS.LEASE_EXPIRED,
+        leaseUntil: run.lease_until
+      });
+    }
+    const now = nowDate.toISOString();
+    const leaseUntil = new Date(nowDate.getTime() + this.claimLeaseMs).toISOString();
+    const refreshed = this.statements.refreshRunLease.run(leaseUntil, now, traceId, run.claim_token_hash);
+    if (refreshed.changes !== 1) {
+      throw failedPrecondition("claim token was fenced while refreshing the lease", {
+        traceId,
+        reason: BUSINESS_REASONS.CLAIM_FENCED
+      });
+    }
+    return { traceId, eventId: run.event_id, attempt: Number(run.attempt), leaseUntil };
   }
 
   appendStep({ traceId, method, status = "completed", evidenceRefs = [] }) {
@@ -381,8 +453,9 @@ export class SecurityOpsStore {
   }
 
   findClaimForEvent(eventId) {
-    const row = this.statements.findClaimByEvent.get(eventId);
-    return row ? decodeClaim(row, false) : null;
+    const claim = this.statements.findClaimByEvent.get(eventId);
+    const run = this.statements.findRunByEvent.get(eventId);
+    return claim && run ? decodeClaim(claim, run, { status: run.state, duplicate: false }) : null;
   }
 
   inspectCounts() {
@@ -426,9 +499,19 @@ function prepareStatements(database) {
     countIngress: database.prepare("SELECT COUNT(*) AS count FROM ingress_events"),
     countTrigger: database.prepare("SELECT COUNT(*) AS count FROM trigger_outbox"),
     findClaimByEvent: database.prepare("SELECT * FROM alert_claims WHERE event_id = ?"),
+    findRunByEvent: database.prepare("SELECT * FROM triage_runs WHERE event_id = ?"),
+    countActiveRuns: database.prepare("SELECT COUNT(*) AS count FROM triage_runs WHERE state = 'processing'"),
     insertClaim: database.prepare(`INSERT INTO alert_claims (claim_id, event_id, trace_id, scheduler_run_id, sandbox_id, claimed_at) VALUES (?, ?, ?, ?, ?, ?)`),
-    insertRun: database.prepare(`INSERT INTO triage_runs (trace_id, event_id, scheduler_run_id, sandbox_id, state, started_at) VALUES (?, ?, ?, ?, 'processing', ?)`),
+    insertRun: database.prepare(`
+      INSERT INTO triage_runs
+        (trace_id, event_id, scheduler_run_id, sandbox_id, state, claim_token_hash, attempt, lease_until, last_activity_at, started_at)
+      VALUES (?, ?, ?, ?, 'processing', ?, 1, ?, ?, ?)
+    `),
     findRun: database.prepare("SELECT * FROM triage_runs WHERE trace_id = ?"),
+    refreshRunLease: database.prepare(`
+      UPDATE triage_runs SET lease_until = ?, last_activity_at = ?
+      WHERE trace_id = ? AND claim_token_hash = ? AND state = 'processing'
+    `),
     updateIngressStatus: database.prepare("UPDATE ingress_events SET status = ?, updated_at = ? WHERE event_id = ?"),
     nextStepSequence: database.prepare("SELECT COALESCE(MAX(sequence), 0) + 1 AS sequence FROM triage_steps WHERE trace_id = ?"),
     insertStep: database.prepare(`INSERT INTO triage_steps (step_id, trace_id, sequence, method, status, evidence_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)`),
@@ -508,8 +591,28 @@ function decodeIngress(row, duplicate) {
   };
 }
 
-function decodeClaim(row, duplicate) {
-  return { claimId: row.claim_id, eventId: row.event_id, traceId: row.trace_id, schedulerRunId: row.scheduler_run_id, sandboxId: row.sandbox_id, status: "processing", duplicate, claimedAt: row.claimed_at };
+function decodeClaim(claim, run, { status, duplicate }) {
+  return {
+    claimId: claim.claim_id,
+    eventId: claim.event_id,
+    traceId: claim.trace_id,
+    schedulerRunId: claim.scheduler_run_id,
+    sandboxId: claim.sandbox_id,
+    status,
+    duplicate,
+    attempt: Number(run.attempt),
+    leaseUntil: run.lease_until,
+    claimedAt: claim.claimed_at
+  };
+}
+
+function hashClaimToken(token) {
+  return createHash("sha256").update(token).digest("hex");
+}
+
+function secureHashEquals(left, right) {
+  if (typeof left !== "string" || typeof right !== "string" || left.length !== right.length) return false;
+  return timingSafeEqual(Buffer.from(left, "utf8"), Buffer.from(right, "utf8"));
 }
 
 function decodePolicyDecision(row, duplicate) {

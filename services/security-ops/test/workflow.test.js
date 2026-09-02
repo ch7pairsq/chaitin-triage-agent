@@ -71,9 +71,9 @@ test("SecurityOps completes a trace with an authoritative decision, ticket and F
   const context = fixture();
   try {
     const claim = context.service.claimAlert({ eventId: "event-vehicle-1", schedulerRunId: "scheduler-1", sandboxId: "sandbox-1" });
-    const alert = context.service.getAlertContext({ eventId: "event-vehicle-1" });
+    const alert = context.service.getAlertContext({ eventId: "event-vehicle-1", claimToken: claim.claimToken });
     assert.equal(alert.wazuhAlertId, "wazuh-9001");
-    const enrichment = context.service.enrichAlert({ traceId: claim.traceId });
+    const enrichment = context.service.enrichAlert({ traceId: claim.traceId, claimToken: claim.claimToken });
     const policyContext = {
       ...enrichment.context,
       observedEvidence: EVIDENCE.slice(0, 2),
@@ -84,7 +84,8 @@ test("SecurityOps completes a trace with an authoritative decision, ticket and F
       traceId: claim.traceId,
       domainId: "vehicle_platform",
       attackTypeId: "brute_force",
-      context: policyContext
+      context: policyContext,
+      claimToken: claim.claimToken
     });
     assert.equal(matches.matches.length, 1);
     assert.deepEqual(matches.matches[0].missingEvidence, [EVIDENCE[2]]);
@@ -92,7 +93,8 @@ test("SecurityOps completes a trace with an authoritative decision, ticket and F
     const policy = context.service.evaluatePolicy({
       traceId: claim.traceId,
       context: policyContext,
-      knowledgeIds: matches.matches.map((match) => match.knowledgeId)
+      knowledgeIds: matches.matches.map((match) => match.knowledgeId),
+      claimToken: claim.claimToken
     });
     assert.equal(policy.action, "escalate_with_manual_review");
     assert.equal(policy.ticketRequired, true);
@@ -102,15 +104,16 @@ test("SecurityOps completes a trace with an authoritative decision, ticket and F
     const result = context.service.recordTriageResult({
       traceId: claim.traceId,
       decisionToken: policy.decisionToken,
-      narrative: "认证失败、来源身份和后续成功登录形成一致证据链，需人工复核。"
+      narrative: "认证失败、来源身份和后续成功登录形成一致证据链，需人工复核。",
+      claimToken: claim.claimToken
     });
     assert.equal(result.action, policy.action);
-    const ticket = context.service.createManualTicket({ traceId: claim.traceId, resultId: result.resultId });
+    const ticket = context.service.createManualTicket({ traceId: claim.traceId, resultId: result.resultId, claimToken: claim.claimToken });
     assert.equal(ticket.status, "open");
-    const delivery = context.service.queueFeishuNotification({ traceId: claim.traceId, ticketId: ticket.ticketId });
+    const delivery = context.service.queueFeishuNotification({ traceId: claim.traceId, ticketId: ticket.ticketId, claimToken: claim.claimToken });
     assert.equal(delivery.status, "pending");
     assert.equal(delivery.payload.msg_type, "interactive");
-    const terminal = context.service.finalizeTriage({ traceId: claim.traceId });
+    const terminal = context.service.finalizeTriage({ traceId: claim.traceId, claimToken: claim.claimToken });
     assert.equal(terminal.state, "completed");
 
     const trace = context.service.getTriageTrace({ traceId: claim.traceId });
@@ -134,28 +137,31 @@ test("business writes are idempotent across Agent retries", () => {
     const secondClaim = context.service.claimAlert({ eventId: "event-vehicle-1", schedulerRunId: "scheduler-retry", sandboxId: "sandbox-retry" });
     assert.equal(secondClaim.traceId, firstClaim.traceId);
     assert.equal(secondClaim.duplicate, true);
-    const enrichment = context.service.enrichAlert({ traceId: firstClaim.traceId });
+    assert.equal(secondClaim.status, "busy");
+    const enrichment = context.service.enrichAlert({ traceId: firstClaim.traceId, claimToken: firstClaim.claimToken });
     const policy = context.service.evaluatePolicy({
       traceId: firstClaim.traceId,
       context: { observedEvidence: EVIDENCE, evidenceRefs: enrichment.evidenceRefs },
-      knowledgeIds: ["kb-vehicle_platform-brute_force"]
+      knowledgeIds: ["kb-vehicle_platform-brute_force"],
+      claimToken: firstClaim.claimToken
     });
     const duplicatePolicy = context.service.evaluatePolicy({
       traceId: firstClaim.traceId,
       context: { observedEvidence: EVIDENCE, evidenceRefs: enrichment.evidenceRefs },
-      knowledgeIds: ["kb-vehicle_platform-brute_force"]
+      knowledgeIds: ["kb-vehicle_platform-brute_force"],
+      claimToken: firstClaim.claimToken
     });
     assert.equal(duplicatePolicy.decisionToken, policy.decisionToken);
     assert.equal(duplicatePolicy.duplicate, true);
-    const result = context.service.recordTriageResult({ traceId: firstClaim.traceId, decisionToken: policy.decisionToken, narrative: "需要人工复核。" });
-    const duplicateResult = context.service.recordTriageResult({ traceId: firstClaim.traceId, decisionToken: policy.decisionToken, narrative: "重试说明不会覆盖首次记录。" });
+    const result = context.service.recordTriageResult({ traceId: firstClaim.traceId, decisionToken: policy.decisionToken, narrative: "需要人工复核。", claimToken: firstClaim.claimToken });
+    const duplicateResult = context.service.recordTriageResult({ traceId: firstClaim.traceId, decisionToken: policy.decisionToken, narrative: "重试说明不会覆盖首次记录。", claimToken: firstClaim.claimToken });
     assert.equal(duplicateResult.resultId, result.resultId);
     assert.equal(duplicateResult.duplicate, true);
-    const ticket = context.service.createManualTicket({ traceId: firstClaim.traceId, resultId: result.resultId });
-    const duplicateTicket = context.service.createManualTicket({ traceId: firstClaim.traceId, resultId: result.resultId });
+    const ticket = context.service.createManualTicket({ traceId: firstClaim.traceId, resultId: result.resultId, claimToken: firstClaim.claimToken });
+    const duplicateTicket = context.service.createManualTicket({ traceId: firstClaim.traceId, resultId: result.resultId, claimToken: firstClaim.claimToken });
     assert.equal(duplicateTicket.ticketId, ticket.ticketId);
-    const delivery = context.service.queueFeishuNotification({ traceId: firstClaim.traceId, ticketId: ticket.ticketId });
-    const duplicateDelivery = context.service.queueFeishuNotification({ traceId: firstClaim.traceId, ticketId: ticket.ticketId });
+    const delivery = context.service.queueFeishuNotification({ traceId: firstClaim.traceId, ticketId: ticket.ticketId, claimToken: firstClaim.claimToken });
+    const duplicateDelivery = context.service.queueFeishuNotification({ traceId: firstClaim.traceId, ticketId: ticket.ticketId, claimToken: firstClaim.claimToken });
     assert.equal(duplicateDelivery.deliveryId, delivery.deliveryId);
   } finally {
     context.close();
@@ -169,7 +175,8 @@ test("missing evidence and authorization never produce automatic closure", () =>
     const missing = context.service.evaluatePolicy({
       traceId: claim.traceId,
       context: { observedEvidence: EVIDENCE.slice(0, 1), evidenceRefs: ["wazuh-alert:wazuh-9001"] },
-      knowledgeIds: ["kb-vehicle_platform-brute_force"]
+      knowledgeIds: ["kb-vehicle_platform-brute_force"],
+      claimToken: claim.claimToken
     });
     assert.equal(missing.action, "request_additional_evidence");
     assert.equal(missing.autoCloseAllowed, false);
@@ -183,7 +190,8 @@ test("missing evidence and authorization never produce automatic closure", () =>
     const policy = authorized.service.evaluatePolicy({
       traceId: claim.traceId,
       context: { observedEvidence: EVIDENCE, evidenceRefs: ["wazuh-alert:wazuh-9001"], authorizationRecord: true },
-      knowledgeIds: ["kb-vehicle_platform-brute_force"]
+      knowledgeIds: ["kb-vehicle_platform-brute_force"],
+      claimToken: claim.claimToken
     });
     assert.equal(policy.action, "suppress_with_manual_review");
     assert.equal(policy.ticketRequired, true);
@@ -200,11 +208,12 @@ test("RecordTriageResult rejects a modified decision token", () => {
     const policy = context.service.evaluatePolicy({
       traceId: claim.traceId,
       context: { observedEvidence: EVIDENCE, evidenceRefs: ["wazuh-alert:wazuh-9001"] },
-      knowledgeIds: ["kb-vehicle_platform-brute_force"]
+      knowledgeIds: ["kb-vehicle_platform-brute_force"],
+      claimToken: claim.claimToken
     });
     const tampered = `${policy.decisionToken.slice(0, -1)}${policy.decisionToken.endsWith("A") ? "B" : "A"}`;
     assert.throws(
-      () => context.service.recordTriageResult({ traceId: claim.traceId, decisionToken: tampered, narrative: "非法改写。" }),
+      () => context.service.recordTriageResult({ traceId: claim.traceId, decisionToken: tampered, narrative: "非法改写。", claimToken: claim.claimToken }),
       (error) => error instanceof SecurityOpsError && error.code === "FAILED_PRECONDITION"
     );
   } finally {

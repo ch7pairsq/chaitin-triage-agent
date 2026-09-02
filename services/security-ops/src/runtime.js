@@ -23,7 +23,10 @@ function backendFor(context) {
   const secret = context.secret ?? {};
   const databasePath = path.resolve(workdir, config.database_path ?? "triage.db");
   const knowledgePath = path.resolve(context.packageDir, config.knowledge_path ?? "resources/knowledge.jsonl");
-  const store = new SecurityOpsStore({ databasePath });
+  const store = new SecurityOpsStore({
+    databasePath,
+    maxActiveTriage: Number(config.max_active_triage ?? 2)
+  });
   try {
     const knowledgeRepository = KnowledgeRepository.fromJsonLines(knowledgePath);
     const service = new SecurityOpsService({

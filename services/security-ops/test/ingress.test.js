@@ -83,17 +83,19 @@ test("duplicate Wazuh alerts are idempotent and do not enqueue twice", () => {
   }
 });
 
-test("an unfinished claimed alert remains available to hourly compensation", () => {
+test("an unfinished claimed alert remains visible but cannot be claimed concurrently", () => {
   const context = fixture();
   try {
     context.service.ingestAlertEvent(wazuhAlert());
     const claim = context.service.claimAlert({ eventId: "event-1", schedulerRunId: "event-run", sandboxId: "sandbox-1" });
-    assert.equal(claim.status, "processing");
+    assert.equal(claim.status, "acquired");
     const resumable = context.service.listPendingAlerts({ limit: 10 }).alerts;
     assert.equal(resumable.length, 1);
     assert.equal(resumable[0].eventId, "event-1");
     assert.equal(resumable[0].status, "processing");
-    assert.equal(context.service.claimAlert({ eventId: "event-1", schedulerRunId: "hourly-run" }).traceId, claim.traceId);
+    const duplicate = context.service.claimAlert({ eventId: "event-1", schedulerRunId: "retry-run" });
+    assert.equal(duplicate.traceId, claim.traceId);
+    assert.equal(duplicate.status, "busy");
   } finally {
     context.close();
   }
@@ -113,7 +115,7 @@ test("enrichment returns only Wazuh-provided classification and evidence fields"
       }
     }));
     const claim = context.service.claimAlert({ eventId: "event-1" });
-    const enrichment = context.service.enrichAlert({ traceId: claim.traceId });
+    const enrichment = context.service.enrichAlert({ traceId: claim.traceId, claimToken: claim.claimToken });
     assert.equal(enrichment.domainId, "vehicle_platform");
     assert.equal(enrichment.attackTypeId, "brute_force");
     assert.deepEqual(enrichment.context.observedEvidence, ["认证失败与成功日志", "来源地址与设备身份"]);
@@ -127,7 +129,7 @@ test("missing Wazuh classification is returned as a server-owned manual fallback
   try {
     context.service.ingestAlertEvent(wazuhAlert());
     const claim = context.service.claimAlert({ eventId: "event-1" });
-    const enrichment = context.service.enrichAlert({ traceId: claim.traceId });
+    const enrichment = context.service.enrichAlert({ traceId: claim.traceId, claimToken: claim.claimToken });
     assert.equal(enrichment.domainId, "unclassified");
     assert.equal(enrichment.attackTypeId, "other_attack");
     assert.deepEqual(enrichment.context.observedEvidence, []);

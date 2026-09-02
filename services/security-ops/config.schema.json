@@ -32,6 +32,13 @@
       "minimum": 1000,
       "maximum": 60000,
       "default": 3000
+    },
+    "max_active_triage": {
+      "type": "integer",
+      "minimum": 2,
+      "maximum": 2,
+      "default": 2,
+      "description": "SecurityOps 强制执行的最大并发研判数"
     }
   },
   "additionalProperties": false

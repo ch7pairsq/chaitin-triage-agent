@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import { hashDecisionToken, issueDecisionToken, verifyDecisionToken } from "./decision-token.js";
 import { failedPrecondition, invalidArgument } from "./errors.js";
 import { normalizeStringArray, parseContextJson } from "./knowledge-repository.js";
-import { normalizeIngestAlertEvent, normalizeLimit } from "./validation.js";
+import { normalizeClaimToken, normalizeIngestAlertEvent, normalizeLimit } from "./validation.js";
 
 export class SecurityOpsService {
   constructor({ store, knowledgeRepository = null, decisionTokenSecret = "", eventIdFactory = randomUUID, now = () => new Date() }) {
@@ -29,8 +29,10 @@ export class SecurityOpsService {
 
   getAlertContext(request) {
     const eventId = requiredId(request?.eventId, "eventId");
+    const traceId = this.#traceForEvent(eventId);
+    this.#assertClaim(traceId, request);
     const result = this.store.getAlertContext(eventId);
-    this.store.appendStep({ traceId: this.#traceForEvent(eventId), method: "GetAlertContext", evidenceRefs: [`wazuh-alert:${result.wazuhAlertId}`] });
+    this.store.appendStep({ traceId, method: "GetAlertContext", evidenceRefs: [`wazuh-alert:${result.wazuhAlertId}`] });
     return result;
   }
 
@@ -41,12 +43,13 @@ export class SecurityOpsService {
       schedulerRunId: optionalId(request?.schedulerRunId, "schedulerRunId"),
       sandboxId: optionalId(request?.sandboxId, "sandboxId")
     });
-    if (!result.duplicate) this.store.appendStep({ traceId: result.traceId, method: "ClaimAlert", evidenceRefs: [`event:${eventId}`] });
+    if (result.status === "acquired") this.store.appendStep({ traceId: result.traceId, method: "ClaimAlert", evidenceRefs: [`event:${eventId}`] });
     return result;
   }
 
   enrichAlert(request) {
     const traceId = requiredId(request?.traceId, "traceId");
+    this.#assertClaim(traceId, request);
     const trace = this.store.getTriageTrace(traceId);
     const alert = this.store.getAlertContext(trace.eventId);
     const evidenceRefs = [`wazuh-alert:${alert.wazuhAlertId}`, `event:${trace.eventId}`];
@@ -71,6 +74,7 @@ export class SecurityOpsService {
   matchKnowledge(request) {
     if (!this.knowledgeRepository) throw failedPrecondition("approved runtime knowledge is not configured");
     const traceId = requiredId(request?.traceId, "traceId");
+    this.#assertClaim(traceId, request);
     const domainId = requiredId(request?.domainId, "domainId");
     const attackTypeId = requiredId(request?.attackTypeId, "attackTypeId");
     const context = parseContextJson(request?.contextJson ?? request?.context);
@@ -83,6 +87,7 @@ export class SecurityOpsService {
   evaluatePolicy(request) {
     if (!this.knowledgeRepository) throw failedPrecondition("approved runtime knowledge is not configured");
     const traceId = requiredId(request?.traceId, "traceId");
+    this.#assertClaim(traceId, request);
     const context = parseContextJson(request?.contextJson ?? request?.context);
     const knowledgeRefs = normalizeStringArray(request?.knowledgeIds ?? request?.knowledgeRefs);
     const records = knowledgeRefs.map((knowledgeId) => this.knowledgeRepository.get(knowledgeId)).filter(Boolean);
@@ -131,6 +136,7 @@ export class SecurityOpsService {
 
   recordTriageResult(request) {
     const traceId = requiredId(request?.traceId, "traceId");
+    this.#assertClaim(traceId, request);
     const decisionToken = String(request?.decisionToken ?? "");
     const tokenPayload = verifyDecisionToken(decisionToken, { secret: this.decisionTokenSecret, now: this.now });
     if (tokenPayload.traceId !== traceId) throw failedPrecondition("decisionToken belongs to another trace", { traceId });
@@ -143,6 +149,7 @@ export class SecurityOpsService {
 
   createManualTicket(request) {
     const traceId = requiredId(request?.traceId, "traceId");
+    this.#assertClaim(traceId, request);
     const resultId = requiredId(request?.resultId, "resultId");
     const ticket = this.store.createManualTicket({ traceId, resultId });
     if (!ticket.duplicate) this.store.appendStep({ traceId, method: "CreateManualTicket", evidenceRefs: [`result:${resultId}`] });
@@ -151,6 +158,7 @@ export class SecurityOpsService {
 
   queueFeishuNotification(request) {
     const traceId = requiredId(request?.traceId, "traceId");
+    this.#assertClaim(traceId, request);
     const ticketId = requiredId(request?.ticketId, "ticketId");
     const trace = this.store.getTriageTrace(traceId);
     const payload = {
@@ -167,6 +175,7 @@ export class SecurityOpsService {
 
   finalizeTriage(request) {
     const traceId = requiredId(request?.traceId, "traceId");
+    this.#assertClaim(traceId, request);
     const result = this.store.finalizeTriage(traceId);
     if (!result.duplicate) this.store.appendStep({ traceId, method: "FinalizeTriage", evidenceRefs: [`trace:${traceId}:terminal`] });
     return result;
@@ -185,6 +194,13 @@ export class SecurityOpsService {
     const claim = this.store.findClaimForEvent(eventId);
     if (!claim) throw failedPrecondition("alert must be claimed before business methods are called", { eventId });
     return claim.traceId;
+  }
+
+  #assertClaim(traceId, request) {
+    return this.store.assertClaim({
+      traceId,
+      claimToken: normalizeClaimToken(request?.claimToken)
+    });
   }
 }
 
