@@ -29,7 +29,6 @@ services:
       DEFAULT_IMAGE: ${AGENT_COMPOSE_GUEST_IMAGE:?AGENT_COMPOSE_GUEST_IMAGE is required}
       AGENT_COMPOSE_RUNTIME_BASE_URL: http://agent-compose:7410
       PROJECT_ENV_FILE: /run/secrets/agent-compose.env
-      AGENT_COMPOSE_PROJECT_ENV_FILE: /run/secrets/agent-compose.env
       TZ: Asia/Shanghai
     entrypoint: [/bin/sh, -ec]
     command:

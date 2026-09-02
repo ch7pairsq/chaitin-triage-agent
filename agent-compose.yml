@@ -1,5 +1,5 @@
 name: chaitin-triage-agent
-env_file: ${AGENT_COMPOSE_PROJECT_ENV_FILE:-.env}
+env_file: /run/secrets/agent-compose.env
 
 octobus_servers:
   wazuh:

@@ -71,6 +71,8 @@ for (const file of [
 ]) parseJson(file);
 
 const agentCompose = documents.get("agent-compose.yml");
+assert(agentCompose?.env_file === "/run/secrets/agent-compose.env", "agent-compose project env file must use the mounted absolute path");
+assert(!String(agentCompose?.env_file).includes("${"), "agent-compose project env file must not rely on unsupported interpolation");
 assert(agentCompose?.octobus_servers?.wazuh, "agent-compose.yml must declare the Wazuh OctoBus server");
 assert(agentCompose?.octobus_servers?.triage, "agent-compose.yml must declare the triage OctoBus server");
 assert(
