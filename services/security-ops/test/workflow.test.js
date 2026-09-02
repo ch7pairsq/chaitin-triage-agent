@@ -168,7 +168,7 @@ test("business writes are idempotent across Agent retries", () => {
   }
 });
 
-test("missing evidence and authorization never produce automatic closure", () => {
+test("missing evidence and untrusted authorization flags never produce automatic closure", () => {
   const context = fixture();
   try {
     const claim = context.service.claimAlert({ eventId: "event-vehicle-1" });
@@ -193,11 +193,93 @@ test("missing evidence and authorization never produce automatic closure", () =>
       knowledgeIds: ["kb-vehicle_platform-brute_force"],
       claimToken: claim.claimToken
     });
-    assert.equal(policy.action, "suppress_with_manual_review");
+    assert.equal(policy.action, "escalate_with_manual_review");
     assert.equal(policy.ticketRequired, true);
     assert.equal(policy.autoCloseAllowed, false);
   } finally {
     authorized.close();
+  }
+});
+
+test("only an active unexpired scope-matching authorization record can suppress", () => {
+  const context = fixture();
+  try {
+    context.service.putAuthorizationRecord({
+      authorizationId: "auth-active",
+      status: "active",
+      scopeType: "asset",
+      scopeValue: "vehicle-platform-gateway",
+      validFrom: "2026-08-31T23:00:00Z",
+      validUntil: "2026-09-01T01:00:00Z",
+      evidenceRefs: ["change:approved-1"]
+    });
+    context.service.putAuthorizationRecord({
+      authorizationId: "auth-expired",
+      status: "active",
+      scopeType: "asset",
+      scopeValue: "vehicle-platform-gateway",
+      validFrom: "2026-08-31T20:00:00Z",
+      validUntil: "2026-08-31T21:00:00Z",
+      evidenceRefs: ["change:expired"]
+    });
+    context.service.putAuthorizationRecord({
+      authorizationId: "auth-revoked",
+      status: "revoked",
+      scopeType: "asset",
+      scopeValue: "vehicle-platform-gateway",
+      validFrom: "2026-08-31T23:00:00Z",
+      validUntil: "2026-09-01T01:00:00Z",
+      evidenceRefs: ["change:revoked"]
+    });
+    context.service.putAuthorizationRecord({
+      authorizationId: "auth-mismatch",
+      status: "active",
+      scopeType: "asset",
+      scopeValue: "different-asset",
+      validFrom: "2026-08-31T23:00:00Z",
+      validUntil: "2026-09-01T01:00:00Z",
+      evidenceRefs: ["change:mismatch"]
+    });
+
+    for (const [authorizationRecordId, expectedAction] of [
+      ["auth-active", "suppress_with_manual_review"],
+      ["auth-expired", "escalate_with_manual_review"],
+      ["auth-revoked", "escalate_with_manual_review"],
+      ["auth-mismatch", "escalate_with_manual_review"],
+      ["auth-missing", "escalate_with_manual_review"]
+    ]) {
+      const isolated = fixture();
+      try {
+        for (const record of context.store.database.prepare("SELECT * FROM authorization_records").all()) {
+          isolated.store.database.prepare(`
+            INSERT INTO authorization_records
+              (authorization_id, status, scope_type, scope_value, valid_from, valid_until, evidence_json, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `).run(record.authorization_id, record.status, record.scope_type, record.scope_value, record.valid_from, record.valid_until, record.evidence_json, record.created_at, record.updated_at);
+        }
+        const claim = isolated.service.claimAlert({ eventId: "event-vehicle-1" });
+        const policy = isolated.service.evaluatePolicy({
+          traceId: claim.traceId,
+          context: {
+            agent: { name: "vehicle-platform-gateway" },
+            observedEvidence: EVIDENCE,
+            evidenceRefs: ["wazuh-alert:wazuh-9001"],
+            authorizationRecord: true,
+            authorizationRecordId
+          },
+          knowledgeIds: ["kb-vehicle_platform-brute_force"],
+          claimToken: claim.claimToken
+        });
+        assert.equal(policy.action, expectedAction, authorizationRecordId);
+        if (authorizationRecordId === "auth-active") {
+          assert.ok(policy.evidenceRefs.includes("change:approved-1"));
+        }
+      } finally {
+        isolated.close();
+      }
+    }
+  } finally {
+    context.close();
   }
 });
 

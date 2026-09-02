@@ -410,6 +410,37 @@ export class SecurityOpsStore {
     };
   }
 
+  putAuthorizationRecord(record) {
+    const now = this.now().toISOString();
+    this.statements.upsertAuthorizationRecord.run(
+      record.authorizationId,
+      record.status,
+      record.scopeType,
+      record.scopeValue,
+      record.validFrom,
+      record.validUntil,
+      JSON.stringify(record.evidenceRefs),
+      now,
+      now
+    );
+    return { authorizationId: record.authorizationId, status: record.status, updatedAt: now };
+  }
+
+  getAuthorizationRecord(authorizationId) {
+    const row = this.statements.findAuthorizationRecord.get(authorizationId);
+    return row ? {
+      authorizationId: row.authorization_id,
+      status: row.status,
+      scopeType: row.scope_type,
+      scopeValue: row.scope_value,
+      validFrom: row.valid_from,
+      validUntil: row.valid_until,
+      evidenceRefs: JSON.parse(row.evidence_json),
+      createdAt: row.created_at,
+      updatedAt: row.updated_at
+    } : null;
+  }
+
   requeueStalledAlerts() {
     const nowDate = this.now();
     const now = nowDate.toISOString();
@@ -755,6 +786,21 @@ function prepareStatements(database) {
       UPDATE ingress_events
       SET status = 'manual', recovery_count = ?, next_recovery_at = NULL, last_recovery_error = ?, updated_at = ?
       WHERE event_id = ?
+    `),
+    findAuthorizationRecord: database.prepare("SELECT * FROM authorization_records WHERE authorization_id = ?"),
+    upsertAuthorizationRecord: database.prepare(`
+      INSERT INTO authorization_records
+        (authorization_id, status, scope_type, scope_value, valid_from, valid_until,
+         evidence_json, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(authorization_id) DO UPDATE SET
+        status = excluded.status,
+        scope_type = excluded.scope_type,
+        scope_value = excluded.scope_value,
+        valid_from = excluded.valid_from,
+        valid_until = excluded.valid_until,
+        evidence_json = excluded.evidence_json,
+        updated_at = excluded.updated_at
     `),
     recoverManualTriggers: database.prepare(`
       UPDATE trigger_outbox

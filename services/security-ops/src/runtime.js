@@ -128,7 +128,8 @@ export const octobusService = defineService({
       const trace = service.getTriageTrace(request);
       return { traceId: trace.traceId, traceJson: JSON.stringify(trace) };
     }),
-    [`${FULL_SERVICE}/RecoverDelivery`]: unary((service, request) => service.recoverDelivery(request))
+    [`${FULL_SERVICE}/RecoverDelivery`]: unary((service, request) => service.recoverDelivery(request)),
+    [`${FULL_SERVICE}/PutAuthorizationRecord`]: unary((service, request) => service.putAuthorizationRecord(request))
   }
 });
 

@@ -3,7 +3,13 @@ import { randomUUID } from "node:crypto";
 import { hashDecisionToken, issueDecisionToken, verifyDecisionToken } from "./decision-token.js";
 import { failedPrecondition, invalidArgument } from "./errors.js";
 import { normalizeStringArray, parseContextJson } from "./knowledge-repository.js";
-import { normalizeClaimToken, normalizeIngestAlertEvent, normalizeLimit, normalizeRequeueStalledAlerts } from "./validation.js";
+import {
+  normalizeClaimToken,
+  normalizeIngestAlertEvent,
+  normalizeLimit,
+  normalizePutAuthorizationRecord,
+  normalizeRequeueStalledAlerts
+} from "./validation.js";
 
 export class SecurityOpsService {
   constructor({ store, knowledgeRepository = null, decisionTokenSecret = "", eventIdFactory = randomUUID, now = () => new Date() }) {
@@ -30,6 +36,10 @@ export class SecurityOpsService {
   requeueStalledAlerts(request = {}) {
     normalizeRequeueStalledAlerts(request);
     return this.store.requeueStalledAlerts();
+  }
+
+  putAuthorizationRecord(request) {
+    return this.store.putAuthorizationRecord(normalizePutAuthorizationRecord(request));
   }
 
   getAlertContext(request) {
@@ -98,6 +108,10 @@ export class SecurityOpsService {
     const records = knowledgeRefs.map((knowledgeId) => this.knowledgeRepository.get(knowledgeId)).filter(Boolean);
     const evidenceRefs = normalizeStringArray(context.evidenceRefs);
     if (evidenceRefs.length === 0) evidenceRefs.push(`trace:${traceId}:alert-context`);
+    const authorization = this.#resolveAuthorization(context);
+    if (authorization) {
+      evidenceRefs.push(`authorization:${authorization.authorizationId}`, ...authorization.evidenceRefs);
+    }
     const observed = new Set(normalizeStringArray(context.observedEvidence));
     const insufficientIndependentEvidence = records.some((record) => {
       const minimum = Number(record.evidencePolicy?.minimumIndependentEvidence ?? record.evidenceRequired.length);
@@ -116,7 +130,7 @@ export class SecurityOpsService {
     } else if (insufficientIndependentEvidence || needsAdditionalTelemetry || context.insufficientEvidence === true) {
       decision = "manual_review";
       action = "request_additional_evidence";
-    } else if (context.authorizationRecord === true) {
+    } else if (authorization) {
       decision = "needs_review";
       action = "suppress_with_manual_review";
     } else {
@@ -207,6 +221,21 @@ export class SecurityOpsService {
       claimToken: normalizeClaimToken(request?.claimToken)
     });
   }
+
+  #resolveAuthorization(context) {
+    const authorizationId = optionalId(
+      context.authorizationRecordId ?? context.authorization_record_id ?? context.data?.authorization_record_id,
+      "authorizationRecordId"
+    );
+    if (!authorizationId) return null;
+    const record = this.store.getAuthorizationRecord(authorizationId);
+    const nowMs = this.now().getTime();
+    if (!record || record.status !== "active" || Date.parse(record.validFrom) > nowMs || Date.parse(record.validUntil) <= nowMs) {
+      return null;
+    }
+    const candidates = authorizationScopeCandidates(record.scopeType, context);
+    return candidates.has(record.scopeValue) && record.evidenceRefs.length > 0 ? record : null;
+  }
 }
 
 function requiredId(value, field) {
@@ -222,4 +251,14 @@ function optionalId(value, field) {
 function optionalKnowledgeId(value) {
   const normalized = String(value ?? "").trim();
   return /^[a-z][a-z0-9_]{1,63}$/.test(normalized) ? normalized : "";
+}
+
+function authorizationScopeCandidates(scopeType, context) {
+  const values = {
+    asset: [context.assetId, context.asset_id, context.agent?.id, context.agent?.name, context.data?.asset_id],
+    account: [context.account, context.accountId, context.data?.account, context.data?.dstuser, context.data?.user],
+    rule: [context.rule?.id, context.ruleId, context.data?.rule_id],
+    change_window: [context.changeWindowId, context.change_window_id, context.data?.change_window_id]
+  }[scopeType] ?? [];
+  return new Set(values.map((value) => String(value ?? "").trim()).filter(Boolean));
 }
